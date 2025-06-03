@@ -1,4 +1,41 @@
+import { type SpiritSubtype, type SpiritCategory } from './types';
+
 export const spiritCategories: SpiritCategory[] = [
+  {
+    id: 'absinthe',
+    name: 'Absinthe',
+    description: 'The "Green Fairy" - a highly alcoholic spirit flavored with botanicals, primarily green anise, sweet fennel, and wormwood.',
+    image: 'https://images.pexels.com/photos/4021983/pexels-photo-4021983.jpeg',
+    subtypes: [
+      {
+        id: 'traditional',
+        name: 'Traditional Absinthe',
+        description: 'Classic Swiss-French style absinthe, known for its complex botanical profile and traditional preparation method.',
+        image: 'https://images.pexels.com/photos/5947036/pexels-photo-5947036.jpeg',
+        details: {
+          characteristics: ['Anise', 'Herbal', 'Complex', 'Botanical'],
+          tastingNotes: 'Strong anise and fennel notes, followed by complex herbal undertones from wormwood and other botanicals. The finish reveals subtle notes of mint and citrus.',
+          history: 'Originated in Switzerland in the late 18th century. Gained immense popularity in France during the 19th century, particularly among artists and writers. Banned in many countries in the early 20th century due to misconceptions about its effects, but has experienced a revival since the 1990s.',
+          productionMethod: 'Herbs are macerated in neutral spirits, then distilled. The distillate is then colored naturally using additional herbs. Traditional serving involves slowly dripping water over a sugar cube.',
+          myths: [
+            'Absinthe makes you hallucinate - This is a misconception based on poor quality historical products',
+            'The wormwood in absinthe is deadly - Modern absinthe is strictly regulated and safe',
+            'Real absinthe must be artificially colored - Traditional absinthes are naturally colored'
+          ],
+          funFacts: [
+            'The louche effect (clouding when water is added) is caused by essential oils from the herbs',
+            'Famous artists like Van Gogh and Picasso were known absinthe enthusiasts',
+            'Modern absinthe must contain less than 35mg/kg of thujone to be legal in the EU'
+          ],
+          stats: {
+            abv: '45-74%',
+            origin: 'Switzerland/France',
+            category: 'Traditional Absinthe'
+          }
+        }
+      }
+    ]
+  },
   {
     id: 'brandy',
     name: 'Brandy',
