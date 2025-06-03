@@ -1,24 +1,28 @@
+// src/App.tsx
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import { SpiritsProvider } from './contexts/SpiritsContext';
+import { SpiritsProvider } from './contexts/SpiritsContext'; // Import SpiritsProvider
 import { UserPreferencesProvider } from './contexts/UserPreferencesContext';
-import { RecommendationsProvider } from './contexts/RecommendationsContext';
+import { RecommendationsProvider } from './contexts/RecommendationsContext'; // Import RecommendationsProvider
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import SpiritListPage from './pages/SpiritList/SpiritListPage';
 import SpiritOverviewPage from './pages/SpiritOverview/SpiritOverviewPage';
 import SpiritSubtypesPage from './pages/SpiritSubtypes/SpiritSubtypesPage';
 import SpiritProfilePage from './pages/Spirit/[id]';
-import AboutPage from './pages/About/AboutPage';
-import ContactPage from './pages/Contact/ContactPage';
-import SettingsPage from './pages/Settings/SettingsPage';
+import AboutPage from './pages/pages/About/AboutPage'; // Check path later if needed
+import ContactPage from './pages/pages/Contact/ContactPage'; // Check path later if needed
+import SettingsPage from './pages/pages/Settings/SettingsPage'; // Check path later if needed
 
 function App() {
   return (
+    // UserPreferencesProvider is the outermost, assuming it doesn't depend on Spirits or Recommendations
     <UserPreferencesProvider>
-      <RecommendationsProvider>
-        <SpiritsProvider>
+      {/* SpiritsProvider must wrap RecommendationsProvider because RecommendationsProvider uses useSpirits() */}
+      <SpiritsProvider>
+        <RecommendationsProvider>
           <Router>
             <Toaster position="top-center" />
             <Layout>
@@ -33,8 +37,8 @@ function App() {
               </Routes>
             </Layout>
           </Router>
-        </SpiritsProvider>
-      </RecommendationsProvider>
+        </RecommendationsProvider>
+      </SpiritsProvider>
     </UserPreferencesProvider>
   );
 }
