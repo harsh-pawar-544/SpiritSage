@@ -1,23 +1,29 @@
+// src/pages/SpiritSubtypes/SpiritSubtypesPage.tsx
+
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useSpirits } from '../../contexts/SpiritsContext';
-import RatingStars from '../../components/RatingStars';
+import RatingStars from '../../components/RatingStars'; // Make sure this path is correct if not using this component
 import TransitionImage from '../../components/ui/TransitionImage';
 
 const SpiritSubtypesPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getSubtypesByCategory, getRatingsForSpirit } = useSpirits();
-  const [subtypes, setSubtypes] = useState<any[]>([]);
+  // --- CHANGE MADE HERE ---
+  // Renamed getSubtypesByCategory to getSubtypesByCategoryId
+  const { getSubtypesByCategoryId, getRatingsForBrand } = useSpirits(); // Changed getRatingsForSpirit to getRatingsForBrand (as per SpiritsContext)
+  const [subtypes, setSubtypes] = useState<any[]>([]); // 'any[]' can be replaced with Subtype[] for better type safety
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchSubtypes = async () => {
       if (!id) return;
-      
+
       try {
-        const data = await getSubtypesByCategory(id);
+        // --- CHANGE MADE HERE ---
+        // Called getSubtypesByCategoryId
+        const data = await getSubtypesByCategoryId(id);
         setSubtypes(data);
       } catch (error) {
         console.error('Error fetching subtypes:', error);
@@ -27,7 +33,7 @@ const SpiritSubtypesPage: React.FC = () => {
     };
 
     fetchSubtypes();
-  }, [id, getSubtypesByCategory]);
+  }, [id, getSubtypesByCategoryId]); // Dependency array also updated
 
   if (isLoading) {
     return (
@@ -37,6 +43,9 @@ const SpiritSubtypesPage: React.FC = () => {
     );
   }
 
+  // NOTE: You are checking if !subtypes.length, but it seems like 'category_name'
+  // is expected on subtypes[0]. If no subtypes are found, this might cause an error
+  // or display 'Spirit' only.
   if (!subtypes.length) {
     return (
       <div className="min-h-[50vh] flex items-center justify-center">
@@ -67,6 +76,10 @@ const SpiritSubtypesPage: React.FC = () => {
           <div
             key={subtype.id}
             className="cursor-pointer group focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-xl"
+            // The onClick navigate path is /spirit/${subtype.id}. This assumes subtype.id is a brand ID,
+            // but usually /spirit/:id routes to an individual brand profile.
+            // If you intend to show a list of brands here, the path should be different
+            // e.g., `/subtype/${subtype.id}/brands`
             onClick={() => navigate(`/spirit/${subtype.id}`)}
             role="button"
             tabIndex={0}
