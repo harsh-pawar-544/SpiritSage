@@ -32,7 +32,7 @@ function App() {
                     <Route path="/explore" element={<SpiritListPage />} />
                     <Route path="/category/:id" element={<SpiritOverviewPage />} />
                     <Route path="/category/:id/subtypes" element={<SpiritSubtypesPage />} />
-                    <Route path="/subtype/:id" element={<SpiritsBySubtypePage />} />
+                    <Route path="/spirits/subtype/:id" element={<SpiritsBySubtypePage />} />
                     <Route path="/brand/:id" element={<BrandDetailPage />} />
                     <Route path="/about" element={<AboutPage />} />
                     <Route path="/contact" element={<ContactPage />} />
