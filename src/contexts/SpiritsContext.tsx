@@ -45,7 +45,14 @@ export function SpiritsProvider({ children }: { children: React.ReactNode }) {
         .order('name');
 
       if (error) throw error;
-      setSpirits(data || []);
+
+      // Map image_url to image property
+      const mappedData = data?.map(item => ({
+        ...item,
+        image: item.image_url
+      })) || [];
+
+      setSpirits(mappedData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch spirits');
     } finally {
@@ -65,7 +72,10 @@ export function SpiritsProvider({ children }: { children: React.ReactNode }) {
         .single();
 
       if (error) throw error;
-      return data;
+      return {
+        ...data,
+        image: data.image_url
+      };
     } catch (err) {
       console.error('Error fetching spirit:', err);
       return null;
@@ -81,7 +91,10 @@ export function SpiritsProvider({ children }: { children: React.ReactNode }) {
         .single();
 
       if (error) throw error;
-      return data;
+      return {
+        ...data,
+        image: data.image_url
+      };
     } catch (err) {
       console.error('Error fetching category:', err);
       return null;
@@ -100,7 +113,10 @@ export function SpiritsProvider({ children }: { children: React.ReactNode }) {
         .order('name');
 
       if (error) throw error;
-      return data || [];
+      return data?.map(item => ({
+        ...item,
+        image: item.image_url
+      })) || [];
     } catch (err) {
       console.error('Error fetching subtypes:', err);
       return [];
@@ -115,7 +131,10 @@ export function SpiritsProvider({ children }: { children: React.ReactNode }) {
         .order('name');
 
       if (error) throw error;
-      return data || [];
+      return data?.map(item => ({
+        ...item,
+        image: item.image_url
+      })) || [];
     } catch (err) {
       console.error('Error fetching spirits:', err);
       return [];
@@ -131,7 +150,10 @@ export function SpiritsProvider({ children }: { children: React.ReactNode }) {
         .order('name');
 
       if (error) throw error;
-      return data || [];
+      return data?.map(item => ({
+        ...item,
+        image: item.image_url
+      })) || [];
     } catch (err) {
       console.error('Error fetching subtypes:', err);
       return [];
