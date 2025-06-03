@@ -4,7 +4,6 @@ import {
   type AlcoholType,
   type Subtype,
   type Brand,
-  type Rating,
 } from '../data/types';
 
 interface SpiritsContextType {
@@ -15,8 +14,6 @@ interface SpiritsContextType {
   getSubtypesByCategoryId: (categoryId: string) => Subtype[];
   getBrandsBySubtypeId: (subtypeId: string) => Brand[];
   getBrandById: (brandId: string) => Brand | undefined;
-  addRating: (brandId: string, rating: number, comment: string) => Promise<void>;
-  getRatingsForBrand: (brandId: string) => Promise<Rating[]>;
   getTastingNotesForSpirit: (spiritId: string) => Promise<Array<{ term: string; percentage: number }>>;
 }
 
@@ -115,51 +112,6 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     [alcoholTypes]
   );
 
-  const addRating = useCallback(
-    async (brandId: string, rating: number, comment: string): Promise<void> => {
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (!user) {
-        throw new Error('User not authenticated.');
-      }
-
-      const { error: insertError } = await supabase
-        .from('ratings')
-        .insert({
-          spirit_id: brandId,
-          user_id: user.id,
-          rating,
-          comment,
-        });
-
-      if (insertError) {
-        throw new Error(insertError.message || 'Failed to add rating.');
-      }
-    },
-    []
-  );
-
-  const getRatingsForBrand = useCallback(
-    async (brandId: string): Promise<Rating[]> => {
-      try {
-        const { data, error: fetchError } = await supabase
-          .from('ratings')
-          .select(`*, profiles:user_id(username, avatar_url)`)
-          .eq('spirit_id', brandId)
-          .order('created_at', { ascending: false });
-
-        if (fetchError) {
-          throw new Error(fetchError.message || 'Failed to fetch ratings.');
-        }
-        return data || [];
-      } catch (err) {
-        console.error('Error fetching ratings:', err);
-        return [];
-      }
-    },
-    []
-  );
-
   const getTastingNotesForSpirit = useCallback(
     async (spiritId: string): Promise<Array<{ term: string; percentage: number }>> => {
       console.log(`Fetching tasting notes for spirit: ${spiritId}`);
@@ -176,8 +128,6 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     getSubtypesByCategoryId,
     getBrandsBySubtypeId,
     getBrandById,
-    addRating,
-    getRatingsForBrand,
     getTastingNotesForSpirit,
   };
 
