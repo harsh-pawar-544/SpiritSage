@@ -1,13 +1,11 @@
-// src/contexts/SpiritsContext.tsx
-
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { supabase } from '../lib/supabaseClient'; // Make sure this path is correct: `../lib/supabaseClient`
+import { supabase } from '../lib/supabaseClient';
 import {
-  type AlcoholType, // Renamed from SpiritCategory
-  type Subtype, // Renamed from SpiritSubtype
-  type Brand, // Renamed from SpiritBrand
+  type AlcoholType,
+  type Subtype,
+  type Brand,
   type Rating,
-} from '../data/types'; // Assuming types.ts defines these interfaces
+} from '../data/types';
 
 interface SpiritsContextType {
   alcoholTypes: AlcoholType[];
@@ -32,23 +30,19 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     const fetchAlcoholData = async () => {
       try {
-        // Fetch alcohol types (categories)
         const { data: typesData, error: typesError } = await supabase
           .from('alcohol_types')
           .select('*');
         if (typesError) throw typesError;
 
-        // Fetch subtypes and brands
         const { data: subtypesData, error: subtypesError } = await supabase
           .from('subtypes')
-          .select('*, alcohol_types(name)'); // This join looks correct if subtypes links to alcohol_types
+          .select('*, alcohol_types(name)');
         if (subtypesError) throw subtypesError;
 
-        // --- FIX APPLIED HERE ---
-        // You need to select alcohol_types(name) THROUGH subtypes
         const { data: brandsData, error: brandsError } = await supabase
           .from('brands')
-          .select('*, subtypes(name, alcohol_types(name))'); // Nested select for alcohol_types name
+          .select('*, subtypes(name, alcohol_types(name))');
         if (brandsError) throw brandsError;
 
         const processedAlcoholTypes = typesData.map(type => ({
@@ -190,7 +184,7 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   return (
     <SpiritsContext.Provider value={contextValue}>
       {children}
-    </SpitsContext.Provider>
+    </SpiritsContext.Provider>
   );
 };
 
