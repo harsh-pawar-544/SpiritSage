@@ -5,21 +5,24 @@ import Home from './pages/Home';
 import SpiritOverviewPage from './pages/SpiritOverview/SpiritOverviewPage';
 import SpiritPage from './pages/SpiritPage';
 import { SpiritsProvider } from './contexts/SpiritsContext';
+import { UserPreferencesProvider } from './contexts/UserPreferencesContext';
 
 function App() {
   return (
-    <SpiritsProvider>
-      <Router>
-        <Toaster position="top-center" />
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/category/:id" element={<SpiritOverviewPage />} />
-            <Route path="/spirit/:id" element={<SpiritPage />} />
-          </Routes>
-        </Layout>
-      </Router>
-    </SpiritsProvider>
+    <UserPreferencesProvider>
+      <SpiritsProvider>
+        <Router>
+          <Toaster position="top-center" />
+          <Layout>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/category/:id" element={<SpiritOverviewPage />} />
+              <Route path="/spirit/:id" element={<SpiritPage />} />
+            </Routes>
+          </Layout>
+        </Router>
+      </SpiritsProvider>
+    </UserPreferencesProvider>
   );
 }
 
