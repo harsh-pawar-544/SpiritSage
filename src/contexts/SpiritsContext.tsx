@@ -1,187 +1,95 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { format } from 'date-fns';
-import toast from 'react-hot-toast';
+import { createContext, useContext, ReactNode } from 'react';
+import { supabase } from '../lib/supabase';
+import { Database } from '../lib/database.types';
 
-export interface SpiritRating {
-  id: string;
-  spiritId: string;
-  rating: number;
-  comment: string;
-  userId: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface TastingNote {
-  term: string;
-  count: number;
-  percentage: number;
-}
+type SpiritCategory = Database['public']['Tables']['spirit_categories']['Row'];
+type SpiritSubtype = Database['public']['Tables']['spirit_subtypes']['Row'];
+type Rating = Database['public']['Tables']['ratings']['Row'];
 
 interface SpiritsContextType {
-  ratings: SpiritRating[];
-  addRating: (spiritId: string, rating: number, comment: string) => void;
-  updateRating: (ratingId: string, rating: number, comment: string) => void;
-  deleteRating: (ratingId: string) => void;
-  getRatingsForSpirit: (spiritId: string) => SpiritRating[];
-  getUserRatingForSpirit: (spiritId: string) => SpiritRating | undefined;
-  getTastingNotesForSpirit: (spiritId: string) => TastingNote[];
+  getCategories: () => Promise<SpiritCategory[]>;
+  getSubtypesByCategory: (categoryId: string) => Promise<SpiritSubtype[]>;
+  getSubtypeById: (id: string) => Promise<SpiritSubtype | null>;
+  getRatings: (spiritId: string) => Promise<Rating[]>;
+  addRating: (spiritId: string, rating: number, comment: string) => Promise<void>;
 }
-
-const STORAGE_KEY = 'spiritsage_ratings';
-const MOCK_USER_ID = 'current-user';
-
-// Common tasting note terms to look for in reviews
-const TASTING_TERMS = [
-  // Primary Flavors
-  'sweet', 'bitter', 'sour', 'spicy', 'smooth', 'harsh',
-  // Vanilla & Caramel Notes
-  'vanilla', 'caramel', 'toffee', 'butterscotch', 'honey', 'maple',
-  // Fruit Notes
-  'fruity', 'citrus', 'apple', 'berry', 'cherry', 'orange', 'lemon', 'tropical',
-  // Floral & Herbal
-  'floral', 'herbal', 'botanical', 'grassy', 'fresh',
-  // Wood & Smoke
-  'oak', 'woody', 'smoky', 'peaty', 'charred', 'toasted',
-  // Earth & Spice
-  'earthy', 'pepper', 'cinnamon', 'nutmeg', 'ginger', 'clove',
-  // Other Flavors
-  'chocolate', 'coffee', 'nutty', 'leather', 'tobacco',
-  // Texture/Body
-  'creamy', 'silky', 'rich', 'light', 'heavy', 'thick',
-  'oily', 'dry', 'crisp', 'clean', 'balanced', 'complex',
-  // Character
-  'bold', 'subtle', 'intense', 'mild', 'sharp', 'mellow',
-  'warm', 'cool', 'bright', 'dark', 'robust', 'delicate'
-];
 
 const SpiritsContext = createContext<SpiritsContextType | undefined>(undefined);
 
-export const SpiritsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [ratings, setRatings] = useState<SpiritRating[]>([]);
-
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        setRatings(JSON.parse(stored));
-      } catch (error) {
-        console.error('Error loading ratings:', error);
-        toast.error('Failed to load ratings');
-      }
-    }
-  }, []);
-
-  const saveRatings = (newRatings: SpiritRating[]) => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newRatings));
-      setRatings(newRatings);
-    } catch (error) {
-      console.error('Error saving ratings:', error);
-      toast.error('Failed to save ratings');
-      throw error;
-    }
-  };
-
-  const addRating = (spiritId: string, rating: number, comment: string) => {
-    const newRating: SpiritRating = {
-      id: crypto.randomUUID(),
-      spiritId,
-      rating,
-      comment,
-      userId: MOCK_USER_ID,
-      createdAt: format(new Date(), 'yyyy-MM-dd\'T\'HH:mm:ss\'Z\''),
-      updatedAt: format(new Date(), 'yyyy-MM-dd\'T\'HH:mm:ss\'Z\'')
-    };
-
-    const existingRating = ratings.find(r => r.spiritId === spiritId && r.userId === MOCK_USER_ID);
-    if (existingRating) {
-      const updatedRatings = ratings.map(r => 
-        r.id === existingRating.id ? newRating : r
-      );
-      saveRatings(updatedRatings);
-    } else {
-      saveRatings([...ratings, newRating]);
-    }
-  };
-
-  const updateRating = (ratingId: string, rating: number, comment: string) => {
-    const updatedRatings = ratings.map(r => 
-      r.id === ratingId
-        ? {
-            ...r,
-            rating,
-            comment,
-            updatedAt: format(new Date(), 'yyyy-MM-dd\'T\'HH:mm:ss\'Z\'')
-          }
-        : r
-    );
-    saveRatings(updatedRatings);
-  };
-
-  const deleteRating = (ratingId: string) => {
-    const updatedRatings = ratings.filter(r => r.id !== ratingId);
-    saveRatings(updatedRatings);
-  };
-
-  const getRatingsForSpirit = (spiritId: string) => {
-    return ratings.filter(r => r.spiritId === spiritId);
-  };
-
-  const getUserRatingForSpirit = (spiritId: string) => {
-    return ratings.find(r => r.spiritId === spiritId && r.userId === MOCK_USER_ID);
-  };
-
-  const getTastingNotesForSpirit = (spiritId: string): TastingNote[] => {
-    const spiritRatings = getRatingsForSpirit(spiritId);
-    if (spiritRatings.length === 0) return [];
-
-    // Count occurrences of tasting terms
-    const termCounts = new Map<string, number>();
+export function SpiritsProvider({ children }: { children: ReactNode }) {
+  const getCategories = async () => {
+    const { data, error } = await supabase
+      .from('spirit_categories')
+      .select('*')
+      .order('name');
     
-    spiritRatings.forEach(rating => {
-      const words = rating.comment.toLowerCase().split(/\W+/);
-      const uniqueTermsInReview = new Set<string>();
+    if (error) throw error;
+    return data;
+  };
 
-      words.forEach(word => {
-        if (TASTING_TERMS.includes(word) && !uniqueTermsInReview.has(word)) {
-          uniqueTermsInReview.add(word);
-          termCounts.set(word, (termCounts.get(word) || 0) + 1);
-        }
+  const getSubtypesByCategory = async (categoryId: string) => {
+    const { data, error } = await supabase
+      .from('spirit_subtypes')
+      .select('*')
+      .eq('category_id', categoryId)
+      .order('name');
+    
+    if (error) throw error;
+    return data;
+  };
+
+  const getSubtypeById = async (id: string) => {
+    const { data, error } = await supabase
+      .from('spirit_subtypes')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) throw error;
+    return data;
+  };
+
+  const getRatings = async (spiritId: string) => {
+    const { data, error } = await supabase
+      .from('ratings')
+      .select('*')
+      .eq('spirit_id', spiritId)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data;
+  };
+
+  const addRating = async (spiritId: string, rating: number, comment: string) => {
+    const { error } = await supabase
+      .from('ratings')
+      .insert({
+        spirit_id: spiritId,
+        rating,
+        comment,
+        user_id: 'anonymous', // Replace with actual user ID when auth is implemented
       });
-    });
-
-    // Convert to array and calculate percentages
-    const tastingNotes: TastingNote[] = Array.from(termCounts.entries())
-      .map(([term, count]) => ({
-        term,
-        count,
-        percentage: Math.round((count / spiritRatings.length) * 100)
-      }))
-      .sort((a, b) => b.count - a.count);
-
-    return tastingNotes;
+    
+    if (error) throw error;
   };
 
   return (
     <SpiritsContext.Provider value={{
-      ratings,
+      getCategories,
+      getSubtypesByCategory,
+      getSubtypeById,
+      getRatings,
       addRating,
-      updateRating,
-      deleteRating,
-      getRatingsForSpirit,
-      getUserRatingForSpirit,
-      getTastingNotesForSpirit
     }}>
       {children}
     </SpiritsContext.Provider>
   );
-};
+}
 
-export const useSpirits = () => {
+export function useSpirits() {
   const context = useContext(SpiritsContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useSpirits must be used within a SpiritsProvider');
   }
   return context;
-};
+}
