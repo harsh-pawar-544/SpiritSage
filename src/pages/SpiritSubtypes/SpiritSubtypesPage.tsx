@@ -63,12 +63,12 @@ const SpiritSubtypesPage: React.FC = () => {
             <Dialog key={subtype.id}>
               <div
                 className="cursor-pointer group focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-xl"
-                onClick={() => navigate(`/spirit/${subtype.id}`)}
+                onClick={() => navigate(`/spirits/subtype/${subtype.id}`)}
                 role="button"
                 tabIndex={0}
                 onKeyPress={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
-                    navigate(`/spirit/${subtype.id}`);
+                    navigate(`/spirits/subtype/${subtype.id}`);
                   }
                 }}
               >
