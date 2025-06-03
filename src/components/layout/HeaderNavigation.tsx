@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { GlassWater, LogIn, LogOut, UserCircle, Settings, Menu, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import * as Dialog from '@radix-ui/react-dialog';
 
 const HeaderNavigation: React.FC = () => {
   const location = useLocation();
@@ -104,53 +105,49 @@ const HeaderNavigation: React.FC = () => {
             <AuthButtons />
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            className="md:hidden p-2 hover:bg-slate-800 rounded-lg"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          >
-            <Menu className="w-6 h-6" />
-          </button>
+          {/* Mobile Nav Button */}
+          <Dialog.Root open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+            <Dialog.Trigger asChild>
+              <button className="block md:hidden p-2 bg-slate-800 hover:bg-slate-700 rounded-lg">
+                <Menu className="w-6 h-6" />
+              </button>
+            </Dialog.Trigger>
 
-          {/* Mobile Menu */}
-          <div
-            className={`fixed inset-y-0 right-0 w-64 bg-slate-900 shadow-lg transform transition-transform duration-300 ease-in-out z-50 ${
-              isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
-            } md:hidden`}
-          >
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-8">
-                <Link
-                  to="/"
-                  className="flex items-center space-x-2 text-xl font-semibold"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <GlassWater className="w-6 h-6" />
-                  <span>SpiritSage</span>
-                </Link>
-                <button
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="p-2 hover:bg-slate-800 rounded-lg"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-              <div className="space-y-8">
-                <NavLinks />
-                <div className="pt-4 border-t border-slate-800">
-                  <AuthButtons />
+            <Dialog.Portal>
+              <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" />
+              <Dialog.Content
+                className="fixed inset-y-0 right-0 w-[80vw] max-w-sm bg-slate-900 p-6 shadow-xl z-50 text-white overflow-y-auto"
+                onInteractOutside={() => setIsMobileMenuOpen(false)}
+              >
+                <Dialog.Title className="sr-only">Mobile navigation menu</Dialog.Title>
+
+                <div className="flex flex-col min-h-full">
+                  {/* Header in Menu */}
+                  <div className="flex items-center justify-between mb-8">
+                    <Link
+                      to="/"
+                      className="flex items-center space-x-2 text-xl font-semibold hover:text-indigo-300 transition-colors"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <GlassWater className="w-6 h-6" />
+                      <span>SpiritSage</span>
+                    </Link>
+                    <Dialog.Close className="p-2 hover:bg-slate-800 rounded-lg">
+                      <X className="w-6 h-6" />
+                    </Dialog.Close>
+                  </div>
+
+                  {/* Mobile Links */}
+                  <div className="flex flex-col space-y-8">
+                    <NavLinks />
+                    <div className="pt-4 border-t border-slate-800">
+                      <AuthButtons />
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Mobile Menu Overlay */}
-          {isMobileMenuOpen && (
-            <div
-              className="fixed inset-0 bg-black/50 md:hidden z-40"
-              onClick={() => setIsMobileMenuOpen(false)}
-            />
-          )}
+              </Dialog.Content>
+            </Dialog.Portal>
+          </Dialog.Root>
         </div>
       </nav>
     </header>
