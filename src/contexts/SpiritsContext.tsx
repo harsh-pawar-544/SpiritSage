@@ -27,11 +27,6 @@ interface SpiritSubtype {
   updated_at: string;
 }
 
-interface TastingNote {
-  term: string;
-  percentage: number;
-}
-
 interface SpiritsContextType {
   categories: SpiritCategory[];
   loading: boolean;
@@ -40,7 +35,6 @@ interface SpiritsContextType {
   getSubtypesByCategory: (categoryId: string) => SpiritSubtype[];
   getRatingsForSpirit: (spiritId: string) => Promise<any[]>;
   addRating: (spiritId: string, rating: number, comment: string) => Promise<void>;
-  getTastingNotesForSpirit: (spiritId: string) => Promise<TastingNote[]>;
 }
 
 const SpiritsContext = createContext<SpiritsContextType | undefined>(undefined);
@@ -128,27 +122,6 @@ export function SpiritsProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error;
   };
 
-  const getTastingNotesForSpirit = async (spiritId: string): Promise<TastingNote[]> => {
-    try {
-      // Find the subtype that matches the spirit ID
-      const subtype = categories.flatMap(cat => cat.subtypes).find(sub => sub.id === spiritId);
-      
-      if (!subtype) {
-        return [];
-      }
-
-      // Convert flavor profile array to TastingNote array with mock percentages
-      return subtype.flavor_profile.map((flavor, index) => ({
-        term: flavor,
-        // Generate a random percentage between 40 and 95 for demonstration
-        percentage: Math.floor(95 - (index * 10))
-      }));
-    } catch (err) {
-      console.error('Error getting tasting notes:', err);
-      return [];
-    }
-  };
-
   return (
     <SpiritsContext.Provider value={{
       categories,
@@ -157,8 +130,7 @@ export function SpiritsProvider({ children }: { children: React.ReactNode }) {
       getCategoryById,
       getSubtypesByCategory,
       getRatingsForSpirit,
-      addRating,
-      getTastingNotesForSpirit
+      addRating
     }}>
       {children}
     </SpiritsContext.Provider>
