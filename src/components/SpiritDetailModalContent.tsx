@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { supabase } from '../../lib/supabaseClient'; // Import Supabase client
-import { useSpirits } from '../../contexts/SpiritsContext'; // Assuming getRatingsForSpirit comes from here
+import { useSpirits } from '../../contexts/SpiritsContext'; // Assuming getRatings comes from here
 import RatingStars from './RatingStars';
 import RatingForm from './SpiritRating/RatingForm';
 import { DialogTitle } from './ui/dialog';
@@ -30,7 +30,7 @@ const SpiritDetailModalContent: React.FC<SpiritDetailModalContentProps> = ({ spi
   const [spirit, setSpirit] = useState<SpiritFromSupabase | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { getRatingsForSpirit } = useSpirits(); // Get ratings function from context
+  const { getRatings } = useSpirits(); // Get ratings function from context
 
   useEffect(() => {
     const fetchSpiritDetails = async () => {
@@ -70,7 +70,7 @@ const SpiritDetailModalContent: React.FC<SpiritDetailModalContentProps> = ({ spi
     fetchSpiritDetails();
   }, [spiritId]);
 
-  const ratings = getRatingsForSpirit(spiritId); // Get ratings from context
+  const ratings = getRatings(spiritId); // Get ratings from context
 
   if (isLoading) {
     return (
@@ -89,7 +89,7 @@ const SpiritDetailModalContent: React.FC<SpiritDetailModalContentProps> = ({ spi
     return <div className="text-gray-600 dark:text-gray-400 text-center p-8">Spirit not found</div>;
   }
 
-  // Calculate average rating if needed, though getRatingsForSpirit might handle it
+  // Calculate average rating if needed, though getRatings might handle it
   const avgRating = ratings.length > 0
     ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
     : 0;

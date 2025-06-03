@@ -11,7 +11,7 @@ import TransitionImage from '../../components/ui/TransitionImage';
 
 const SpiritProfilePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { getRatingsForSpirit, getTastingNotesForSpirit } = useSpirits();
+  const { getRatings, getTastingNotesForSpirit } = useSpirits();
   const { trackInteraction } = useRecommendations();
   const [showRatingForm, setShowRatingForm] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -31,7 +31,7 @@ const SpiritProfilePage: React.FC = () => {
       
       // Fetch ratings and tasting notes
       Promise.all([
-        getRatingsForSpirit(id),
+        getRatings(id),
         getTastingNotesForSpirit(id)
       ]).then(([ratingsData, tastingNotesData]) => {
         setRatings(ratingsData);
@@ -150,7 +150,7 @@ const SpiritProfilePage: React.FC = () => {
                   onSuccess={() => {
                     setShowRatingForm(false);
                     // Refresh ratings after new rating is added
-                    getRatingsForSpirit(id).then(setRatings);
+                    getRatings(id).then(setRatings);
                   }}
                 />
               </div>
