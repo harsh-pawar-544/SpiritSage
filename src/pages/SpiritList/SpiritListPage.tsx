@@ -1,14 +1,9 @@
-// src/pages/SpiritList/SpiritListPage.tsx
-
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Search } from 'lucide-react'; // Not used in this component, but kept
 import { useSpirits } from '../../contexts/SpiritsContext';
 import TransitionImage from '../../components/ui/TransitionImage';
 
 const SpiritListPage: React.FC = () => {
-  // --- CHANGE MADE HERE ---
-  // Destructure 'alcoholTypes' instead of 'spirits'
   const { alcoholTypes, loading, error } = useSpirits();
 
   if (loading) {
@@ -32,18 +27,16 @@ const SpiritListPage: React.FC = () => {
       <h1 className="text-4xl font-bold text-center mb-12">Explore Spirits</h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* --- CHANGE MADE HERE --- */}
-        {/* Map over 'alcoholTypes' now, and rename 'spirit' to 'alcoholType' for clarity */}
         {alcoholTypes.map((alcoholType) => (
           <Link
             key={alcoholType.id}
-            to={`/category/${alcoholType.id}`} // Ensure your route matches '/category/:id'
+            to={`/alcohol-type/${alcoholType.id}`}
             className="group focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-xl"
           >
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transition-all duration-300 transform hover:shadow-xl hover:-translate-y-1">
               <div className="relative aspect-[4/3]">
                 <TransitionImage
-                  src={alcoholType.image} // Use alcoholType.image
+                  src={alcoholType.image}
                   alt={alcoholType.name}
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
