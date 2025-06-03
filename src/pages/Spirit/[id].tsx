@@ -85,4 +85,4 @@ const SpiritProfilePage: React.FC = () => {
   );
 };
 
-export default SpiritProfilePage;
+export default SpiritProfilePage; 
