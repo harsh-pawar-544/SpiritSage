@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { GlassWater, LogIn, LogOut, UserCircle, Settings, Menu, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import * as Dialog from '@radix-ui/react-dialog';
 
 const HeaderNavigation: React.FC = () => {
   const location = useLocation();
@@ -115,7 +114,7 @@ const HeaderNavigation: React.FC = () => {
 
           {/* Mobile Menu */}
           <div
-            className={`fixed inset-y-0 right-0 w-64 bg-slate-900 shadow-lg transform transition-transform duration-300 ease-in-out ${
+            className={`fixed inset-y-0 right-0 w-64 bg-slate-900 shadow-lg transform transition-transform duration-300 ease-in-out z-50 ${
               isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
             } md:hidden`}
           >
@@ -148,7 +147,7 @@ const HeaderNavigation: React.FC = () => {
           {/* Mobile Menu Overlay */}
           {isMobileMenuOpen && (
             <div
-              className="fixed inset-0 bg-black/50 md:hidden"
+              className="fixed inset-0 bg-black/50 md:hidden z-40"
               onClick={() => setIsMobileMenuOpen(false)}
             />
           )}
