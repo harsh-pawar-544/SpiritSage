@@ -105,7 +105,7 @@ const HeaderNavigation: React.FC = () => {
             <AuthButtons />
           </div>
 
-          {/* Mobile Nav Button */}
+          {/* Mobile Menu Button */}
           <Dialog.Root open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <Dialog.Trigger asChild>
               <button className="block md:hidden p-2 bg-slate-800 hover:bg-slate-700 rounded-lg">
