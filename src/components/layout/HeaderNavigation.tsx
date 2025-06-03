@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { GlassWater, LogIn, LogOut, UserCircle, Settings, Menu, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import * as Dialog from '@radix-ui/react-dialog';
 
 const HeaderNavigation: React.FC = () => {
   const location = useLocation();
@@ -83,7 +84,7 @@ const HeaderNavigation: React.FC = () => {
         onClick={() => setIsMobileMenuOpen(false)}
       >
         <Settings className="w-5 h-5" />
-        <span>Settings</span>
+        <span className="md:sr-only">Settings</span>
       </Link>
     </div>
   );
@@ -92,6 +93,7 @@ const HeaderNavigation: React.FC = () => {
     <header className="fixed top-0 left-0 right-0 bg-slate-900 text-white shadow-lg z-50">
       <nav className="container mx-auto px-4 h-20">
         <div className="flex items-center justify-between h-full">
+          {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 text-xl font-semibold hover:text-indigo-300 transition-colors">
             <GlassWater className="w-6 h-6" />
             <span>SpiritSage</span>
@@ -103,51 +105,51 @@ const HeaderNavigation: React.FC = () => {
             <AuthButtons />
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden p-2 hover:bg-slate-800 rounded-lg"
-          >
-            <Menu className="w-6 h-6" />
-          </button>
+          {/* Mobile Nav Button */}
+          <Dialog.Root open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+            <Dialog.Trigger asChild>
+              <button className="block md:hidden p-2 bg-slate-800 hover:bg-slate-700 rounded-lg">
+                <Menu className="w-6 h-6" />
+              </button>
+            </Dialog.Trigger>
+
+            <Dialog.Portal>
+              <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" />
+              <Dialog.Content
+                className="fixed inset-y-0 right-0 w-[80vw] max-w-sm bg-slate-900 p-6 shadow-xl z-50 text-white overflow-y-auto"
+                onInteractOutside={() => setIsMobileMenuOpen(false)}
+              >
+                <Dialog.Title className="sr-only">Mobile navigation menu</Dialog.Title>
+
+                <div className="flex flex-col min-h-full">
+                  {/* Header in Menu */}
+                  <div className="flex items-center justify-between mb-8">
+                    <Link
+                      to="/"
+                      className="flex items-center space-x-2 text-xl font-semibold hover:text-indigo-300 transition-colors"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <GlassWater className="w-6 h-6" />
+                      <span>SpiritSage</span>
+                    </Link>
+                    <Dialog.Close className="p-2 hover:bg-slate-800 rounded-lg">
+                      <X className="w-6 h-6" />
+                    </Dialog.Close>
+                  </div>
+
+                  {/* Mobile Links */}
+                  <div className="flex flex-col space-y-8">
+                    <NavLinks />
+                    <div className="pt-4 border-t border-slate-800">
+                      <AuthButtons />
+                    </div>
+                  </div>
+                </div>
+              </Dialog.Content>
+            </Dialog.Portal>
+          </Dialog.Root>
         </div>
       </nav>
-
-      {/* Mobile Menu */}
-      {isMobileMenuOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" onClick={() => setIsMobileMenuOpen(false)} />
-      )}
-      <div
-        className={`fixed inset-y-0 right-0 w-64 bg-slate-900 shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
-          isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
-        }`}
-      >
-        <div className="flex flex-col h-full p-6">
-          <div className="flex items-center justify-between mb-8">
-            <Link
-              to="/"
-              className="flex items-center space-x-2 text-xl font-semibold hover:text-indigo-300 transition-colors"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <GlassWater className="w-6 h-6" />
-              <span>SpiritSage</span>
-            </Link>
-            <button
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="p-2 hover:bg-slate-800 rounded-lg"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-
-          <div className="flex flex-col space-y-8">
-            <NavLinks />
-            <div className="pt-4 border-t border-slate-800">
-              <AuthButtons />
-            </div>
-          </div>
-        </div>
-      </div>
     </header>
   );
 };
