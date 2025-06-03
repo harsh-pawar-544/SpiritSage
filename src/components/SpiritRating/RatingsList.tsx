@@ -12,12 +12,12 @@ interface RatingsListProps {
 }
 
 const RatingsList: React.FC<RatingsListProps> = ({
-  ratings,
+  ratings = [], // Provide default empty array
   onEdit,
   onDelete,
   currentUserId = 'current-user'
 }) => {
-  if (ratings.length === 0) {
+  if (!Array.isArray(ratings) || ratings.length === 0) {
     return (
       <p className="text-gray-500 dark:text-gray-400 text-center py-4">
         No ratings yet. Be the first to rate this spirit!
@@ -50,7 +50,7 @@ const RatingsList: React.FC<RatingsListProps> = ({
             <div className="flex items-center justify-between">
               <RatingStars rating={rating.rating} size="sm" />
               <div className="flex items-center space-x-2">
-                {rating.userId === currentUserId && (
+                {rating.user_id === currentUserId && (
                   <>
                     <button
                       onClick={() => onEdit?.(rating)}
@@ -72,8 +72,7 @@ const RatingsList: React.FC<RatingsListProps> = ({
             <p className="text-gray-700 dark:text-gray-300">{rating.comment}</p>
 
             <div className="text-sm text-gray-500 dark:text-gray-400">
-              {formatDistanceToNow(new Date(rating.createdAt), { addSuffix: true })}
-              {rating.updatedAt !== rating.createdAt && ' (edited)'}
+              {formatDistanceToNow(new Date(rating.created_at), { addSuffix: true })}
             </div>
           </div>
         ))}

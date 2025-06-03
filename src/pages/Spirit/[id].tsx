@@ -15,10 +15,10 @@ const SpiritProfilePage: React.FC = () => {
   const { trackInteraction } = useRecommendations();
   const [showRatingForm, setShowRatingForm] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [ratings, setRatings] = useState<any[]>([]);
+  const [tastingNotes, setTastingNotes] = useState<Array<{ term: string; percentage: number }>>([]);
 
   const spirit = id ? getSpiritById(id) : null;
-  const ratings = getRatingsForSpirit(id || '');
-  const tastingNotes = getTastingNotesForSpirit(id || '');
   const similarSpirits = getSimilarSpirits(id || '', 3);
   
   // Get the parent category ID from the spirit ID (e.g., 'gin' from 'london-dry')
@@ -28,7 +28,21 @@ const SpiritProfilePage: React.FC = () => {
     if (id) {
       setIsLoading(true);
       trackInteraction(id, 'view');
-      setTimeout(() => setIsLoading(false), 300);
+      
+      // Fetch ratings and tasting notes
+      Promise.all([
+        getRatingsForSpirit(id),
+        getTastingNotesForSpirit(id)
+      ]).then(([ratingsData, tastingNotesData]) => {
+        setRatings(ratingsData);
+        setTastingNotes(tastingNotesData);
+        setIsLoading(false);
+      }).catch(error => {
+        console.error('Error fetching data:', error);
+        setRatings([]);
+        setTastingNotes([]);
+        setIsLoading(false);
+      });
     }
   }, [id]);
 
@@ -133,7 +147,11 @@ const SpiritProfilePage: React.FC = () => {
               <div className="bg-white dark:bg-gray-800 rounded-lg p-6 mb-6 shadow-md">
                 <RatingForm
                   spiritId={spirit.id}
-                  onSuccess={() => setShowRatingForm(false)}
+                  onSuccess={() => {
+                    setShowRatingForm(false);
+                    // Refresh ratings after new rating is added
+                    getRatingsForSpirit(id).then(setRatings);
+                  }}
                 />
               </div>
             )}
