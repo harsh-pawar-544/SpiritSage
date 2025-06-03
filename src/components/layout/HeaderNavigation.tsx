@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { GlassWater, LogIn, LogOut, UserCircle, Settings, Menu, X } from 'lucide-react';
+import { GlassWater, LogIn, LogOut, UserCircle, Settings, Menu, X, Moon, Sun } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useUserPreferences } from '../../contexts/UserPreferencesContext';
@@ -97,6 +97,17 @@ const HeaderNavigation: React.FC = () => {
         <Settings className="w-5 h-5" />
         <span className="md:sr-only">Settings</span>
       </Link>
+      <button
+        onClick={toggleTheme}
+        className="flex items-center space-x-1 hover:text-indigo-300 transition-colors w-full md:w-auto"
+      >
+        {theme === 'dark' ? (
+          <Sun className="w-5 h-5" />
+        ) : (
+          <Moon className="w-5 h-5" />
+        )}
+        <span className="md:sr-only">Toggle Theme</span>
+      </button>
     </div>
   );
 
@@ -116,14 +127,16 @@ const HeaderNavigation: React.FC = () => {
             <AuthButtons />
           </div>
 
-          {/* Mobile Nav Button */}
-          <Dialog.Root open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-            <Dialog.Trigger asChild>
-              <button className="block md:hidden p-2 bg-slate-800 hover:bg-slate-700 rounded-lg">
-                <Menu className="w-6 h-6" />
-              </button>
-            </Dialog.Trigger>
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="md:hidden p-2 hover:bg-slate-800 rounded-lg"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
 
+          {/* Mobile Menu */}
+          <Dialog.Root open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <Dialog.Portal>
               <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" />
               <Dialog.Content
