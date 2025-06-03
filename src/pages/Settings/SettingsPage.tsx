@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Settings as SettingsIcon, Moon, Sun, Globe, GlassWater, Save, X, Loader2 } from 'lucide-react';
 import { useUserPreferences, Theme, Language, PreferredSpirit } from '../../contexts/UserPreferencesContext';
-import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import ConfirmationModal from '../../components/ConfirmationModal';
-import ImageUpdater from '../../components/admin/ImageUpdater';
 
 interface SettingsForm {
   theme: Theme;
@@ -13,7 +11,6 @@ interface SettingsForm {
 }
 
 const SettingsPage: React.FC = () => {
-  const { user } = useAuth();
   const {
     theme: savedTheme,
     language: savedLanguage,
@@ -193,14 +190,6 @@ const SettingsPage: React.FC = () => {
           </button>
         </div>
       </div>
-
-      {/* Admin Section */}
-      {user?.email?.endsWith('@spiritsage.com') && (
-        <div className="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-md p-8">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Admin Settings</h2>
-          <ImageUpdater />
-        </div>
-      )}
 
       <ConfirmationModal
         isOpen={showSaveModal}
