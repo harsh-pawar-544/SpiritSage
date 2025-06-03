@@ -1,7 +1,7 @@
 // src/contexts/SpiritsContext.tsx
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from '../lib/supabaseClient'; // Make sure this path is correct: `../lib/supabaseClient`
 import {
   type AlcoholType, // Renamed from SpiritCategory
   type Subtype, // Renamed from SpiritSubtype
@@ -19,7 +19,6 @@ interface SpiritsContextType {
   getBrandById: (brandId: string) => Brand | undefined;
   addRating: (brandId: string, rating: number, comment: string) => Promise<void>;
   getRatingsForBrand: (brandId: string) => Promise<Rating[]>;
-  // --- ADDED THIS FUNCTION ---
   getTastingNotesForSpirit: (spiritId: string) => Promise<Array<{ term: string; percentage: number }>>;
 }
 
@@ -42,12 +41,14 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         // Fetch subtypes and brands
         const { data: subtypesData, error: subtypesError } = await supabase
           .from('subtypes')
-          .select('*, alcohol_types(name)'); // Join to get category name if needed
+          .select('*, alcohol_types(name)'); // This join looks correct if subtypes links to alcohol_types
         if (subtypesError) throw subtypesError;
 
+        // --- FIX APPLIED HERE ---
+        // You need to select alcohol_types(name) THROUGH subtypes
         const { data: brandsData, error: brandsError } = await supabase
           .from('brands')
-          .select('*, subtypes(name), alcohol_types(name)'); // Join to get subtype and category names
+          .select('*, subtypes(name, alcohol_types(name))'); // Nested select for alcohol_types name
         if (brandsError) throw brandsError;
 
         const processedAlcoholTypes = typesData.map(type => ({
@@ -131,7 +132,7 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const { error: insertError } = await supabase
         .from('ratings')
         .insert({
-          spirit_id: brandId, // This column name in 'ratings' table is 'spirit_id'
+          spirit_id: brandId,
           user_id: user.id,
           rating,
           comment,
@@ -144,15 +145,13 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     []
   );
 
-  // Function to get ratings for a brand
-  const getRatingsForBrand = useCallback( // Renamed
-    async (brandId: string): Promise<Rating[]> => { // Renamed
+  const getRatingsForBrand = useCallback(
+    async (brandId: string): Promise<Rating[]> => {
       try {
         const { data, error: fetchError } = await supabase
           .from('ratings')
-          // --- FIX APPLIED HERE: Removed inline comments from select string ---
           .select(`*, profiles:user_id(username, avatar_url)`)
-          .eq('spirit_id', brandId) // Changed spiritId to brandId
+          .eq('spirit_id', brandId)
           .order('created_at', { ascending: false });
 
         if (fetchError) {
@@ -167,24 +166,13 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     []
   );
 
-  // --- NEW FUNCTION ADDED HERE ---
-  // Placeholder for getTastingNotesForSpirit
   const getTastingNotesForSpirit = useCallback(
     async (spiritId: string): Promise<Array<{ term: string; percentage: number }>> => {
-      // In a real application, you would fetch tasting notes from Supabase here
-      // For now, return a placeholder or empty array
       console.log(`Fetching tasting notes for spirit: ${spiritId}`);
-      // Example placeholder data:
-      // return [
-      //   { term: 'Smoky', percentage: 70 },
-      //   { term: 'Sweet', percentage: 50 },
-      //   { term: 'Oaky', percentage: 60 },
-      // ];
-      return []; // Return empty array for now
+      return [];
     },
     []
   );
-
 
   const contextValue = {
     alcoholTypes,
@@ -192,17 +180,17 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     error,
     getCategoryById,
     getSubtypesByCategoryId,
-    getBrandsBySubtypeId, // Renamed
-    getBrandById, // Renamed
+    getBrandsBySubtypeId,
+    getBrandById,
     addRating,
-    getRatingsForBrand, // Renamed
-    getTastingNotesForSpirit, // --- ADDED TO CONTEXT VALUE ---
+    getRatingsForBrand,
+    getTastingNotesForSpirit,
   };
 
   return (
     <SpiritsContext.Provider value={contextValue}>
       {children}
-    </SpiritsContext.Provider>
+    </SpitsContext.Provider>
   );
 };
 
