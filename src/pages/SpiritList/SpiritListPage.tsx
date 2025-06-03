@@ -1,13 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search } from 'lucide-react';
-import { spiritCategories } from '../../data/spiritCategories';
+import { useSpirits } from '../../contexts/SpiritsContext';
 import TransitionImage from '../../components/ui/TransitionImage';
 
 const SpiritListPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [categories, setCategories] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { getCategories } = useSpirits();
 
-  const filteredCategories = spiritCategories.filter(category =>
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await getCategories();
+        setCategories(data);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, [getCategories]);
+
+  const filteredCategories = categories.filter(category =>
     category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     category.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
