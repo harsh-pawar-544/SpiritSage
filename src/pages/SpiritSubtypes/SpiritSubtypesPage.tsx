@@ -30,15 +30,26 @@ const SpiritSubtypesPage: React.FC = () => {
         setIsLoading(true);
         setError(null);
 
-        // First, fetch the alcohol type by ID instead of name
-        const { data: alcoholType, error: alcoholTypeError } = await supabase
+        // Try to fetch alcohol type by either ID or name
+        let alcoholTypeQuery = supabase
           .from('alcohol_types')
-          .select('*')
-          .eq('id', id)
+          .select('*');
+
+        // First try by name (for string IDs like "gin")
+        let { data: alcoholType, error: nameError } = await alcoholTypeQuery
+          .eq('name', id.charAt(0).toUpperCase() + id.slice(1))
           .single();
 
-        if (alcoholTypeError) {
-          throw new Error('Error fetching alcohol type');
+        // If not found by name, try by ID
+        if (!alcoholType) {
+          const { data: idResult, error: idError } = await alcoholTypeQuery
+            .eq('id', id)
+            .single();
+
+          if (idError) {
+            throw new Error('Category not found');
+          }
+          alcoholType = idResult;
         }
 
         if (!alcoholType) {
@@ -47,7 +58,7 @@ const SpiritSubtypesPage: React.FC = () => {
 
         setCategoryName(alcoholType.name);
 
-        // Then fetch all subtypes for this alcohol type
+        // Fetch subtypes for this alcohol type
         const { data: subtypesData, error: subtypesError } = await supabase
           .from('subtypes')
           .select('*')
@@ -81,6 +92,9 @@ const SpiritSubtypesPage: React.FC = () => {
         <div className="text-center text-red-500">
           <h2 className="text-2xl font-bold mb-4">Error</h2>
           <p>{error}</p>
+          <Link to="/explore" className="mt-4 inline-block text-indigo-600 hover:text-indigo-700">
+            Return to Categories
+          </Link>
         </div>
       </div>
     );
