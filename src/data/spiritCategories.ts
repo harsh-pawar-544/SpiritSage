@@ -1,117 +1,34 @@
-import { type SpiritSubtype, type SpiritCategory } from './types';
-
 export const spiritCategories: SpiritCategory[] = [
   {
-    id: 'whiskey',
-    name: 'Whiskey',
-    description: 'From smooth bourbon to peaty scotch, explore the diverse world of whiskey. A distilled alcoholic beverage made from fermented grain mash, aged in wooden barrels.',
-    image: 'https://images.pexels.com/photos/5947028/pexels-photo-5947028.jpeg',
+    id: 'brandy',
+    name: 'Brandy',
+    description: 'A sophisticated spirit distilled from wine or fruit juice.',
+    image: 'https://images.pexels.com/photos/3858347/pexels-photo-3858347.jpeg',
     subtypes: [
       {
-        id: 'japanese',
-        name: 'Elegance Blossom Japanese Whisky',
-        description: 'Japanese whisky embodies a philosophy of meticulous craftsmanship, balance, and understated elegance. Often inspired by Scotch methods but with a distinct Japanese sensitivity, these whiskies are renowned for their exceptional smoothness, purity, and subtle complexities. They typically feature pristine water sources, diverse aging casks (including Mizunara oak), and unique blending artistry that results in harmonious flavor profiles ranging from delicate floral and fruity notes to deep, rich caramel and smoky undertones. Each sip offers a journey of refined discovery.',
-        image: 'https://images.pexels.com/photos/6638640/pexels-photo-6638640.jpeg',
+        id: 'cognac',
+        name: 'Cognac',
+        description: 'The world\'s most prestigious brandy from France.',
+        image: 'https://images.pexels.com/photos/6638087/pexels-photo-6638087.jpeg',
         details: {
-          characteristics: ['Refined', 'Floral', 'Complex', 'Balanced'],
-          tastingNotes: 'Delicate floral notes with hints of honey and citrus, balanced by subtle oak and a touch of incense from Mizunara casks.',
-          history: 'The history of Japanese whisky begins in the early 20th century, spearheaded by two pioneering figures: Shinjiro Torii, who founded Suntory, and Masataka Taketsuru, who established Nikka Whisky. Taketsuru, often regarded as the \'father of Japanese whisky,\' studied whisky production in Scotland, bringing back invaluable knowledge. Despite early challenges, Japanese distilleries meticulously honed their craft, adapting Scottish techniques to their unique climate and ingredients. Their dedication to quality and pursuit of perfection eventually led to widespread international acclaim, with Japanese whiskies now among the most highly regarded and sought-after in the world.',
-          productionMethod: 'Crafted using Scottish methods adapted to Japanese conditions, with pure mountain water and carefully selected malts. Aged in various casks including rare Mizunara oak.',
+          characteristics: ['Elegant', 'Fruity', 'Complex', 'Oak'],
+          tastingNotes: 'Dried fruits, vanilla, and spice with floral notes.',
+          history: 'Developed in the 16th century in the Cognac region of France.',
+          productionMethod: 'Double-distilled in copper pot stills, aged in French oak.',
           myths: [
-            'All Japanese whisky is made in Japan - Some is imported and bottled',
-            'Japanese whisky is always expensive - Entry-level options exist',
-            'It\'s just a copy of Scotch - Japanese whisky has unique characteristics'
+            'All cognac is expensive - Entry-level options exist',
+            'Only for after dinner - Versatile in cocktails',
+            'Age statements tell full story - Blending is crucial'
           ],
           funFacts: [
-            'Mizunara oak casks can cost up to 10 times more than American oak',
-            'Japanese distilleries are often located in areas chosen for their similarity to Scotland',
-            'The Japanese climate accelerates the aging process compared to Scotland'
+            'Must be made from specific grape varieties',
+            'The angels\' share in Cognac is about 2% per year',
+            'VS, VSOP, and XO indicate minimum aging periods'
           ],
           stats: {
-            abv: '43-50%',
-            origin: 'Japan',
-            category: 'Japanese Single Malt Whisky'
-          }
-        }
-      },
-      {
-        id: 'canadian',
-        name: 'Smooth Frontier Canadian Rye',
-        description: 'Canadian whisky is renowned for its exceptional smoothness, lightness, and approachable character, often making it a versatile choice for both sipping neat and in cocktails. Distinctively, most Canadian whiskies are blends of various grain spirits (primarily corn, rye, barley, and wheat) that are often distilled and aged separately before blending. This allows for a broad spectrum of styles and a hallmark of their production. Legally, it must be aged for at least three years in small wooden barrels in Canada, contributing to its mellow and refined profile, frequently with notes of vanilla, caramel, and a signature peppery rye spice.',
-        image: 'https://images.pexels.com/photos/6638642/pexels-photo-6638642.jpeg',
-        details: {
-          characteristics: ['Smooth', 'Light', 'Versatile', 'Spicy'],
-          tastingNotes: 'Gentle vanilla and caramel sweetness balanced by rye spice, with hints of maple, toffee, and toasted grain.',
-          history: 'The history of Canadian whisky is deeply intertwined with North American history, particularly gaining significant prominence during the U.S. Prohibition era (1920-1933) when it was legally produced and easily smuggled across the border. Early Canadian distillers, many with British Isles heritage, leveraged the abundant grain harvests. Unlike some other whisky traditions, the practice of blending different grain distillates after aging became a cornerstone of Canadian whisky production early on, contributing to its signature lightness and versatility. This heritage has fostered a rich tradition of master blenders who skillfully combine various whiskies to achieve consistent quality and a wide array of nuanced flavors, cementing its place as a beloved spirit globally.',
-          productionMethod: 'Multiple grains distilled separately and aged in oak barrels before blending. Minimum three years aging required.',
-          myths: [
-            'All Canadian whisky is rye whisky - Most use very little rye',
-            'Canadian whisky is always light and mild - Many bold options exist',
-            'It must contain maple syrup - This is rarely used in production'
-          ],
-          funFacts: [
-            'Canadian whisky was a major beneficiary of U.S. Prohibition',
-            'It\'s often called rye whisky even when made mostly from corn',
-            'Canada has no strict rules about grain percentages in their whisky'
-          ],
-          stats: {
-            abv: '40-45%',
-            origin: 'Canada',
-            category: 'Canadian Whisky'
-          }
-        }
-      },
-      {
-        id: 'scotch',
-        name: 'Scotch Whisky',
-        description: 'Single malts and blends from Scotland\'s historic distilleries.',
-        image: 'https://images.pexels.com/photos/6638905/pexels-photo-6638905.jpeg',
-        details: {
-          characteristics: ['Peaty', 'Smoky', 'Complex', 'Maritime'],
-          tastingNotes: 'Varies by region - Islay: intense peat and smoke; Speyside: fruit and honey; Highland: heather and subtle smoke; Lowland: light and floral.',
-          history: 'First recorded in 1494 as "water of life" (uisge beatha). Originally used medicinally by monks, evolved into Scotland\'s national spirit.',
-          productionMethod: 'Made from malted barley, water, and yeast. Double distilled in copper pot stills. Aged minimum 3 years in oak casks.',
-          myths: [
-            'Older whisky is always better - Age is just one factor in quality',
-            'Adding water ruins whisky - A few drops can actually enhance flavors',
-            'Single malts are superior to blends - Both have their merits'
-          ],
-          funFacts: [
-            'The word "whisky" comes from the Gaelic "uisge beatha" meaning "water of life"',
-            'Scotland has more distilleries than any other country in the world',
-            'A closed bottle of whisky can be kept for over 100 years without deteriorating'
-          ],
-          stats: {
-            abv: '40-46%',
-            origin: 'Scotland',
-            category: 'Single Malt & Blended Whisky'
-          }
-        }
-      },
-      {
-        id: 'bourbon',
-        name: 'Bourbon',
-        description: 'America\'s native spirit, known for sweet, rich flavors.',
-        image: 'https://images.pexels.com/photos/5947552/pexels-photo-5947552.jpeg',
-        details: {
-          characteristics: ['Sweet', 'Vanilla', 'Caramel', 'Oak'],
-          tastingNotes: 'Rich vanilla and caramel from new charred oak, with sweet corn backbone. Notes of cinnamon, nutmeg, and toasted wood.',
-          history: 'Named after Bourbon County, Kentucky. Developed by early settlers using local corn and limestone water.',
-          productionMethod: 'Must be made from at least 51% corn, aged in new charred oak barrels. Must be produced in the United States.',
-          myths: [
-            'All bourbon comes from Kentucky - It can be made anywhere in the US',
-            'Bourbon must be aged for at least 2 years - No minimum age requirement exists',
-            'Tennessee Whiskey is bourbon - It\'s technically a separate category'
-          ],
-          funFacts: [
-            'During Prohibition, bourbon was one of few spirits legally available with a prescription',
-            'Kentucky produces 95% of the world\'s bourbon',
-            'The name has nothing to do with French royalty'
-          ],
-          stats: {
-            abv: '40-50%',
-            origin: 'United States',
-            category: 'American Whiskey'
+            abv: '40%',
+            origin: 'France',
+            category: 'Cognac'
           }
         }
       }
@@ -223,35 +140,116 @@ export const spiritCategories: SpiritCategory[] = [
     ]
   },
   {
-    id: 'brandy',
-    name: 'Brandy',
-    description: 'A sophisticated spirit distilled from wine or fruit juice.',
-    image: 'https://images.pexels.com/photos/3858347/pexels-photo-3858347.jpeg',
+    id: 'whiskey',
+    name: 'Whiskey',
+    description: 'From smooth bourbon to peaty scotch, explore the diverse world of whiskey. A distilled alcoholic beverage made from fermented grain mash, aged in wooden barrels.',
+    image: 'https://images.pexels.com/photos/5947028/pexels-photo-5947028.jpeg',
     subtypes: [
       {
-        id: 'cognac',
-        name: 'Cognac',
-        description: 'The world\'s most prestigious brandy from France.',
-        image: 'https://images.pexels.com/photos/6638087/pexels-photo-6638087.jpeg',
+        id: 'japanese',
+        name: 'Elegance Blossom Japanese Whisky',
+        description: 'Japanese whisky embodies a philosophy of meticulous craftsmanship, balance, and understated elegance. Often inspired by Scotch methods but with a distinct Japanese sensitivity, these whiskies are renowned for their exceptional smoothness, purity, and subtle complexities. They typically feature pristine water sources, diverse aging casks (including Mizunara oak), and unique blending artistry that results in harmonious flavor profiles ranging from delicate floral and fruity notes to deep, rich caramel and smoky undertones. Each sip offers a journey of refined discovery.',
+        image: 'https://images.pexels.com/photos/6638640/pexels-photo-6638640.jpeg',
         details: {
-          characteristics: ['Elegant', 'Fruity', 'Complex', 'Oak'],
-          tastingNotes: 'Dried fruits, vanilla, and spice with floral notes.',
-          history: 'Developed in the 16th century in the Cognac region of France.',
-          productionMethod: 'Double-distilled in copper pot stills, aged in French oak.',
+          characteristics: ['Refined', 'Floral', 'Complex', 'Balanced'],
+          tastingNotes: 'Delicate floral notes with hints of honey and citrus, balanced by subtle oak and a touch of incense from Mizunara casks.',
+          history: 'The history of Japanese whisky begins in the early 20th century, spearheaded by two pioneering figures: Shinjiro Torii, who founded Suntory, and Masataka Taketsuru, who established Nikka Whisky. Taketsuru, often regarded as the \'father of Japanese whisky,\' studied whisky production in Scotland, bringing back invaluable knowledge. Despite early challenges, Japanese distilleries meticulously honed their craft, adapting Scottish techniques to their unique climate and ingredients. Their dedication to quality and pursuit of perfection eventually led to widespread international acclaim, with Japanese whiskies now among the most highly regarded and sought-after in the world.',
+          productionMethod: 'Crafted using Scottish methods adapted to Japanese conditions, with pure mountain water and carefully selected malts. Aged in various casks including rare Mizunara oak.',
           myths: [
-            'All cognac is expensive - Entry-level options exist',
-            'Only for after dinner - Versatile in cocktails',
-            'Age statements tell full story - Blending is crucial'
+            'All Japanese whisky is made in Japan - Some is imported and bottled',
+            'Japanese whisky is always expensive - Entry-level options exist',
+            'It\'s just a copy of Scotch - Japanese whisky has unique characteristics'
           ],
           funFacts: [
-            'Must be made from specific grape varieties',
-            'The angels\' share in Cognac is about 2% per year',
-            'VS, VSOP, and XO indicate minimum aging periods'
+            'Mizunara oak casks can cost up to 10 times more than American oak',
+            'Japanese distilleries are often located in areas chosen for their similarity to Scotland',
+            'The Japanese climate accelerates the aging process compared to Scotland'
           ],
           stats: {
-            abv: '40%',
-            origin: 'France',
-            category: 'Cognac'
+            abv: '43-50%',
+            origin: 'Japan',
+            category: 'Japanese Single Malt Whisky'
+          }
+        }
+      },
+      {
+        id: 'canadian',
+        name: 'Smooth Frontier Canadian Rye',
+        description: 'Canadian whisky is renowned for its exceptional smoothness, lightness, and approachable character, often making it a versatile choice for both sipping neat and in cocktails. Distinctively, most Canadian whiskies are blends of various grain spirits (primarily corn, rye, barley, and wheat) that are often distilled and aged separately before blending. This allows for a broad spectrum of styles and a hallmark of their production. Legally, it must be aged for at least three years in small wooden barrels in Canada, contributing to its mellow and refined profile, frequently with notes of vanilla, caramel, and a signature peppery rye spice.',
+        image: 'https://images.pexels.com/photos/6638642/pexels-photo-6638642.jpeg',
+        details: {
+          characteristics: ['Smooth', 'Light', 'Versatile', 'Spicy'],
+          tastingNotes: 'Gentle vanilla and caramel sweetness balanced by rye spice, with hints of maple, toffee, and toasted grain.',
+          history: 'The history of Canadian whisky is deeply intertwined with North American history, particularly gaining significant prominence during the U.S. Prohibition era (1920-1933) when it was legally produced and easily smuggled across the border. Early Canadian distillers, many with British Isles heritage, leveraged the abundant grain harvests. Unlike some other whisky traditions, the practice of blending different grain distillates after aging became a cornerstone of Canadian whisky production early on, contributing to its signature lightness and versatility. This heritage has fostered a rich tradition of master blenders who skillfully combine various whiskies to achieve consistent quality and a wide array of nuanced flavors, cementing its place as a beloved spirit globally.',
+          productionMethod: 'Multiple grains distilled separately and aged in oak barrels before blending. Minimum three years aging required.',
+          myths: [
+            'All Canadian whisky is rye whisky - Most use very little rye',
+            'Canadian whisky is always light and mild - Many bold options exist',
+            'It must contain maple syrup - This is rarely used in production'
+          ],
+          funFacts: [
+            'Canadian whisky was a major beneficiary of U.S. Prohibition',
+            'It\'s often called rye whisky even when made mostly from corn',
+            'Canada has no strict rules about grain percentages in their whisky'
+          ],
+          stats: {
+            abv: '40-45%',
+            origin: 'Canada',
+            category: 'Canadian Whisky'
+          }
+        }
+      },
+      {
+        id: 'scotch',
+        name: 'Scotch Whisky',
+        description: 'Single malts and blends from Scotland\'s historic distilleries.',
+        image: 'https://images.pexels.com/photos/6638905/pexels-photo-6638905.jpeg',
+        details: {
+          characteristics: ['Peaty', 'Smoky', 'Complex', 'Maritime'],
+          tastingNotes: 'Varies by region - Islay: intense peat and smoke; Speyside: fruit and honey; Highland: heather and subtle smoke; Lowland: light and floral.',
+          history: 'First recorded in 1494 as "water of life" (uisge beatha). Originally used medicinally by monks, evolved into Scotland\'s national spirit.',
+          productionMethod: 'Made from malted barley, water, and yeast. Double distilled in copper pot stills. Aged minimum 3 years in oak casks.',
+          myths: [
+            'Older whisky is always better - Age is just one factor in quality',
+            'Adding water ruins whisky - A few drops can actually enhance flavors',
+            'Single malts are superior to blends - Both have their merits'
+          ],
+          funFacts: [
+            'The word "whisky" comes from the Gaelic "uisge beatha" meaning "water of life"',
+            'Scotland has more distilleries than any other country in the world',
+            'A closed bottle of whisky can be kept for over 100 years without deteriorating'
+          ],
+          stats: {
+            abv: '40-46%',
+            origin: 'Scotland',
+            category: 'Single Malt & Blended Whisky'
+          }
+        }
+      },
+      {
+        id: 'bourbon',
+        name: 'Bourbon',
+        description: 'America\'s native spirit, known for sweet, rich flavors.',
+        image: 'https://images.pexels.com/photos/5947552/pexels-photo-5947552.jpeg',
+        details: {
+          characteristics: ['Sweet', 'Vanilla', 'Caramel', 'Oak'],
+          tastingNotes: 'Rich vanilla and caramel from new charred oak, with sweet corn backbone. Notes of cinnamon, nutmeg, and toasted wood.',
+          history: 'Named after Bourbon County, Kentucky. Developed by early settlers using local corn and limestone water.',
+          productionMethod: 'Must be made from at least 51% corn, aged in new charred oak barrels. Must be produced in the United States.',
+          myths: [
+            'All bourbon comes from Kentucky - It can be made anywhere in the US',
+            'Bourbon must be aged for at least 2 years - No minimum age requirement exists',
+            'Tennessee Whiskey is bourbon - It\'s technically a separate category'
+          ],
+          funFacts: [
+            'During Prohibition, bourbon was one of few spirits legally available with a prescription',
+            'Kentucky produces 95% of the world\'s bourbon',
+            'The name has nothing to do with French royalty'
+          ],
+          stats: {
+            abv: '40-50%',
+            origin: 'United States',
+            category: 'American Whiskey'
           }
         }
       }
