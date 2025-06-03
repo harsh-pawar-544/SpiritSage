@@ -1,7 +1,7 @@
 // src/components/layout/HeaderNavigation.tsx
 
 import React, { useState } from 'react';
-import { Link, NavLink } from 'react-router-dom'; // Using NavLink for potential active state styling
+import { Link, NavLink } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 
 const HeaderNavigation: React.FC = () => {
@@ -15,7 +15,6 @@ const HeaderNavigation: React.FC = () => {
     setIsMobileMenuOpen(false);
   };
 
-  // Define your navigation links
   const navLinks = [
     { name: 'Explore', path: '/explore' },
     { name: 'About', path: '/about' },
@@ -31,39 +30,21 @@ const HeaderNavigation: React.FC = () => {
           The Spirit Guide
         </Link>
 
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex space-x-6 lg:space-x-8">
-          {navLinks.map((link) => (
-            <NavLink
-              key={link.name}
-              to={link.path}
-              className={({ isActive }) =>
-                `text-lg font-medium transition-colors duration-200 ${
-                  isActive
-                    ? 'text-indigo-600 dark:text-indigo-400'
-                    : 'text-gray-700 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-indigo-400'
-                }`
-              }
-            >
-              {link.name}
-            </NavLink>
-          ))}
-        </nav>
-
-        {/* Mobile Menu Button (Hamburger Icon) */}
-        <div className="md:hidden">
+        {/* Hamburger Icon - ALWAYS VISIBLE */}
+        <div> {/* Removed md:hidden from this div */}
           <button
             onClick={toggleMobileMenu}
             className="p-2 text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-md transition-colors duration-200"
-            aria-label="Open mobile menu"
+            aria-label="Open menu"
           >
             <Menu className="w-7 h-7" />
           </button>
         </div>
 
-        {/* Mobile Menu Overlay */}
+        {/* Mobile/Overlay Menu - ALWAYS COVERS SCREEN (controlled by translate-x) */}
+        {/* Removed md:hidden from this div */}
         <div
-          className={`fixed inset-0 z-50 bg-white dark:bg-gray-900 transform transition-transform duration-300 ease-in-out md:hidden ${
+          className={`fixed inset-0 z-50 bg-white dark:bg-gray-900 transform transition-transform duration-300 ease-in-out ${
             isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
           }`}
         >
@@ -71,7 +52,7 @@ const HeaderNavigation: React.FC = () => {
             <button
               onClick={closeMobileMenu}
               className="p-2 text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-md transition-colors duration-200"
-              aria-label="Close mobile menu"
+              aria-label="Close menu"
             >
               <X className="w-8 h-8" />
             </button>
@@ -81,7 +62,7 @@ const HeaderNavigation: React.FC = () => {
               <NavLink
                 key={link.name}
                 to={link.path}
-                onClick={closeMobileMenu} // Close menu on link click
+                onClick={closeMobileMenu}
                 className={({ isActive }) =>
                   `text-3xl font-bold transition-colors duration-200 ${
                     isActive
