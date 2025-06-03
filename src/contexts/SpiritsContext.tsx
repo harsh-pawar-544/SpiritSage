@@ -1,38 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-
-interface SpiritCategory {
-  id: string;
-  name: string;
-  description: string;
-  history: string;
-  fun_facts: string[];
-  created_at: string;
-  updated_at: string;
-  subtypes: SpiritSubtype[];
-}
-
-interface SpiritSubtype {
-  id: string;
-  alcohol_type_id: string;
-  name: string;
-  region: string;
-  description: string;
-  abv_min: number;
-  abv_max: number;
-  flavor_profile: string[];
-  characteristics: string[];
-  production_method: string;
-  created_at: string;
-  updated_at: string;
-}
+import { spiritCategories } from '../data/spiritCategories';
 
 interface SpiritsContextType {
-  categories: SpiritCategory[];
+  categories: typeof spiritCategories;
   loading: boolean;
   error: string | null;
-  getCategoryById: (id: string) => SpiritCategory | undefined;
-  getSubtypesByCategory: (categoryId: string) => SpiritSubtype[];
+  getSpirit: (id: string) => any;
+  getSubtypesByCategory: (categoryId: string) => Promise<any[]>;
   getRatingsForSpirit: (spiritId: string) => Promise<any[]>;
   addRating: (spiritId: string, rating: number, comment: string) => Promise<void>;
 }
@@ -40,53 +15,21 @@ interface SpiritsContextType {
 const SpiritsContext = createContext<SpiritsContextType | undefined>(undefined);
 
 export function SpiritsProvider({ children }: { children: React.ReactNode }) {
-  const [categories, setCategories] = useState<SpiritCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchSpirits() {
-      try {
-        // Fetch categories
-        const { data: categoriesData, error: categoriesError } = await supabase
-          .from('alcohol_types')
-          .select('*');
-
-        if (categoriesError) throw categoriesError;
-
-        // Fetch subtypes
-        const { data: subtypesData, error: subtypesError } = await supabase
-          .from('subtypes')
-          .select('*');
-
-        if (subtypesError) throw subtypesError;
-
-        // Combine categories with their subtypes
-        const categoriesWithSubtypes = categoriesData.map((category: SpiritCategory) => ({
-          ...category,
-          subtypes: subtypesData.filter((subtype: SpiritSubtype) => 
-            subtype.alcohol_type_id === category.id
-          )
-        }));
-
-        setCategories(categoriesWithSubtypes);
-      } catch (err) {
-        console.error('Error fetching spirits:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load spirits');
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchSpirits();
+    setLoading(false);
   }, []);
 
-  const getCategoryById = (id: string) => {
-    return categories.find(category => category.id === id);
+  const getSpirit = (id: string) => {
+    return spiritCategories
+      .flatMap(category => category.subtypes)
+      .find(spirit => spirit.id === id);
   };
 
-  const getSubtypesByCategory = (categoryId: string) => {
-    const category = categories.find(cat => cat.id === categoryId);
+  const getSubtypesByCategory = async (categoryId: string) => {
+    const category = spiritCategories.find(cat => cat.id === categoryId);
     return category?.subtypes || [];
   };
 
@@ -124,10 +67,10 @@ export function SpiritsProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <SpiritsContext.Provider value={{
-      categories,
+      categories: spiritCategories,
       loading,
       error,
-      getCategoryById,
+      getSpirit,
       getSubtypesByCategory,
       getRatingsForSpirit,
       addRating
