@@ -83,7 +83,7 @@ const HeaderNavigation: React.FC = () => {
         onClick={() => setIsMobileMenuOpen(false)}
       >
         <Settings className="w-5 h-5" />
-        <span className="md:sr-only">Settings</span>
+        <span>Settings</span>
       </Link>
     </div>
   );
