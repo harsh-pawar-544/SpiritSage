@@ -3,7 +3,7 @@ import { Toaster } from 'react-hot-toast';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import SpiritOverviewPage from './pages/SpiritOverview/SpiritOverviewPage';
-import SpiritPage from './pages/SpiritPage';
+import SpiritProfilePage from './pages/Spirit/[id]';
 import { SpiritsProvider } from './contexts/SpiritsContext';
 
 function App() {
@@ -15,7 +15,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/category/:id" element={<SpiritOverviewPage />} />
-            <Route path="/spirit/:id" element={<SpiritPage />} />
+            <Route path="/spirit/:id" element={<SpiritProfilePage />} />
           </Routes>
         </Layout>
       </Router>
