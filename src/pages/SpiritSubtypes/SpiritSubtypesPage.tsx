@@ -30,11 +30,11 @@ const SpiritSubtypesPage: React.FC = () => {
         setIsLoading(true);
         setError(null);
 
-        // First, fetch the alcohol type to get its name
+        // First, fetch the alcohol type by ID instead of name
         const { data: alcoholType, error: alcoholTypeError } = await supabase
           .from('alcohol_types')
-          .select('name')
-          .eq('name', id)
+          .select('*')
+          .eq('id', id)
           .single();
 
         if (alcoholTypeError) {
