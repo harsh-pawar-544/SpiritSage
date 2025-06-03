@@ -3,17 +3,28 @@ import { Link, useLocation } from 'react-router-dom';
 import { GlassWater, LogIn, LogOut, UserCircle, Settings, Menu, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as Dialog from '@radix-ui/react-dialog';
+import { useUserPreferences } from '../../contexts/UserPreferencesContext';
 
 const HeaderNavigation: React.FC = () => {
   const location = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { theme, updatePreferences } = useUserPreferences();
 
   const isActive = (path: string) => location.pathname === path ? 'text-indigo-300' : '';
 
   const handleSignIn = () => toast.success('Sign In clicked - Authentication coming soon!');
   const handleSignUp = () => toast.success('Sign Up clicked - Authentication coming soon!');
   const handleSignOut = () => toast.success('Sign Out clicked - Authentication coming soon!');
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    updatePreferences({
+      theme: newTheme,
+      language: 'en',
+      preferredSpirit: null
+    });
+  };
 
   const NavLinks = () => (
     <ul className="flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-8">
