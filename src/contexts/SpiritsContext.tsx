@@ -263,7 +263,7 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({
   return (
     <SpiritsContext.Provider value={contextValue}>
       {children}
-    </SpitsContext.Provider>
+    </SpiritsContext.Provider>
   );
 };
 
