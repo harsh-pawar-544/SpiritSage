@@ -6,25 +6,28 @@ import SpiritOverviewPage from './pages/SpiritOverview/SpiritOverviewPage';
 import SpiritProfilePage from './pages/Spirit/[id]';
 import { SpiritsProvider } from './contexts/SpiritsContext';
 import { SpiritSageProvider } from './contexts/SpiritSageContext';
+import { UserPreferencesProvider } from './contexts/UserPreferencesContext';
 import { RecommendationsProvider } from './contexts/RecommendationsContext';
 
 function App() {
   return (
     <SpiritSageProvider>
-      <SpiritsProvider>
-        <RecommendationsProvider>
-          <Router>
-            <Toaster position="top-center" />
-            <Layout>
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/category/:id" element={<SpiritOverviewPage />} />
-                <Route path="/spirit/:id" element={<SpiritProfilePage />} />
-              </Routes>
-            </Layout>
-          </Router>
-        </RecommendationsProvider>
-      </SpiritsProvider>
+      <UserPreferencesProvider>
+        <SpiritsProvider>
+          <RecommendationsProvider>
+            <Router>
+              <Toaster position="top-center" />
+              <Layout>
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/category/:id" element={<SpiritOverviewPage />} />
+                  <Route path="/spirit/:id" element={<SpiritProfilePage />} />
+                </Routes>
+              </Layout>
+            </Router>
+          </RecommendationsProvider>
+        </SpiritsProvider>
+      </UserPreferencesProvider>
     </SpiritSageProvider>
   );
 }
