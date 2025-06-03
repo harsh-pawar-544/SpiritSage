@@ -13,25 +13,14 @@ const HeaderNavigation: React.FC = () => {
   }, [location]);
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const menu = document.getElementById('mobile-menu');
-      const button = document.getElementById('menu-button');
-      if (
-        menu &&
-        button &&
-        !menu.contains(event.target as Node) &&
-        !button.contains(event.target as Node)
-      ) {
-        setIsMenuOpen(false);
-      }
-    };
-
     if (isMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.body.style.overflow = 'unset';
     };
   }, [isMenuOpen]);
 
@@ -94,11 +83,9 @@ const HeaderNavigation: React.FC = () => {
           </div>
 
           <button
-            id="menu-button"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="md:hidden p-2 rounded-md text-gray-300 hover:text-indigo-300 transition-colors"
             aria-expanded={isMenuOpen}
-            aria-controls="mobile-menu"
             aria-label="Main menu"
           >
             <span className="sr-only">
@@ -112,50 +99,45 @@ const HeaderNavigation: React.FC = () => {
           </button>
         </div>
 
-        <div
-          id="mobile-menu"
-          className={`md:hidden transition-all duration-300 ease-in-out ${
-            isMenuOpen
-              ? 'opacity-100 translate-y-0'
-              : 'opacity-0 -translate-y-2 pointer-events-none'
-          }`}
-          aria-hidden={!isMenuOpen}
-        >
-          <div className="px-2 pt-2 pb-3 space-y-1 bg-gray-800 rounded-b-lg shadow-lg">
-            {navLinks.map((link) => (
-              <NavLink
-                key={link.path}
-                to={link.path}
-                className={({ isActive }) =>
-                  `block px-3 py-2 rounded-md text-base font-medium transition-colors ${
-                    isActive
-                      ? 'bg-indigo-900/50 text-indigo-300'
-                      : 'text-gray-300 hover:bg-gray-800 hover:text-indigo-300'
-                  }`
-                }
+        {/* Mobile menu, show/hide based on menu state */}
+        {isMenuOpen && (
+          <div className="md:hidden fixed inset-0 top-16 bg-gray-900 z-50">
+            <div className="px-2 pt-2 pb-3 space-y-1">
+              {navLinks.map((link) => (
+                <NavLink
+                  key={link.path}
+                  to={link.path}
+                  className={({ isActive }) =>
+                    `block px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                      isActive
+                        ? 'bg-indigo-900/50 text-indigo-300'
+                        : 'text-gray-300 hover:bg-gray-800 hover:text-indigo-300'
+                    }`
+                  }
+                >
+                  {link.name}
+                </NavLink>
+              ))}
+              
+              <button
+                onClick={toggleTheme}
+                className="w-full flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-800 hover:text-indigo-300 transition-colors"
               >
-                {link.name}
-              </NavLink>
-            ))}
-            
-            <button
-              onClick={toggleTheme}
-              className="w-full flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-800 hover:text-indigo-300 transition-colors"
-            >
-              {theme === 'dark' ? (
-                <>
-                  <Sun className="w-5 h-5 mr-2" />
-                  Light Mode
-                </>
-              ) : (
-                <>
-                  <Moon className="w-5 h-5 mr-2" />
-                  Dark Mode
-                </>
-              )}
-            </button>
+                {theme === 'dark' ? (
+                  <>
+                    <Sun className="w-5 h-5 mr-2" />
+                    Light Mode
+                  </>
+                ) : (
+                  <>
+                    <Moon className="w-5 h-5 mr-2" />
+                    Dark Mode
+                  </>
+                )}
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </nav>
     </header>
   );
