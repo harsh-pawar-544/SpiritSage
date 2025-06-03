@@ -12,12 +12,9 @@ import SpiritListPage from './pages/SpiritList/SpiritListPage';
 import SpiritOverviewPage from './pages/SpiritOverview/SpiritOverviewPage';
 import SpiritSubtypesPage from './pages/SpiritSubtypes/SpiritSubtypesPage';
 
-// --- NEW IMPORTS FOR NEW PAGES ---
 import AlcoholTypeDetailPage from './pages/AlcoholType/[id]';
 import SubtypeDetailPage from './pages/Subtype/[id]';
-
-// --- ADD THIS MISSING IMPORT ---
-import SpiritProfilePage from './pages/Spirit/[id]'; // Assuming your individual spirit page is here
+import SpiritProfilePage from './pages/Spirit/[id]'; // Ensure this is imported
 
 import AboutPage from './pages/About/AboutPage';
 import ContactPage from './pages/Contact/ContactPage';
@@ -33,20 +30,29 @@ function App() {
             <Toaster position="top-center" />
             <Layout>
               <Routes>
-                {/* Main Explore/Home Page - Link to AlcoholType details from here */}
+                {/* Main Explore/Home Page */}
                 <Route path="/" element={<SpiritListPage />} />
                 <Route path="/explore" element={<SpiritListPage />} />
 
-                {/* NEW ROUTES FOR ALCOHOL TYPE AND SUBTYPE DETAILS */}
+                {/* Alcohol Type Detail Page */}
                 <Route path="/alcohol-type/:id" element={<AlcoholTypeDetailPage />} />
+
+                {/* NEW ROUTE: For listing subtypes of a specific AlcoholType */}
+                {/* This matches the link from AlcoholTypeDetailPage */}
+                <Route path="/alcohol-type/:id/subtypes" element={<SpiritSubtypesPage />} />
+
+                {/* Subtype Detail Page */}
                 <Route path="/subtype/:id" element={<SubtypeDetailPage />} />
 
-                {/* Route for individual Brand/Spirit Profile Page (now correctly imported) */}
+                {/* Individual Brand/Spirit Profile Page */}
                 <Route path="/spirit/:id" element={<SpiritProfilePage />} />
 
-                {/* Original routes, review if still needed */}
+                {/* Original routes - you might want to remove these or adjust if redundant */}
+                {/* If SpiritOverviewPage or SpiritSubtypesPage are no longer needed under /category, consider removing them */}
                 <Route path="/category/:id" element={<SpiritOverviewPage />} />
-                <Route path="/category/:id/subtypes" element={<SpiritSubtypesPage />} />
+                {/* The route below is now replaced by /alcohol-type/:id/subtypes but kept for reference */}
+                {/* <Route path="/category/:id/subtypes" element={<SpiritSubtypesPage />} /> */}
+
 
                 {/* Other static pages */}
                 <Route path="/about" element={<AboutPage />} />
