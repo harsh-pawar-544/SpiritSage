@@ -63,8 +63,8 @@ const SpiritOverviewPage: React.FC = () => {
         </h1>
       </div>
 
-      {/* Intro Card */}
-      <div className="relative h-[400px] rounded-xl overflow-hidden">
+      {/* Hero Section */}
+      <div className="relative h-[500px] rounded-2xl overflow-hidden">
         <TransitionImage
           src={category.image}
           alt={category.name}
@@ -72,14 +72,14 @@ const SpiritOverviewPage: React.FC = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/50 to-transparent" />
         <div className="absolute bottom-8 left-8 right-8 text-white">
-          <h2 className="text-4xl font-bold mb-4">{category.name}</h2>
-          <p className="text-xl text-gray-200 max-w-2xl">{category.description}</p>
+          <h2 className="text-5xl font-bold mb-4">{category.name}</h2>
+          <p className="text-xl text-gray-200 max-w-2xl leading-relaxed">{category.description}</p>
         </div>
       </div>
 
       {/* History, Myths & Facts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-lg">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-lg">
           <div className="flex items-center space-x-3 mb-6">
             <History className="w-6 h-6 text-indigo-600" />
             <h2 className="text-2xl font-semibold">History</h2>
@@ -91,7 +91,7 @@ const SpiritOverviewPage: React.FC = () => {
 
         <div className="space-y-8">
           {/* Fun Facts */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-lg">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-lg">
             <div className="flex items-center space-x-3 mb-6">
               <Info className="w-6 h-6 text-indigo-600" />
               <h2 className="text-2xl font-semibold">Did You Know?</h2>
@@ -107,7 +107,7 @@ const SpiritOverviewPage: React.FC = () => {
           </div>
 
           {/* Myths */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-lg">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-lg">
             <div className="flex items-center space-x-3 mb-6">
               <Award className="w-6 h-6 text-indigo-600" />
               <h2 className="text-2xl font-semibold">Common Myths</h2>
@@ -134,21 +134,21 @@ const SpiritOverviewPage: React.FC = () => {
           {regions.map((region, index) => (
             <div
               key={index}
-              className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-lg"
+              className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-lg group"
             >
               <div className="relative h-48">
                 <TransitionImage
                   src={region.image}
                   alt={region.name}
-                  className="absolute inset-0 w-full h-full object-cover"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                 <div className="absolute bottom-4 left-4">
                   <h3 className="text-xl font-semibold text-white">{region.name}</h3>
                 </div>
               </div>
-              <div className="p-4">
-                <p className="text-gray-600 dark:text-gray-300 text-sm line-clamp-3">
+              <div className="p-6">
+                <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
                   {region.description}
                 </p>
               </div>
@@ -157,15 +157,21 @@ const SpiritOverviewPage: React.FC = () => {
         </div>
       </div>
 
-      {/* ABV and Flavor Profile */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-lg">
+      {/* Production & Characteristics */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-lg">
         <div className="flex items-center space-x-3 mb-6">
           <Droplet className="w-6 h-6 text-indigo-600" />
-          <h2 className="text-2xl font-semibold">Flavor Profile</h2>
+          <h2 className="text-2xl font-semibold">Production & Characteristics</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
-            <h3 className="text-lg font-semibold mb-4">Common Characteristics</h3>
+            <h3 className="text-lg font-semibold mb-4">Production Method</h3>
+            <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+              {category.subtypes[0]?.details.productionMethod}
+            </p>
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Key Characteristics</h3>
             <div className="flex flex-wrap gap-2">
               {category.subtypes[0]?.details.characteristics.map((char, index) => (
                 <span
@@ -177,12 +183,6 @@ const SpiritOverviewPage: React.FC = () => {
               ))}
             </div>
           </div>
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Typical ABV Range</h3>
-            <p className="text-3xl font-bold text-indigo-600">
-              {category.subtypes[0]?.details.stats?.abv}
-            </p>
-          </div>
         </div>
       </div>
 
@@ -190,7 +190,7 @@ const SpiritOverviewPage: React.FC = () => {
       <div className="text-center">
         <button
           onClick={handleExploreSubtypes}
-          className="inline-flex items-center px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-lg font-medium group"
+          className="inline-flex items-center px-8 py-4 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors text-lg font-medium group"
         >
           Explore {category.name} Types
           <ChevronRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
