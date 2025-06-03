@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { spiritCategories } from '../../data/spiritCategories';
@@ -7,10 +7,47 @@ import RatingStars from '../../components/RatingStars';
 import { useSpirits } from '../../contexts/SpiritsContext';
 import TransitionImage from '../../components/ui/TransitionImage';
 
+interface SpiritRatings {
+  [key: string]: {
+    average: number;
+    count: number;
+  };
+}
+
 const SpiritSubtypesPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getRatingsForSpirit } = useSpirits();
+  const { getRatings } = useSpirits();
+  const [spiritRatings, setSpiritRatings] = useState<SpiritRatings>({});
+  
+  useEffect(() => {
+    const fetchRatings = async () => {
+      try {
+        const ratings = await getRatings();
+        const ratingsBySpirit: SpiritRatings = {};
+        
+        // Process ratings for each spirit
+        ratings.forEach(rating => {
+          if (!ratingsBySpirit[rating.spiritId]) {
+            ratingsBySpirit[rating.spiritId] = {
+              average: 0,
+              count: 0
+            };
+          }
+          ratingsBySpirit[rating.spiritId].average = 
+            (ratingsBySpirit[rating.spiritId].average * ratingsBySpirit[rating.spiritId].count + rating.rating) / 
+            (ratingsBySpirit[rating.spiritId].count + 1);
+          ratingsBySpirit[rating.spiritId].count += 1;
+        });
+        
+        setSpiritRatings(ratingsBySpirit);
+      } catch (error) {
+        console.error('Error fetching ratings:', error);
+      }
+    };
+
+    fetchRatings();
+  }, [getRatings]);
   
   // Find the parent category by checking both direct ID and subtype parent
   const category = spiritCategories.find(cat => {
@@ -54,10 +91,7 @@ const SpiritSubtypesPage: React.FC = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {category.subtypes.map(subtype => {
-          const ratings = getRatingsForSpirit(subtype.id);
-          const avgRating = ratings.length > 0
-            ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
-            : 0;
+          const ratings = spiritRatings[subtype.id] || { average: 0, count: 0 };
 
           return (
             <Dialog key={subtype.id}>
@@ -83,9 +117,9 @@ const SpiritSubtypesPage: React.FC = () => {
                     <div className="absolute bottom-4 left-4 right-4">
                       <h3 className="text-xl font-bold text-white mb-2">{subtype.name}</h3>
                       <div className="flex items-center space-x-2 mb-2">
-                        <RatingStars rating={Math.round(avgRating)} size="sm" />
+                        <RatingStars rating={Math.round(ratings.average)} size="sm" />
                         <span className="text-white text-sm">
-                          ({ratings.length} {ratings.length === 1 ? 'review' : 'reviews'})
+                          ({ratings.count} {ratings.count === 1 ? 'review' : 'reviews'})
                         </span>
                       </div>
                       <p className="text-sm text-gray-200 line-clamp-2">{subtype.description}</p>
