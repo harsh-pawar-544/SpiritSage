@@ -1,20 +1,10 @@
 import { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { GlassWater, Moon, Sun } from 'lucide-react';
+import { GlassWater } from 'lucide-react';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 
 export default function Layout({ children }: { children: ReactNode }) {
-  const { theme, updatePreferences } = useUserPreferences();
   const location = useLocation();
-
-  const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    updatePreferences({
-      theme: newTheme,
-      language: 'en',
-      preferredSpirit: null
-    });
-  };
 
   const navigation = [
     { name: 'Explore', path: '/' },
@@ -50,18 +40,6 @@ export default function Layout({ children }: { children: ReactNode }) {
                 ))}
               </nav>
             </div>
-            
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              aria-label="Toggle theme"
-            >
-              {theme === 'dark' ? (
-                <Sun className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-              ) : (
-                <Moon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-              )}
-            </button>
           </div>
         </div>
       </header>
