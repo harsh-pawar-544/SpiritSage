@@ -11,7 +11,8 @@ import Home from './pages/Home';
 import SpiritListPage from './pages/SpiritList/SpiritListPage';
 import SpiritOverviewPage from './pages/SpiritOverview/SpiritOverviewPage';
 import SpiritSubtypesPage from './pages/SpiritSubtypes/SpiritSubtypesPage';
-import SpiritProfilePage from './pages/Spirit/[id]';
+import SpiritsBySubtypePage from './pages/SpiritsBySubtype/SpiritsBySubtypePage';
+import BrandDetailPage from './pages/Brand/BrandDetailPage';
 import AboutPage from './pages/About/AboutPage';
 import ContactPage from './pages/Contact/ContactPage';
 import SettingsPage from './pages/Settings/SettingsPage';
@@ -31,7 +32,8 @@ function App() {
                     <Route path="/explore" element={<SpiritListPage />} />
                     <Route path="/category/:id" element={<SpiritOverviewPage />} />
                     <Route path="/category/:id/subtypes" element={<SpiritSubtypesPage />} />
-                    <Route path="/spirit/:id" element={<SpiritProfilePage />} />
+                    <Route path="/subtype/:id" element={<SpiritsBySubtypePage />} />
+                    <Route path="/brand/:id" element={<BrandDetailPage />} />
                     <Route path="/about" element={<AboutPage />} />
                     <Route path="/contact" element={<ContactPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
