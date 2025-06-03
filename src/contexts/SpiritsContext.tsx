@@ -22,6 +22,8 @@ interface SpiritsContextType {
   getSubtypes: (categoryId: string) => Promise<Spirit[]>;
   addRating: (spiritId: string, rating: number, comment: string) => Promise<void>;
   getRatings: (spiritId: string) => Promise<any[]>;
+  getCategoryById: (id: string) => Promise<any>;
+  getSubtypesByCategory: (categoryId: string) => Promise<any[]>;
 }
 
 const SpiritsContext = createContext<SpiritsContextType | undefined>(undefined);
@@ -67,6 +69,41 @@ export function SpiritsProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       console.error('Error fetching spirit:', err);
       return null;
+    }
+  }
+
+  async function getCategoryById(id: string) {
+    try {
+      const { data, error } = await supabase
+        .from('alcohol_types')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (err) {
+      console.error('Error fetching category:', err);
+      return null;
+    }
+  }
+
+  async function getSubtypesByCategory(categoryId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('subtypes')
+        .select(`
+          *,
+          alcohol_types!inner (*)
+        `)
+        .eq('alcohol_type_id', categoryId)
+        .order('name');
+
+      if (error) throw error;
+      return data || [];
+    } catch (err) {
+      console.error('Error fetching subtypes:', err);
+      return [];
     }
   }
 
@@ -143,7 +180,9 @@ export function SpiritsProvider({ children }: { children: React.ReactNode }) {
       getSpirits,
       getSubtypes,
       addRating,
-      getRatings
+      getRatings,
+      getCategoryById,
+      getSubtypesByCategory
     }}>
       {children}
     </SpiritsContext.Provider>
