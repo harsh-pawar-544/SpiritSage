@@ -1,34 +1,38 @@
 import React from 'react';
-import { GlassWater } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { GlassWater, ArrowRight } from 'lucide-react';
 import { useUserPreferences } from '../contexts/UserPreferencesContext';
 import RecommendedSpirits from '../components/RecommendedSpirits';
 
 const Home: React.FC = () => {
-  const { theme, language } = useUserPreferences();
+  const { theme } = useUserPreferences();
 
   return (
-    <div className={`space-y-12 ${
-      theme === 'dark' ? 'text-white' : 'text-gray-900'
-    }`}>
-      <div className="text-center space-y-6">
+    <div className="min-h-[calc(100vh-80px)] flex flex-col items-center justify-center px-4">
+      <div className="text-center space-y-8 max-w-3xl mx-auto mb-16">
         <div className="flex items-center justify-center">
-          <GlassWater className="w-12 h-12 text-indigo-600" />
+          <GlassWater className="w-16 h-16 text-indigo-600" />
         </div>
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-          Welcome to SpiritSage
+        <h1 className="text-5xl md:text-6xl font-bold tracking-tight">
+          Your AI-Powered Spirit Assistant
         </h1>
-        <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto leading-relaxed">
-          Your AI-powered companion for exploring spirits and liquors
-          {language !== 'en' && (
-            <span className="block mt-2 text-sm">
-              Language: {language.toUpperCase()}
-            </span>
-          )}
+        <div className="h-1 w-32 bg-indigo-600 mx-auto rounded-full" />
+        <p className="text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
+          Discover your perfect spirit with personalized recommendations powered by artificial intelligence
         </p>
-        <div className="h-1 w-20 bg-indigo-600 mx-auto rounded-full" />
+        
+        <Link
+          to="/explore"
+          className="inline-flex items-center px-8 py-4 bg-indigo-600 text-white rounded-full text-lg font-medium hover:bg-indigo-700 transition-colors group"
+        >
+          Start Exploring
+          <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+        </Link>
       </div>
 
-      <RecommendedSpirits />
+      <div className="w-full max-w-7xl">
+        <RecommendedSpirits />
+      </div>
     </div>
   );
 };

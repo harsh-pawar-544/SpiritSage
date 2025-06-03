@@ -27,7 +27,7 @@ function App() {
             <Toaster position="top-center" />
             <Layout>
               <Routes>
-                <Route path="/" element={<SpiritListPage />} />
+                <Route path="/" element={<Home />} />
                 <Route path="/explore" element={<SpiritListPage />} />
                 <Route path="/alcohol-type/:id" element={<AlcoholTypeDetailPage />} />
                 <Route path="/alcohol-type/:id/subtypes" element={<SpiritSubtypesPage />} />
