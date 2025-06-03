@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { Menu, X, GlassWater } from 'lucide-react';
+import { Menu, X, GlassWater, Moon, Sun } from 'lucide-react';
+import { useUserPreferences } from '../../contexts/UserPreferencesContext';
 
 const HeaderNavigation: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const { theme, updatePreferences } = useUserPreferences();
 
-  // Close menu when route changes
   useEffect(() => {
     setIsMenuOpen(false);
   }, [location]);
 
-  // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const menu = document.getElementById('mobile-menu');
@@ -35,6 +35,15 @@ const HeaderNavigation: React.FC = () => {
     };
   }, [isMenuOpen]);
 
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    updatePreferences({
+      theme: newTheme,
+      language: 'en',
+      preferredSpirit: null
+    });
+  };
+
   const navLinks = [
     { name: 'Explore', path: '/explore' },
     { name: 'Contact', path: '/contact' },
@@ -43,19 +52,17 @@ const HeaderNavigation: React.FC = () => {
   ];
 
   return (
-    <header className="fixed top-0 left-0 right-0 bg-white dark:bg-gray-900 shadow-sm z-50">
+    <header className="fixed top-0 left-0 right-0 bg-gray-900 shadow-lg z-50">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
-          {/* Logo */}
           <Link 
             to="/" 
-            className="flex items-center space-x-2 text-gray-900 dark:text-white hover:text-primary dark:hover:text-primary-dark"
+            className="flex items-center space-x-2 text-white hover:text-indigo-300 transition-colors"
           >
             <GlassWater className="w-8 h-8" />
             <span className="text-xl font-semibold">SpiritSage</span>
           </Link>
 
-          {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             {navLinks.map((link) => (
               <NavLink
@@ -64,21 +71,32 @@ const HeaderNavigation: React.FC = () => {
                 className={({ isActive }) =>
                   `text-base font-medium transition-colors ${
                     isActive
-                      ? 'text-primary dark:text-primary-dark'
-                      : 'text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary-dark'
+                      ? 'text-indigo-300'
+                      : 'text-gray-300 hover:text-indigo-300'
                   }`
                 }
               >
                 {link.name}
               </NavLink>
             ))}
+            
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-lg text-gray-300 hover:text-indigo-300 transition-colors"
+              aria-label="Toggle theme"
+            >
+              {theme === 'dark' ? (
+                <Sun className="w-5 h-5" />
+              ) : (
+                <Moon className="w-5 h-5" />
+              )}
+            </button>
           </div>
 
-          {/* Hamburger Menu Button */}
           <button
             id="menu-button"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary-dark focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary dark:focus:ring-primary-dark"
+            className="md:hidden p-2 rounded-md text-gray-300 hover:text-indigo-300 transition-colors"
             aria-expanded={isMenuOpen}
             aria-controls="mobile-menu"
             aria-label="Main menu"
@@ -94,7 +112,6 @@ const HeaderNavigation: React.FC = () => {
           </button>
         </div>
 
-        {/* Mobile Navigation */}
         <div
           id="mobile-menu"
           className={`md:hidden transition-all duration-300 ease-in-out ${
@@ -104,7 +121,7 @@ const HeaderNavigation: React.FC = () => {
           }`}
           aria-hidden={!isMenuOpen}
         >
-          <div className="px-2 pt-2 pb-3 space-y-1 bg-white dark:bg-gray-900 rounded-b-lg shadow-lg">
+          <div className="px-2 pt-2 pb-3 space-y-1 bg-gray-800 rounded-b-lg shadow-lg">
             {navLinks.map((link) => (
               <NavLink
                 key={link.path}
@@ -112,14 +129,31 @@ const HeaderNavigation: React.FC = () => {
                 className={({ isActive }) =>
                   `block px-3 py-2 rounded-md text-base font-medium transition-colors ${
                     isActive
-                      ? 'bg-primary/10 text-primary dark:bg-primary-dark/10 dark:text-primary-dark'
-                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-primary dark:hover:text-primary-dark'
+                      ? 'bg-indigo-900/50 text-indigo-300'
+                      : 'text-gray-300 hover:bg-gray-800 hover:text-indigo-300'
                   }`
                 }
               >
                 {link.name}
               </NavLink>
             ))}
+            
+            <button
+              onClick={toggleTheme}
+              className="w-full flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-800 hover:text-indigo-300 transition-colors"
+            >
+              {theme === 'dark' ? (
+                <>
+                  <Sun className="w-5 h-5 mr-2" />
+                  Light Mode
+                </>
+              ) : (
+                <>
+                  <Moon className="w-5 h-5 mr-2" />
+                  Dark Mode
+                </>
+              )}
+            </button>
           </div>
         </div>
       </nav>

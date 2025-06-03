@@ -4,12 +4,7 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-  }
-
-  .dark {
-    --background: 222.2 47.4% 11.2%;
+    --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
   }
 }
@@ -19,11 +14,11 @@ html, body, #root {
 }
 
 body {
-  @apply bg-white dark:bg-gray-900;
+  @apply bg-gray-900 text-white;
 }
 
 #root {
-  @apply min-h-screen flex flex-col bg-white dark:bg-gray-900;
+  @apply min-h-screen flex flex-col bg-gray-900;
 }
 
 main {
