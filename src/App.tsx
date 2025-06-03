@@ -17,8 +17,8 @@ import SettingsPage from './pages/Settings/SettingsPage';
 function App() {
   return (
     <UserPreferencesProvider>
-      <SpiritsProvider>
-        <RecommendationsProvider>
+      <RecommendationsProvider>
+        <SpiritsProvider>
           <Router>
             <Toaster position="top-center" />
             <Layout>
@@ -33,8 +33,8 @@ function App() {
               </Routes>
             </Layout>
           </Router>
-        </RecommendationsProvider>
-      </SpiritsProvider>
+        </SpiritsProvider>
+      </RecommendationsProvider>
     </UserPreferencesProvider>
   );
 }

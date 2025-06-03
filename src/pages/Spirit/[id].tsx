@@ -11,7 +11,7 @@ import TransitionImage from '../../components/ui/TransitionImage';
 
 const SpiritProfilePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { getRatings, getTastingNotesForSpirit } = useSpirits();
+  const { getRatingsForBrand, getTastingNotesForSpirit } = useSpirits();
   const { trackInteraction } = useRecommendations();
   const [showRatingForm, setShowRatingForm] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -21,7 +21,6 @@ const SpiritProfilePage: React.FC = () => {
   const spirit = id ? getSpiritById(id) : null;
   const similarSpirits = getSimilarSpirits(id || '', 3);
   
-  // Get the parent category ID from the spirit ID (e.g., 'gin' from 'london-dry')
   const parentCategoryId = id?.split('-')[0];
   
   useEffect(() => {
@@ -29,9 +28,8 @@ const SpiritProfilePage: React.FC = () => {
       setIsLoading(true);
       trackInteraction(id, 'view');
       
-      // Fetch ratings and tasting notes
       Promise.all([
-        getRatings(id),
+        getRatingsForBrand(id),
         getTastingNotesForSpirit(id)
       ]).then(([ratingsData, tastingNotesData]) => {
         setRatings(ratingsData);
@@ -44,7 +42,7 @@ const SpiritProfilePage: React.FC = () => {
         setIsLoading(false);
       });
     }
-  }, [id]);
+  }, [id, getRatingsForBrand, getTastingNotesForSpirit, trackInteraction]);
 
   if (!spirit) {
     return (
@@ -149,8 +147,7 @@ const SpiritProfilePage: React.FC = () => {
                   spiritId={spirit.id}
                   onSuccess={() => {
                     setShowRatingForm(false);
-                    // Refresh ratings after new rating is added
-                    getRatings(id).then(setRatings);
+                    getRatingsForBrand(id).then(setRatings);
                   }}
                 />
               </div>
