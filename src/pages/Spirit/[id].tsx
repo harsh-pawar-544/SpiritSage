@@ -6,7 +6,7 @@ import { useRecommendations } from '../../contexts/RecommendationsContext';
 import TransitionImage from '../../components/ui/TransitionImage';
 import { Brand } from '../../data/types';
 
-const SpiritProfilePage: React.FC = () => {
+export default function SpiritProfilePage() {
   const { id } = useParams<{ id: string }>();
   const { getBrandById, getTastingNotesForSpirit } = useSpirits();
   const { trackInteraction } = useRecommendations();
@@ -64,6 +64,4 @@ const SpiritProfilePage: React.FC = () => {
       </Link>
     </div>
   );
-};
-
-export default SpiritProfilePage;
+}

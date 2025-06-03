@@ -7,7 +7,7 @@ import { AlcoholType } from '../../data/types';
 
 const AlcoholTypeDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { getAlcoholTypeById, loading: spiritsContextLoading, error: spiritsContextError } = useSpirits();
+  const { getCategoryById, loading: spiritsContextLoading, error: spiritsContextError } = useSpirits();
   const [alcoholType, setAlcoholType] = useState<AlcoholType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +22,7 @@ const AlcoholTypeDetailPage: React.FC = () => {
       setIsLoading(true);
       setError(null);
       try {
-        const data = await getAlcoholTypeById(id);
+        const data = await getCategoryById(id);
         if (data) {
           setAlcoholType(data);
         } else {
@@ -37,7 +37,7 @@ const AlcoholTypeDetailPage: React.FC = () => {
     };
 
     fetchAlcoholTypeDetails();
-  }, [id, getAlcoholTypeById]);
+  }, [id, getCategoryById]);
 
   if (isLoading || spiritsContextLoading) {
     return (
