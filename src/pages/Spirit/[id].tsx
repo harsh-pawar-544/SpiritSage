@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Star } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { getSpiritById, getSimilarSpirits } from '../../data/spiritCategories';
 import { useSpirits } from '../../contexts/SpiritsContext';
 import { useRecommendations } from '../../contexts/RecommendationsContext';
@@ -20,9 +20,8 @@ const SpiritProfilePage: React.FC = () => {
 
   const spirit = id ? getSpiritById(id) : null;
   const similarSpirits = getSimilarSpirits(id || '', 3);
-  
   const parentCategoryId = id?.split('-')[0];
-  
+
   useEffect(() => {
     if (id) {
       setIsLoading(true);
