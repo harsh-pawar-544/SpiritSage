@@ -1,78 +1,99 @@
-// src/pages/SpiritList/SpiritListPage.tsx
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Search, Loader2 } from 'lucide-react'; // Added Loader2 for loading state
+import React, { useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { Search } from 'lucide-react';
 import TransitionImage from '../../components/ui/TransitionImage';
-import { supabase } from '../../lib/supabaseClient'; // Import supabase client
+import { supabase } from '../../lib/supabaseClient';
 
-// Define a type for your alcohol categories/types fetched from Supabase
-interface AlcoholType {
-  id: string; // This will be string representation of UUID or BIGINT from Supabase
+interface Subtype {
+  id: string;
   name: string;
-  description: string; // Assuming you might add descriptions to alcohol_types later
-  image: string; // Assuming you might add image URLs to alcohol_types later
+  description: string;
+  region: string;
+  abv_min: number | null;
+  abv_max: number | null;
+  flavor_profile: string[];
+  characteristics: string[];
+  production_method: string | null;
 }
 
-const SpiritListPage: React.FC = () => {
+const SpiritSubtypesPage: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
   const [searchQuery, setSearchQuery] = useState('');
-  const [allCategories, setAllCategories] = useState<AlcoholType[]>([]);
+  const [subtypes, setSubtypes] = useState<Subtype[]>([]);
+  const [categoryName, setCategoryName] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchAlcoholTypes = async () => {
+  React.useEffect(() => {
+    const fetchCategoryAndSubtypes = async () => {
       try {
         setIsLoading(true);
         setError(null);
 
-        const { data, error } = await supabase
+        // First, fetch the alcohol type to get its name
+        const { data: alcoholType, error: alcoholTypeError } = await supabase
           .from('alcohol_types')
-          .select('*'); // Select all columns (id, name, etc.)
+          .select('name')
+          .eq('name', id)
+          .single();
 
-        if (error) {
-          console.error('Error fetching alcohol types from Supabase:', error);
-          setError('Failed to load categories. Please try again.');
-          setAllCategories([]);
-          return;
+        if (alcoholTypeError) {
+          throw new Error('Error fetching alcohol type');
         }
 
-        // Assuming your alcohol_types table has 'id' and 'name'.
-        // If you want 'description' or 'image', you'll need to add those columns
-        // to your 'alcohol_types' table in Supabase and re-import the CSV.
-        // For now, let's map what we have and add placeholders for missing fields.
-        const mappedCategories: AlcoholType[] = data.map(item => ({
-          id: item.id.toString(), // Ensure ID is string for Link to
-          name: item.name,
-          description: item.description || `Explore the world of ${item.name}.`, // Placeholder
-          image: item.image || `/images/categories/${item.name.toLowerCase().replace(/\s/g, '-')}.jpg`, // Placeholder/default
-        }));
+        if (!alcoholType) {
+          throw new Error('Category not found');
+        }
 
-        setAllCategories(mappedCategories);
+        setCategoryName(alcoholType.name);
+
+        // Then fetch all subtypes for this alcohol type
+        const { data: subtypesData, error: subtypesError } = await supabase
+          .from('subtypes')
+          .select('*')
+          .eq('alcohol_type_id', alcoholType.id);
+
+        if (subtypesError) {
+          throw new Error('Error fetching subtypes');
+        }
+
+        setSubtypes(subtypesData || []);
       } catch (err) {
-        console.error('Unexpected error in fetchAlcoholTypes:', err);
-        setError('An unexpected error occurred.');
-        setAllCategories([]);
+        console.error('Error:', err);
+        setError(err instanceof Error ? err.message : 'An unexpected error occurred');
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchAlcoholTypes();
-  }, []); // Run once on component mount
+    fetchCategoryAndSubtypes();
+  }, [id]);
 
-  const filteredCategories = allCategories.filter(category =>
-    category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    category.description.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredSubtypes = subtypes.filter(subtype =>
+    subtype.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    subtype.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    subtype.region.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  if (error) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-12">
+        <div className="text-center text-red-500">
+          <h2 className="text-2xl font-bold mb-4">Error</h2>
+          <p>{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">
       <div className="text-center mb-16">
         <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-          Explore Spirits
+          {categoryName} Varieties
         </h1>
         <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
-          Browse by category, mood, or flavor profile
+          Explore different styles and regional variations
         </p>
 
         <div className="relative max-w-md mx-auto">
@@ -81,7 +102,7 @@ const SpiritListPage: React.FC = () => {
           </div>
           <input
             type="text"
-            placeholder="Search categories..." // Updated placeholder
+            placeholder="Search varieties..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="block w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
@@ -89,44 +110,47 @@ const SpiritListPage: React.FC = () => {
         </div>
       </div>
 
-      {isLoading && (
+      {isLoading ? (
         <div className="flex justify-center items-center h-48">
-          <Loader2 className="h-10 w-10 animate-spin text-indigo-500" />
-          <p className="ml-2 text-lg text-gray-600 dark:text-gray-400">Loading categories...</p>
+          <div className="animate-pulse text-gray-600 dark:text-gray-400">Loading varieties...</div>
         </div>
-      )}
-
-      {error && (
-        <div className="text-center text-red-500 text-lg mt-8">
-          <p>{error}</p>
-        </div>
-      )}
-
-      {!isLoading && !error && filteredCategories.length === 0 && (
+      ) : filteredSubtypes.length === 0 ? (
         <div className="text-center mt-8">
-          <p className="text-gray-600 dark:text-gray-400 text-lg">No categories found matching your search.</p>
+          <p className="text-gray-600 dark:text-gray-400 text-lg">
+            No varieties found matching your search.
+          </p>
         </div>
-      )}
-
-      {!isLoading && !error && filteredCategories.length > 0 && (
+      ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredCategories.map((category) => (
+          {filteredSubtypes.map((subtype) => (
             <Link
-              key={category.id}
-              to={`/category/${category.id}`} // This will now use the Supabase ID
+              key={subtype.id}
+              to={`/spirit/${subtype.id}`}
               className="group focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-xl"
             >
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden transition-all duration-300 transform hover:shadow-xl hover:-translate-y-1">
                 <div className="relative aspect-[4/3]">
                   <TransitionImage
-                    src={category.image} // Uses image from mapped category
-                    alt={category.name}
+                    src={`https://images.pexels.com/photos/1283219/pexels-photo-1283219.jpeg`}
+                    alt={subtype.name}
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                   <div className="absolute bottom-4 left-4 right-4">
-                    <h3 className="text-2xl font-bold text-white mb-2">{category.name}</h3>
-                    <p className="text-sm text-gray-200 line-clamp-2">{category.description}</p>
+                    <h3 className="text-2xl font-bold text-white mb-2">{subtype.name}</h3>
+                    <p className="text-sm text-gray-200 line-clamp-2">
+                      {subtype.description}
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {subtype.flavor_profile.slice(0, 3).map((flavor, index) => (
+                        <span
+                          key={index}
+                          className="inline-block px-2 py-1 text-xs bg-white/20 text-white rounded-full"
+                        >
+                          {flavor}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -138,4 +162,4 @@ const SpiritListPage: React.FC = () => {
   );
 };
 
-export default SpiritListPage;
+export default SpiritSubtypesPage;
