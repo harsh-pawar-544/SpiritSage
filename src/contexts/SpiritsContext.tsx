@@ -1,20 +1,12 @@
-import { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
-interface SpiritCategory {
+interface Spirit {
   id: string;
   name: string;
   description: string;
   image: string;
-  created_at: string;
-}
-
-interface SpiritSubtype {
-  id: string;
-  category_id: string;
-  name: string;
-  description: string;
-  image: string;
+  type: string;
   region: string;
   characteristics: string[];
   production_method: string;
@@ -22,72 +14,110 @@ interface SpiritSubtype {
 }
 
 interface SpiritsContextType {
-  getCategories: () => Promise<SpiritCategory[]>;
-  getCategoryById: (id: string) => Promise<SpiritCategory | null>;
-  getSubtypesByCategory: (categoryId: string) => Promise<SpiritSubtype[]>;
-  getSubtypeById: (id: string) => Promise<SpiritSubtype | null>;
-  getRatingsForSpirit: (spiritId: string) => Promise<any[]>;
+  spirits: Spirit[];
+  loading: boolean;
+  error: string | null;
+  getSpirit: (id: string) => Promise<Spirit | null>;
+  getSpirits: () => Promise<Spirit[]>;
+  getSubtypes: (categoryId: string) => Promise<Spirit[]>;
   addRating: (spiritId: string, rating: number, comment: string) => Promise<void>;
+  getRatings: (spiritId: string) => Promise<any[]>;
 }
 
 const SpiritsContext = createContext<SpiritsContextType | undefined>(undefined);
 
-export function SpiritsProvider({ children }: { children: ReactNode }) {
-  const getCategories = async () => {
-    const { data, error } = await supabase
-      .from('alcohol_types')
-      .select('*')
-      .order('name');
-    
-    if (error) throw error;
-    return data;
-  };
+export function SpiritsProvider({ children }: { children: React.ReactNode }) {
+  const [spirits, setSpirits] = useState<Spirit[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const getCategoryById = async (id: string) => {
-    const { data, error } = await supabase
-      .from('alcohol_types')
-      .select('*')
-      .eq('id', id)
-      .single();
-    
-    if (error) throw error;
-    return data;
-  };
+  useEffect(() => {
+    fetchSpirits();
+  }, []);
 
-  const getSubtypesByCategory = async (categoryId: string) => {
-    const { data, error } = await supabase
-      .from('subtypes')
-      .select(`
-        *,
-        alcohol_types (
-          name
-        )
-      `)
-      .eq('alcohol_type_id', categoryId)
-      .order('name');
-    
-    if (error) throw error;
-    return data;
-  };
+  async function fetchSpirits() {
+    try {
+      const { data, error } = await supabase
+        .from('alcohol_types')
+        .select('*')
+        .order('name');
 
-  const getSubtypeById = async (id: string) => {
-    const { data, error } = await supabase
-      .from('subtypes')
-      .select(`
-        *,
-        alcohol_types (
-          name,
-          description
-        )
-      `)
-      .eq('id', id)
-      .single();
-    
-    if (error) throw error;
-    return data;
-  };
+      if (error) throw error;
+      setSpirits(data || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch spirits');
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  const getRatingsForSpirit = async (spiritId: string) => {
+  async function getSpirit(id: string) {
+    try {
+      const { data, error } = await supabase
+        .from('subtypes')
+        .select(`
+          *,
+          alcohol_types (*)
+        `)
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (err) {
+      console.error('Error fetching spirit:', err);
+      return null;
+    }
+  }
+
+  async function getSpirits() {
+    try {
+      const { data, error } = await supabase
+        .from('alcohol_types')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+      return data || [];
+    } catch (err) {
+      console.error('Error fetching spirits:', err);
+      return [];
+    }
+  }
+
+  async function getSubtypes(categoryId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('subtypes')
+        .select('*')
+        .eq('alcohol_type_id', categoryId)
+        .order('name');
+
+      if (error) throw error;
+      return data || [];
+    } catch (err) {
+      console.error('Error fetching subtypes:', err);
+      return [];
+    }
+  }
+
+  async function addRating(spiritId: string, rating: number, comment: string) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Must be logged in to rate');
+
+    const { error } = await supabase
+      .from('ratings')
+      .insert({
+        spirit_id: spiritId,
+        user_id: user.id,
+        rating,
+        comment
+      });
+
+    if (error) throw error;
+  }
+
+  async function getRatings(spiritId: string) {
     const { data, error } = await supabase
       .from('ratings')
       .select(`
@@ -99,32 +129,21 @@ export function SpiritsProvider({ children }: { children: ReactNode }) {
       `)
       .eq('spirit_id', spiritId)
       .order('created_at', { ascending: false });
-    
-    if (error) throw error;
-    return data;
-  };
 
-  const addRating = async (spiritId: string, rating: number, comment: string) => {
-    const { error } = await supabase
-      .from('ratings')
-      .insert({
-        spirit_id: spiritId,
-        rating,
-        comment,
-        user_id: (await supabase.auth.getUser()).data.user?.id
-      });
-    
     if (error) throw error;
-  };
+    return data || [];
+  }
 
   return (
     <SpiritsContext.Provider value={{
-      getCategories,
-      getCategoryById,
-      getSubtypesByCategory,
-      getSubtypeById,
-      getRatingsForSpirit,
+      spirits,
+      loading,
+      error,
+      getSpirit,
+      getSpirits,
+      getSubtypes,
       addRating,
+      getRatings
     }}>
       {children}
     </SpiritsContext.Provider>
@@ -133,8 +152,8 @@ export function SpiritsProvider({ children }: { children: ReactNode }) {
 
 export function useSpirits() {
   const context = useContext(SpiritsContext);
-  if (context === undefined) {
-    throw new Error('useSpirits must be used within a SpiritsProvider');
+  if (!context) {
+    throw new Error('useSpirits must be used within SpiritsProvider');
   }
   return context;
 }
