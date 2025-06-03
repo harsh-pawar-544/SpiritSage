@@ -1,7 +1,7 @@
 // src/contexts/SpiritsContext.tsx
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../lib/supabaseClient';
 import {
   type AlcoholType, // Renamed from SpiritCategory
   type Subtype, // Renamed from SpiritSubtype
