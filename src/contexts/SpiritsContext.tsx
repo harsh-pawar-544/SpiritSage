@@ -1,21 +1,33 @@
 import { createContext, useContext, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
-import { Database } from '../lib/database.types';
 
-type SpiritCategory = Database['public']['Tables']['alcohol_types']['Row'];
-type SpiritSubtype = Database['public']['Tables']['subtypes']['Row'];
-type Rating = Database['public']['Tables']['ratings']['Row'];
+interface SpiritCategory {
+  id: string;
+  name: string;
+  description: string;
+  image: string;
+  created_at: string;
+}
+
+interface SpiritSubtype {
+  id: string;
+  category_id: string;
+  name: string;
+  description: string;
+  image: string;
+  region: string;
+  characteristics: string[];
+  production_method: string;
+  created_at: string;
+}
 
 interface SpiritsContextType {
   getCategories: () => Promise<SpiritCategory[]>;
+  getCategoryById: (id: string) => Promise<SpiritCategory | null>;
   getSubtypesByCategory: (categoryId: string) => Promise<SpiritSubtype[]>;
   getSubtypeById: (id: string) => Promise<SpiritSubtype | null>;
-  getRatings: () => Promise<Rating[]>;
-  getRatingsForSpirit: (spiritId: string) => Promise<Rating[]>;
-  getTastingNotesForSpirit: (spiritId: string) => Promise<Array<{ term: string; percentage: number }>>;
+  getRatingsForSpirit: (spiritId: string) => Promise<any[]>;
   addRating: (spiritId: string, rating: number, comment: string) => Promise<void>;
-  updateRating: (ratingId: string, rating: number, comment: string) => Promise<void>;
-  deleteRating: (ratingId: string) => Promise<void>;
 }
 
 const SpiritsContext = createContext<SpiritsContextType | undefined>(undefined);
@@ -31,10 +43,26 @@ export function SpiritsProvider({ children }: { children: ReactNode }) {
     return data;
   };
 
+  const getCategoryById = async (id: string) => {
+    const { data, error } = await supabase
+      .from('alcohol_types')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) throw error;
+    return data;
+  };
+
   const getSubtypesByCategory = async (categoryId: string) => {
     const { data, error } = await supabase
       .from('subtypes')
-      .select('*')
+      .select(`
+        *,
+        alcohol_types (
+          name
+        )
+      `)
       .eq('alcohol_type_id', categoryId)
       .order('name');
     
@@ -45,19 +73,15 @@ export function SpiritsProvider({ children }: { children: ReactNode }) {
   const getSubtypeById = async (id: string) => {
     const { data, error } = await supabase
       .from('subtypes')
-      .select('*')
+      .select(`
+        *,
+        alcohol_types (
+          name,
+          description
+        )
+      `)
       .eq('id', id)
       .single();
-    
-    if (error) throw error;
-    return data;
-  };
-
-  const getRatings = async () => {
-    const { data, error } = await supabase
-      .from('ratings')
-      .select('*')
-      .order('created_at', { ascending: false });
     
     if (error) throw error;
     return data;
@@ -66,23 +90,18 @@ export function SpiritsProvider({ children }: { children: ReactNode }) {
   const getRatingsForSpirit = async (spiritId: string) => {
     const { data, error } = await supabase
       .from('ratings')
-      .select('*')
+      .select(`
+        *,
+        profiles:user_id (
+          username,
+          avatar_url
+        )
+      `)
       .eq('spirit_id', spiritId)
       .order('created_at', { ascending: false });
     
     if (error) throw error;
     return data;
-  };
-
-  const getTastingNotesForSpirit = async (spiritId: string) => {
-    // For now, return mock data until we implement the actual tasting notes feature
-    return [
-      { term: 'Vanilla', percentage: 75 },
-      { term: 'Oak', percentage: 65 },
-      { term: 'Caramel', percentage: 60 },
-      { term: 'Spice', percentage: 45 },
-      { term: 'Fruit', percentage: 40 }
-    ];
   };
 
   const addRating = async (spiritId: string, rating: number, comment: string) => {
@@ -98,37 +117,14 @@ export function SpiritsProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   };
 
-  const updateRating = async (ratingId: string, rating: number, comment: string) => {
-    const { error } = await supabase
-      .from('ratings')
-      .update({ rating, comment, updated_at: new Date().toISOString() })
-      .eq('id', ratingId)
-      .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
-    
-    if (error) throw error;
-  };
-
-  const deleteRating = async (ratingId: string) => {
-    const { error } = await supabase
-      .from('ratings')
-      .delete()
-      .eq('id', ratingId)
-      .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
-    
-    if (error) throw error;
-  };
-
   return (
     <SpiritsContext.Provider value={{
       getCategories,
+      getCategoryById,
       getSubtypesByCategory,
       getSubtypeById,
-      getRatings,
       getRatingsForSpirit,
-      getTastingNotesForSpirit,
       addRating,
-      updateRating,
-      deleteRating,
     }}>
       {children}
     </SpiritsContext.Provider>
