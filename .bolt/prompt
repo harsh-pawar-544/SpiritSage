@@ -1,0 +1,11 @@
+For all UI designs and components you create, make them elegant, modern, and highly user-friendly—no generic or cookie-cutter styles. The app must look polished and production-ready, with smooth user experience and intuitive navigation.
+
+Use React with JSX and Tailwind CSS for styling. You can use the shadcn/ui component library and lucide-react icons for all UI elements and logos. Do not add any other UI libraries or icon packs unless I specifically request them.
+
+Use relevant, high-quality stock photos from Unsplash to enhance the visual appeal where appropriate.
+
+Follow good accessibility practices and responsive design principles to ensure the app works well on both desktop and mobile.
+
+Our app, SpiritSage, is an AI-powered liquor companion for enthusiasts and bartenders, providing expert tasting notes, historical facts, myth-busting, and mood-based recommendations. Keep the tone sophisticated yet approachable.
+
+I will give you component or page-level instructions one at a time. Only create or modify files I ask for. Do not remove or change unrelated code or files unless I explicitly tell you.
