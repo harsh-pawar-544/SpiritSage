@@ -4,12 +4,12 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
+    --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 222.2 47.4% 11.2%;
     --foreground: 210 40% 98%;
   }
 }
@@ -19,25 +19,13 @@ html, body, #root {
 }
 
 body {
-  @apply bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark;
+  @apply bg-white dark:bg-gray-900;
 }
 
 #root {
-  @apply min-h-screen flex flex-col;
+  @apply min-h-screen flex flex-col bg-white dark:bg-gray-900;
 }
 
 main {
   @apply flex-1;
-}
-
-h1, h2, h3, h4, h5, h6 {
-  @apply text-text-light dark:text-text-dark;
-}
-
-p {
-  @apply text-text-light/90 dark:text-text-dark/90;
-}
-
-a {
-  @apply text-primary hover:text-primary/80 dark:text-primary-dark dark:hover:text-primary-dark/80;
 }
