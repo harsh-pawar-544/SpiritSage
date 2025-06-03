@@ -12,9 +12,20 @@ const SpiritSubtypesPage: React.FC = () => {
   const navigate = useNavigate();
   const { getRatingsForSpirit } = useSpirits();
   
-  // Get the base category ID from the subtype ID (e.g., 'gin' from 'london-dry-gin')
-  const baseId = id?.split('-')[0];
-  const category = spiritCategories.find(cat => cat.id === baseId);
+  // Find the parent category by checking both direct ID and subtype parent
+  const category = spiritCategories.find(cat => {
+    // Check if this is a direct category match
+    if (cat.id === id) return true;
+    
+    // Check if this is a subtype's parent category
+    if (cat.subtypes.some(subtype => subtype.id === id)) {
+      return true;
+    }
+    
+    // Get the base category ID from the subtype ID (e.g., 'gin' from 'london-dry-gin')
+    const baseId = id?.split('-')[0];
+    return cat.id === baseId;
+  });
 
   if (!category) {
     return (
