@@ -18,7 +18,6 @@ const TransitionImage: React.FC<TransitionImageProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
 
-  // Create optimized URLs for better loading performance
   const thumbnailSrc = src?.includes('images.pexels.com')
     ? `${src}?auto=compress&w=50&q=10&blur=10`
     : src;
