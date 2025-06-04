@@ -19,7 +19,7 @@ html, body, #root {
 }
 
 body {
-  @apply bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark;
+  @apply bg-white dark:bg-gray-900 text-gray-900 dark:text-white;
 }
 
 #root {

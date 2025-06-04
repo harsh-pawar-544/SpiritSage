@@ -35,7 +35,7 @@ const HeaderNavigation: React.FC = () => {
         <div className="flex justify-between h-16 items-center">
           <Link 
             to="/" 
-            className="flex items-center space-x-2 text-text-light dark:text-text-dark hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+            className="flex items-center space-x-2 text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
           >
             <GlassWater className="w-8 h-8" />
             <span className="text-xl font-semibold">SpiritSage</span>
@@ -50,7 +50,7 @@ const HeaderNavigation: React.FC = () => {
                   `text-base font-medium transition-colors ${
                     isActive
                       ? 'text-indigo-600 dark:text-indigo-400'
-                      : 'text-text-light dark:text-text-dark hover:text-indigo-600 dark:hover:text-indigo-400'
+                      : 'text-gray-900 dark:text-gray-100 hover:text-indigo-600 dark:hover:text-indigo-400'
                   }`
                 }
               >
@@ -61,7 +61,7 @@ const HeaderNavigation: React.FC = () => {
 
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden p-2 rounded-md text-text-light dark:text-text-dark hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+            className="md:hidden p-2 rounded-md text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
             aria-expanded={isMenuOpen}
             aria-label="Main menu"
           >
@@ -87,7 +87,7 @@ const HeaderNavigation: React.FC = () => {
                     `block px-3 py-2 rounded-md text-base font-medium transition-colors ${
                       isActive
                         ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-400'
-                        : 'text-text-light dark:text-text-dark hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-indigo-600 dark:hover:text-indigo-400'
+                        : 'text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-indigo-600 dark:hover:text-indigo-400'
                     }`
                   }
                 >
