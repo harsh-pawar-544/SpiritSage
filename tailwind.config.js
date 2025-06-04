@@ -8,9 +8,13 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: {
-          DEFAULT: '#4f46e5',
-          dark: '#6366f1'
+        background: {
+          light: '#ffffff',
+          dark: '#0f172a',
+        },
+        text: {
+          light: '#1e293b',
+          dark: '#f8fafc',
         }
       },
       container: {

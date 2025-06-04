@@ -6,7 +6,7 @@ import { useUserPreferences } from '../../contexts/UserPreferencesContext';
 const HeaderNavigation: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
-  const { theme, updatePreferences } = useUserPreferences();
+  const { theme, setTheme } = useUserPreferences();
 
   useEffect(() => {
     setIsMenuOpen(false);
@@ -25,12 +25,7 @@ const HeaderNavigation: React.FC = () => {
   }, [isMenuOpen]);
 
   const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    updatePreferences({
-      theme: newTheme,
-      language: 'en',
-      preferredSpirit: null
-    });
+    setTheme(theme === 'light' ? 'dark' : 'light');
   };
 
   const navLinks = [
@@ -41,12 +36,12 @@ const HeaderNavigation: React.FC = () => {
   ];
 
   return (
-    <header className="fixed top-0 left-0 right-0 bg-gray-900 shadow-lg z-50">
+    <header className="fixed top-0 left-0 right-0 bg-white dark:bg-gray-900 shadow-lg z-50">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           <Link 
             to="/" 
-            className="flex items-center space-x-2 text-white hover:text-indigo-300 transition-colors"
+            className="flex items-center space-x-2 text-text-light dark:text-text-dark hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
           >
             <GlassWater className="w-8 h-8" />
             <span className="text-xl font-semibold">SpiritSage</span>
@@ -60,8 +55,8 @@ const HeaderNavigation: React.FC = () => {
                 className={({ isActive }) =>
                   `text-base font-medium transition-colors ${
                     isActive
-                      ? 'text-indigo-300'
-                      : 'text-gray-300 hover:text-indigo-300'
+                      ? 'text-indigo-600 dark:text-indigo-400'
+                      : 'text-text-light dark:text-text-dark hover:text-indigo-600 dark:hover:text-indigo-400'
                   }`
                 }
               >
@@ -71,7 +66,7 @@ const HeaderNavigation: React.FC = () => {
             
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-lg text-gray-300 hover:text-indigo-300 transition-colors"
+              className="p-2 rounded-lg text-text-light dark:text-text-dark hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
               aria-label="Toggle theme"
             >
               {theme === 'dark' ? (
@@ -84,7 +79,7 @@ const HeaderNavigation: React.FC = () => {
 
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden p-2 rounded-md text-gray-300 hover:text-indigo-300 transition-colors"
+            className="md:hidden p-2 rounded-md text-text-light dark:text-text-dark hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
             aria-expanded={isMenuOpen}
             aria-label="Main menu"
           >
@@ -99,9 +94,8 @@ const HeaderNavigation: React.FC = () => {
           </button>
         </div>
 
-        {/* Mobile menu, show/hide based on menu state */}
         {isMenuOpen && (
-          <div className="md:hidden fixed inset-0 top-16 bg-gray-900 z-50">
+          <div className="md:hidden fixed inset-0 top-16 bg-white dark:bg-gray-900 z-50">
             <div className="px-2 pt-2 pb-3 space-y-1">
               {navLinks.map((link) => (
                 <NavLink
@@ -110,8 +104,8 @@ const HeaderNavigation: React.FC = () => {
                   className={({ isActive }) =>
                     `block px-3 py-2 rounded-md text-base font-medium transition-colors ${
                       isActive
-                        ? 'bg-indigo-900/50 text-indigo-300'
-                        : 'text-gray-300 hover:bg-gray-800 hover:text-indigo-300'
+                        ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-400'
+                        : 'text-text-light dark:text-text-dark hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-indigo-600 dark:hover:text-indigo-400'
                     }`
                   }
                 >
@@ -121,7 +115,7 @@ const HeaderNavigation: React.FC = () => {
               
               <button
                 onClick={toggleTheme}
-                className="w-full flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-gray-800 hover:text-indigo-300 transition-colors"
+                className="w-full flex items-center px-3 py-2 rounded-md text-base font-medium text-text-light dark:text-text-dark hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
               >
                 {theme === 'dark' ? (
                   <>

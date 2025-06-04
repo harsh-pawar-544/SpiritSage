@@ -13,6 +13,9 @@ interface UserPreferences {
 
 interface UserPreferencesContextType extends UserPreferences {
   updatePreferences: (preferences: UserPreferences) => void;
+  setTheme: (theme: Theme) => void;
+  setLanguage: (language: Language) => void;
+  setPreferredSpirit: (spirit: PreferredSpirit) => void;
 }
 
 const STORAGE_KEY = 'spiritsage_preferences';
@@ -23,55 +26,65 @@ const defaultPreferences: UserPreferences = {
   preferredSpirit: null,
 };
 
-const loadStoredPreferences = (): UserPreferences => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const parsedPreferences = JSON.parse(stored);
-      return { ...defaultPreferences, ...parsedPreferences };
-    }
-  } catch (error) {
-    console.error('Error loading preferences:', error);
-    toast.error('Failed to load preferences');
-  }
-  return defaultPreferences;
-};
-
 const UserPreferencesContext = createContext<UserPreferencesContextType | undefined>(undefined);
 
 export const UserPreferencesProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [isLoading, setIsLoading] = useState(true);
   const [preferences, setPreferences] = useState<UserPreferences>(defaultPreferences);
 
   useEffect(() => {
-    const storedPreferences = loadStoredPreferences();
-    setPreferences(storedPreferences);
-    
-    document.documentElement.classList.remove('light', 'dark');
-    document.documentElement.classList.add(storedPreferences.theme);
-    
-    setIsLoading(false);
+    // Load stored preferences
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsedPreferences = JSON.parse(stored);
+        setPreferences({ ...defaultPreferences, ...parsedPreferences });
+      }
+    } catch (error) {
+      console.error('Error loading preferences:', error);
+      toast.error('Failed to load preferences');
+    }
   }, []);
 
-  const updatePreferences = (newPreferences: UserPreferences) => {
+  useEffect(() => {
+    // Apply theme
+    document.documentElement.classList.remove('light', 'dark');
+    document.documentElement.classList.add(preferences.theme);
+    
+    // Save preferences
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newPreferences));
-      setPreferences(newPreferences);
-      
-      document.documentElement.classList.remove('light', 'dark');
-      document.documentElement.classList.add(newPreferences.theme);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences));
     } catch (error) {
       console.error('Error saving preferences:', error);
       toast.error('Failed to save preferences');
     }
+  }, [preferences]);
+
+  const updatePreferences = (newPreferences: UserPreferences) => {
+    setPreferences(newPreferences);
   };
 
-  if (isLoading) {
-    return null;
-  }
+  const setTheme = (theme: Theme) => {
+    setPreferences(prev => ({ ...prev, theme }));
+  };
+
+  const setLanguage = (language: Language) => {
+    setPreferences(prev => ({ ...prev, language }));
+  };
+
+  const setPreferredSpirit = (preferredSpirit: PreferredSpirit) => {
+    setPreferences(prev => ({ ...prev, preferredSpirit }));
+  };
 
   return (
-    <UserPreferencesContext.Provider value={{ ...preferences, updatePreferences }}>
+    <UserPreferencesContext.Provider 
+      value={{ 
+        ...preferences, 
+        updatePreferences,
+        setTheme,
+        setLanguage,
+        setPreferredSpirit
+      }}
+    >
       {children}
     </UserPreferencesContext.Provider>
   );
