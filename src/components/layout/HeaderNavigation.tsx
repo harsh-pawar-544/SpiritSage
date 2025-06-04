@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { Menu, X, GlassWater, Moon, Sun } from 'lucide-react';
-import { useUserPreferences } from '../../contexts/UserPreferencesContext';
+import { Menu, X, GlassWater } from 'lucide-react';
 
 const HeaderNavigation: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
-  const { theme, setTheme } = useUserPreferences();
 
   useEffect(() => {
     setIsMenuOpen(false);
@@ -23,10 +21,6 @@ const HeaderNavigation: React.FC = () => {
       document.body.style.overflow = 'unset';
     };
   }, [isMenuOpen]);
-
-  const toggleTheme = () => {
-    setTheme(theme === 'light' ? 'dark' : 'light');
-  };
 
   const navLinks = [
     { name: 'Explore', path: '/explore' },
@@ -63,18 +57,6 @@ const HeaderNavigation: React.FC = () => {
                 {link.name}
               </NavLink>
             ))}
-            
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-lg text-text-light dark:text-text-dark hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-              aria-label="Toggle theme"
-            >
-              {theme === 'dark' ? (
-                <Sun className="w-5 h-5" />
-              ) : (
-                <Moon className="w-5 h-5" />
-              )}
-            </button>
           </div>
 
           <button
@@ -112,23 +94,6 @@ const HeaderNavigation: React.FC = () => {
                   {link.name}
                 </NavLink>
               ))}
-              
-              <button
-                onClick={toggleTheme}
-                className="w-full flex items-center px-3 py-2 rounded-md text-base font-medium text-text-light dark:text-text-dark hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-              >
-                {theme === 'dark' ? (
-                  <>
-                    <Sun className="w-5 h-5 mr-2" />
-                    Light Mode
-                  </>
-                ) : (
-                  <>
-                    <Moon className="w-5 h-5 mr-2" />
-                    Dark Mode
-                  </>
-                )}
-              </button>
             </div>
           </div>
         )}
