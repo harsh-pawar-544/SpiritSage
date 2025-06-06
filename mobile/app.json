@@ -9,51 +9,32 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#6366f1",
-      "imageUrl": "./assets/splash.png"
+      "backgroundColor": "#6366f1"
     },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.spiritsage.mobile",
-      "icon": "./assets/icon-ios.png",
-      "splash": {
-        "image": "./assets/splash-ios.png",
-        "resizeMode": "contain",
-        "backgroundColor": "#6366f1"
-      }
+      "bundleIdentifier": "com.spiritsage.mobile"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#6366f1"
       },
-      "package": "com.spiritsage.mobile",
-      "icon": "./assets/icon-android.png",
-      "splash": {
-        "image": "./assets/splash-android.png",
-        "resizeMode": "contain",
-        "backgroundColor": "#6366f1"
-      }
+      "package": "com.spiritsage.mobile"
     },
     "web": {
-      "favicon": "./assets/favicon.png",
-      "splash": {
-        "image": "./assets/splash-web.png",
-        "resizeMode": "contain",
-        "backgroundColor": "#6366f1"
-      }
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-notifications",
         {
-          "icon": "./assets/notification-icon.png",
-          "color": "#6366f1",
-          "sounds": ["./assets/notification.wav"]
+          "icon": "./assets/icon.png",
+          "color": "#6366f1"
         }
       ],
       [
@@ -78,7 +59,7 @@
     ],
     "scheme": "spiritsage",
     "notification": {
-      "icon": "./assets/notification-icon.png",
+      "icon": "./assets/icon.png",
       "color": "#6366f1"
     },
     "updates": {
