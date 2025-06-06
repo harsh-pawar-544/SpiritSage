@@ -110,10 +110,11 @@ const SpiritListPage: React.FC = () => {
                 <div className="relative aspect-[4/3]">
                   {/* *** CRITICAL FIX: Changed alcoholType.image to alcoholType.image_url *** */}
                   
-                  <TransitionImage
-                   src={alcoholType.image_url || 'https://images.pexels.com/photos/602750/pexels-photo-602750.jpeg'} // Fallback Pexels image if image_url is null
-                    alt={alcoholType.name}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  <img
+  src={alcoholType.image_url || 'https://images.pexels.com/photos/602750/pexels-photo-602750.jpeg'}
+  alt={alcoholType.name}
+  className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+/>
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                   <div className="absolute bottom-4 left-4 right-4">
