@@ -33,27 +33,13 @@ const HeaderNavigation: React.FC = () => {
     <header className="fixed top-0 left-0 right-0 bg-white dark:bg-gray-900 shadow-lg z-50">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
-          <div className="flex items-center space-x-4">
-            <Link 
-              to="/" 
-              className="flex items-center space-x-2 text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-            >
-              <img
-                src="https://bolt.dev/logo-dark.svg"
-                alt="Bolt Logo"
-                className="h-8 w-auto hidden dark:block"
-              />
-              <img
-                src="https://bolt.dev/logo-light.svg"
-                alt="Bolt Logo"
-                className="h-8 w-auto block dark:hidden"
-              />
-              <div className="flex items-center space-x-2">
-                <GlassWater className="w-8 h-8" />
-                <span className="text-xl font-semibold">SpiritSage</span>
-              </div>
-            </Link>
-          </div>
+          <Link 
+            to="/" 
+            className="flex items-center space-x-2 text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+          >
+            <GlassWater className="w-8 h-8" />
+            <span className="text-xl font-semibold">SpiritSage</span>
+          </Link>
 
           <div className="hidden md:flex items-center space-x-8">
             {navLinks.map((link) => (
