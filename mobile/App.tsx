@@ -79,7 +79,7 @@ function AppNavigator() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {isAuthenticated ? (
           <>
-            <Stack.Screen name="Main\" component={TabNavigator} />
+            <Stack.Screen name="Main" component={TabNavigator} />
             <Stack.Screen 
               name="AlcoholType" 
               component={AlcoholTypeScreen}
@@ -112,11 +112,11 @@ export default function App() {
       try {
         // Initialize services
         await Promise.all([
-          // Initialize crash reporting first
-          CrashReportingService.initialize('YOUR_SENTRY_DSN_HERE'),
+          // Initialize crash reporting first (optional - will work without DSN)
+          CrashReportingService.initialize(process.env.EXPO_PUBLIC_SENTRY_DSN || ''),
           
-          // Initialize analytics
-          AnalyticsService.initialize('YOUR_SEGMENT_WRITE_KEY_HERE'),
+          // Initialize analytics (will work without write key)
+          AnalyticsService.initialize(process.env.EXPO_PUBLIC_SEGMENT_WRITE_KEY),
           
           // Initialize notifications
           NotificationService.initialize(),
