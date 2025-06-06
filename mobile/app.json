@@ -9,28 +9,86 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#6366f1",
+      "imageUrl": "./assets/splash.png"
     },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.spiritsage.mobile"
+      "bundleIdentifier": "com.spiritsage.mobile",
+      "icon": "./assets/icon-ios.png",
+      "splash": {
+        "image": "./assets/splash-ios.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#6366f1"
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#6366f1"
       },
-      "package": "com.spiritsage.mobile"
+      "package": "com.spiritsage.mobile",
+      "icon": "./assets/icon-android.png",
+      "splash": {
+        "image": "./assets/splash-android.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#6366f1"
+      }
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "splash": {
+        "image": "./assets/splash-web.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#6366f1"
+      }
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#6366f1",
+          "sounds": ["./assets/notification.wav"]
+        }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "spiritsage",
+          "project": "spiritsage-mobile"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableProguardInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          },
+          "ios": {
+            "deploymentTarget": "13.0"
+          }
+        }
+      ]
     ],
-    "scheme": "spiritsage"
+    "scheme": "spiritsage",
+    "notification": {
+      "icon": "./assets/notification-icon.png",
+      "color": "#6366f1"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/your-project-id"
+    },
+    "runtimeVersion": "1.0.0",
+    "extra": {
+      "eas": {
+        "projectId": "your-project-id"
+      }
+    }
   }
 }
