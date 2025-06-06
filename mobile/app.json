@@ -36,40 +36,12 @@
           "icon": "./assets/icon.png",
           "color": "#6366f1"
         }
-      ],
-      [
-        "@sentry/react-native/expo",
-        {
-          "organization": "spiritsage",
-          "project": "spiritsage-mobile"
-        }
-      ],
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "enableProguardInReleaseBuilds": true,
-            "enableShrinkResourcesInReleaseBuilds": true
-          },
-          "ios": {
-            "deploymentTarget": "13.0"
-          }
-        }
       ]
     ],
     "scheme": "spiritsage",
     "notification": {
       "icon": "./assets/icon.png",
       "color": "#6366f1"
-    },
-    "updates": {
-      "url": "https://u.expo.dev/your-project-id"
-    },
-    "runtimeVersion": "1.0.0",
-    "extra": {
-      "eas": {
-        "projectId": "your-project-id"
-      }
     }
   }
 }

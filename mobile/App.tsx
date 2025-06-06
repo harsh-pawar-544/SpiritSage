@@ -26,7 +26,6 @@ import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 // Import services
 import NotificationService from './src/services/NotificationService';
 import AnalyticsService from './src/services/AnalyticsService';
-import CrashReportingService from './src/services/CrashReportingService';
 import OfflineService from './src/services/OfflineService';
 
 const Stack = createNativeStackNavigator();
@@ -79,7 +78,7 @@ function AppNavigator() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {isAuthenticated ? (
           <>
-            <Stack.Screen name="Main\" component={TabNavigator} />
+            <Stack.Screen name="Main" component={TabNavigator} />
             <Stack.Screen 
               name="AlcoholType" 
               component={AlcoholTypeScreen}
@@ -112,9 +111,6 @@ export default function App() {
       try {
         // Initialize services
         await Promise.all([
-          // Initialize crash reporting first (optional - will work without DSN)
-          CrashReportingService.initialize(process.env.EXPO_PUBLIC_SENTRY_DSN || ''),
-          
           // Initialize analytics (will work without write key)
           AnalyticsService.initialize(process.env.EXPO_PUBLIC_SEGMENT_WRITE_KEY),
           
@@ -147,7 +143,6 @@ export default function App() {
         };
       } catch (e) {
         console.warn('Error during app initialization:', e);
-        CrashReportingService.captureException(e as Error);
       } finally {
         setAppIsReady(true);
       }
