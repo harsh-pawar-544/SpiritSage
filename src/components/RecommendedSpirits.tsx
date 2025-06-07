@@ -9,7 +9,7 @@ import { getSpiritById } from '../data/spiritCategories';
 
 const RecommendedSpirits: React.FC = () => {
   const { recommendedSpirits, clearInteractionHistory, isLoading } = useRecommendations();
-  const { getRatingsForSpirit } = useSpirits();
+  const { getRatingsForBrand } = useSpirits(); // Changed from getRatingsForSpirit to getRatingsForBrand
 
   if (isLoading) {
     return (
@@ -55,7 +55,23 @@ const RecommendedSpirits: React.FC = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {validSpirits.map(spirit => {
-          const ratings = getRatingsForSpirit(spirit.id);
+          // Use getRatingsForBrand with async handling
+          const [ratings, setRatings] = React.useState([]);
+          
+          React.useEffect(() => {
+            const fetchRatings = async () => {
+              try {
+                const spiritRatings = await getRatingsForBrand(spirit.id);
+                setRatings(spiritRatings);
+              } catch (error) {
+                console.error('Error fetching ratings:', error);
+                setRatings([]);
+              }
+            };
+            
+            fetchRatings();
+          }, [spirit.id, getRatingsForBrand]);
+
           const avgRating = ratings.length > 0
             ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
             : 0;

@@ -68,21 +68,40 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     const fetchAlcoholData = async () => {
       try {
+        setLoading(true);
+        setError(null);
+
+        console.log('Fetching alcohol types...');
         const { data: typesData, error: typesError } = await supabase
           .from('alcohol_types')
-          .select('*, history, fun_facts, myths, image_url');
-        if (typesError) throw typesError;
+          .select('*');
 
+        if (typesError) {
+          console.error('Error fetching alcohol types:', typesError);
+          throw new Error(`Failed to fetch alcohol types: ${typesError.message}`);
+        }
+
+        console.log('Fetching subtypes...');
         const { data: subtypesData, error: subtypesError } = await supabase
           .from('subtypes')
-          .select('*, alcohol_types(name), history, fun_facts, myths, image_url, abv_min, abv_max, region, flavor_profile, characteristics, production_method');
-        if (subtypesError) throw subtypesError;
+          .select('*');
 
+        if (subtypesError) {
+          console.error('Error fetching subtypes:', subtypesError);
+          throw new Error(`Failed to fetch subtypes: ${subtypesError.message}`);
+        }
+
+        console.log('Fetching brands...');
         const { data: brandsData, error: brandsError } = await supabase
           .from('brands')
-          .select('*, subtypes(name, alcohol_types(name)), history, fun_facts, myths, image_url, abv, tasting_notes, price_range');
-        if (brandsError) throw brandsError;
+          .select('*');
 
+        if (brandsError) {
+          console.error('Error fetching brands:', brandsError);
+          throw new Error(`Failed to fetch brands: ${brandsError.message}`);
+        }
+
+        console.log('Processing data...');
         const processedAlcoholTypes = typesData.map(type => ({
           ...type,
           image: type.image_url,
@@ -97,8 +116,9 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }));
 
         setAlcoholTypes(processedAlcoholTypes);
+        console.log('Data loaded successfully');
       } catch (err: any) {
-        console.error('Error fetching spirits data:', err.message);
+        console.error('Error in fetchAlcoholData:', err);
         setError(err.message || 'Failed to fetch spirits data.');
       } finally {
         setLoading(false);
@@ -119,20 +139,26 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const getAlcoholTypeById = useCallback(
     async (id: string): Promise<AlcoholType | undefined> => {
       try {
+        console.log(`Fetching alcohol type by ID: ${id}`);
         const { data, error } = await supabase
           .from('alcohol_types')
-          .select('*, history, fun_facts, myths, image_url')
+          .select('*')
           .eq('id', id)
           .single();
 
-        if (error && error.code !== 'PGRST116') {
-          console.error(`Error fetching alcohol type by ID ${id}:`, error.message);
-          return undefined;
+        if (error) {
+          if (error.code === 'PGRST116') {
+            console.log(`Alcohol type with ID ${id} not found`);
+            return undefined;
+          }
+          console.error(`Error fetching alcohol type by ID ${id}:`, error);
+          throw new Error(`Failed to fetch alcohol type: ${error.message}`);
         }
+
         return data ? { ...data, image: data.image_url } as AlcoholType : undefined;
-      } catch (err) {
+      } catch (err: any) {
         console.error(`Exception fetching alcohol type by ID ${id}:`, err);
-        return undefined;
+        throw err;
       }
     },
     []
@@ -149,20 +175,45 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const getSubtypeById = useCallback(
     async (id: string): Promise<Subtype | undefined> => {
       try {
+        console.log(`Fetching subtype by ID: ${id}`);
         const { data, error } = await supabase
           .from('subtypes')
-          .select('*, alcohol_types(name), history, fun_facts, myths, image_url, abv_min, abv_max, region, flavor_profile, characteristics, production_method')
+          .select('*')
           .eq('id', id)
           .single();
 
-        if (error && error.code !== 'PGRST116') {
-          console.error(`Error fetching subtype by ID ${id}:`, error.message);
-          return undefined;
+        if (error) {
+          if (error.code === 'PGRST116') {
+            console.log(`Subtype with ID ${id} not found`);
+            return undefined;
+          }
+          console.error(`Error fetching subtype by ID ${id}:`, error);
+          throw new Error(`Failed to fetch subtype: ${error.message}`);
         }
-        return data ? { ...data, image: data.image_url } as Subtype : undefined;
-      } catch (err) {
+
+        // Try to get alcohol type name separately to avoid complex joins
+        let alcoholTypeName = null;
+        if (data?.alcohol_type_id) {
+          try {
+            const { data: alcoholTypeData } = await supabase
+              .from('alcohol_types')
+              .select('name')
+              .eq('id', data.alcohol_type_id)
+              .single();
+            alcoholTypeName = alcoholTypeData?.name;
+          } catch (alcoholTypeError) {
+            console.warn('Could not fetch alcohol type name:', alcoholTypeError);
+          }
+        }
+
+        return data ? { 
+          ...data, 
+          image: data.image_url,
+          alcohol_types: alcoholTypeName ? { name: alcoholTypeName } : null
+        } as Subtype : undefined;
+      } catch (err: any) {
         console.error(`Exception fetching subtype by ID ${id}:`, err);
-        return undefined;
+        throw err;
       }
     },
     []
@@ -185,20 +236,60 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const getBrandById = useCallback(
     async (brandId: string): Promise<Brand | undefined> => {
       try {
+        console.log(`Fetching brand by ID: ${brandId}`);
         const { data, error } = await supabase
           .from('brands')
-          .select('*, subtypes(name, alcohol_types(name)), history, fun_facts, myths, image_url, abv, tasting_notes, price_range')
+          .select('*')
           .eq('id', brandId)
           .single();
 
-        if (error && error.code !== 'PGRST116') {
-          console.error(`Error fetching brand by ID ${brandId}:`, error.message);
-          return undefined;
+        if (error) {
+          if (error.code === 'PGRST116') {
+            console.log(`Brand with ID ${brandId} not found`);
+            return undefined;
+          }
+          console.error(`Error fetching brand by ID ${brandId}:`, error);
+          throw new Error(`Failed to fetch brand: ${error.message}`);
         }
-        return data ? { ...data, image: data.image_url } as Brand : undefined;
-      } catch (err) {
+
+        // Try to get subtype and alcohol type names separately
+        let subtypeName = null;
+        let alcoholTypeName = null;
+        
+        if (data?.subtype_id) {
+          try {
+            const { data: subtypeData } = await supabase
+              .from('subtypes')
+              .select('name, alcohol_type_id')
+              .eq('id', data.subtype_id)
+              .single();
+            
+            subtypeName = subtypeData?.name;
+            
+            if (subtypeData?.alcohol_type_id) {
+              const { data: alcoholTypeData } = await supabase
+                .from('alcohol_types')
+                .select('name')
+                .eq('id', subtypeData.alcohol_type_id)
+                .single();
+              alcoholTypeName = alcoholTypeData?.name;
+            }
+          } catch (relationError) {
+            console.warn('Could not fetch related data for brand:', relationError);
+          }
+        }
+
+        return data ? { 
+          ...data, 
+          image: data.image_url,
+          subtypes: subtypeName ? { 
+            name: subtypeName,
+            alcohol_types: alcoholTypeName ? { name: alcoholTypeName } : null
+          } : null
+        } as Brand : undefined;
+      } catch (err: any) {
         console.error(`Exception fetching brand by ID ${brandId}:`, err);
-        return undefined;
+        throw err;
       }
     },
     []
@@ -336,9 +427,12 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
             comment
           });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error adding rating:', error);
+          throw new Error(`Failed to add rating: ${error.message}`);
+        }
       } catch (err: any) {
-        console.error('Error adding rating:', err.message);
+        console.error('Error adding rating:', err);
         throw err;
       }
     },
@@ -348,16 +442,21 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const getRatingsForBrand = useCallback(
     async (brandId: string): Promise<Rating[]> => {
       try {
+        console.log(`Fetching ratings for brand: ${brandId}`);
         const { data, error } = await supabase
           .from('ratings')
           .select('*')
           .eq('spirit_id', brandId)
           .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error fetching ratings:', error);
+          throw new Error(`Failed to fetch ratings: ${error.message}`);
+        }
+        
         return data || [];
       } catch (err: any) {
-        console.error('Error fetching ratings:', err.message);
+        console.error('Error fetching ratings:', err);
         return [];
       }
     },
@@ -369,27 +468,36 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      console.log('Loading My Bar spirits for user:', user.id);
       const { data, error } = await supabase
         .from('user_spirits')
         .select('*')
         .eq('user_id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error loading My Bar spirits:', error);
+        throw new Error(`Failed to load My Bar spirits: ${error.message}`);
+      }
 
       const spiritsWithData = await Promise.all(
         (data || []).map(async (spirit) => {
           let spirit_data;
           
-          switch (spirit.spirit_type) {
-            case 'alcohol_type':
-              spirit_data = await getAlcoholTypeById(spirit.spirit_id);
-              break;
-            case 'subtype':
-              spirit_data = await getSubtypeById(spirit.spirit_id);
-              break;
-            case 'brand':
-              spirit_data = await getBrandById(spirit.spirit_id);
-              break;
+          try {
+            switch (spirit.spirit_type) {
+              case 'alcohol_type':
+                spirit_data = await getAlcoholTypeById(spirit.spirit_id);
+                break;
+              case 'subtype':
+                spirit_data = await getSubtypeById(spirit.spirit_id);
+                break;
+              case 'brand':
+                spirit_data = await getBrandById(spirit.spirit_id);
+                break;
+            }
+          } catch (error) {
+            console.error(`Error fetching spirit data for ${spirit.spirit_id}:`, error);
+            spirit_data = null;
           }
           
           return {
@@ -401,7 +509,7 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       setMyBarSpirits(spiritsWithData);
     } catch (err: any) {
-      console.error('Error loading My Bar spirits:', err.message);
+      console.error('Error loading My Bar spirits:', err);
     }
   }, [getAlcoholTypeById, getSubtypeById, getBrandById]);
 
@@ -420,10 +528,14 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
             notes
           });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error adding spirit to My Bar:', error);
+          throw new Error(`Failed to add spirit to My Bar: ${error.message}`);
+        }
+        
         await loadMyBarSpirits();
       } catch (err: any) {
-        console.error('Error adding spirit to My Bar:', err.message);
+        console.error('Error adding spirit to My Bar:', err);
         throw err;
       }
     },
@@ -443,10 +555,14 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
           .eq('spirit_id', spiritId)
           .eq('spirit_type', spiritType);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error removing spirit from My Bar:', error);
+          throw new Error(`Failed to remove spirit from My Bar: ${error.message}`);
+        }
+        
         await loadMyBarSpirits();
       } catch (err: any) {
-        console.error('Error removing spirit from My Bar:', err.message);
+        console.error('Error removing spirit from My Bar:', err);
         throw err;
       }
     },
@@ -466,10 +582,14 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
           .eq('spirit_id', spiritId)
           .eq('spirit_type', spiritType);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error updating My Bar notes:', error);
+          throw new Error(`Failed to update My Bar notes: ${error.message}`);
+        }
+        
         await loadMyBarSpirits();
       } catch (err: any) {
-        console.error('Error updating My Bar notes:', err.message);
+        console.error('Error updating My Bar notes:', err);
         throw err;
       }
     },
