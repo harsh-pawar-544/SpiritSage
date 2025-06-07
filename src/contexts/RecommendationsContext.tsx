@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { debounce } from 'lodash';
 import { spiritCategories } from '../data/spiritCategories';
-import { useSpirits } from './SpiritsContext';
+import { useSpirits } from './SpiritsContext'; // Assuming you import this for getRatingsForBrand, though it's not currently used in this file's logic
 
 interface Interaction {
   spiritId: string;
@@ -15,6 +15,9 @@ interface RecommendationsContextType {
   trackInteraction: (spiritId: string, type: Interaction['type'], data?: { rating?: number; comment?: string }) => void;
   clearInteractionHistory: () => void;
   isLoading: boolean;
+  // getRatingsForBrand is exposed by useSpirits, not RecommendationsContext directly.
+  // It's listed in the interface, but it's not being provided by this context.
+  // If you meant to expose it here, you'd need to add it to the value object.
 }
 
 const STORAGE_KEY = 'spiritsage_interactions';
@@ -32,7 +35,10 @@ export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = 
   const [interactions, setInteractions] = useState<Interaction[]>([]);
   const [recommendedSpirits, setRecommendedSpirits] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { getRatingsForBrand } = useSpirits();
+
+  // Note: getRatingsForBrand is imported from useSpirits but not currently used in the logic below.
+  // If you intend to use it within these memoized functions, ensure it's stable.
+  // const { getRatingsForBrand } = useSpirits();
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -45,17 +51,19 @@ export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = 
       }
     }
     setIsLoading(false);
-  }, []);
+  }, []); // Runs once on mount
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(interactions));
-  }, [interactions]);
+  }, [interactions]); // Runs whenever 'interactions' state changes
+
+  // --- Memoized Functions ---
 
   const calculateSpiritScores = useCallback(() => {
     const now = Date.now();
     const scores = new Map<string, number>();
     const categories = new Set<string>();
-    
+
     interactions.forEach(interaction => {
       const age = (now - interaction.timestamp) / (1000 * 60 * 60 * 24);
       const timeDecay = Math.exp(-age / 30);
@@ -72,15 +80,17 @@ export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = 
     });
 
     return { scores, categories };
-  }, [interactions]);
+  }, [interactions]); // This function depends on 'interactions' state
 
+  // updateRecommendations is debounced, and depends on calculateSpiritScores
   const updateRecommendations = useCallback(
     debounce(() => {
       const { scores, categories } = calculateSpiritScores();
       const recommendations: string[] = [];
       const usedCategories = new Set<string>();
 
-      const allSpirits = spiritCategories.flatMap(cat => cat.subtypes);
+      const allSpirits = spiritCategories.flatMap(cat => cat.subtypes); // spiritCategories is static, no dependency needed
+
       const rankedSpirits = allSpirits
         .map(spirit => ({
           id: spirit.id,
@@ -120,7 +130,7 @@ export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = 
 
       setRecommendedSpirits(recommendations);
     }, 500),
-    [calculateSpiritScores]
+    [calculateSpiritScores] // Depends on 'calculateSpiritScores'
   );
 
   const trackInteraction = useCallback(
@@ -143,15 +153,25 @@ export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = 
         return newInteractions;
       });
 
+      // Call the debounced function
       updateRecommendations();
     },
-    [updateRecommendations]
+    [updateRecommendations] // Depends on 'updateRecommendations'
   );
 
   const clearInteractionHistory = useCallback(() => {
     setInteractions([]);
     setRecommendedSpirits([]);
-  }, []);
+  }, []); // No external dependencies
+
+  // Effect to update recommendations when interactions change
+  // This useEffect calls updateRecommendations without debouncing in case of a direct setInteractions
+  // from local storage loading, to ensure initial recommendations are generated.
+  useEffect(() => {
+    if (!isLoading) { // Only run once initial loading is done
+        updateRecommendations();
+    }
+  }, [interactions, updateRecommendations, isLoading]); // Depends on 'interactions' and 'updateRecommendations'
 
   return (
     <RecommendationsContext.Provider
