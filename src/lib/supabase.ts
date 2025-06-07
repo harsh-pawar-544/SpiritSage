@@ -8,4 +8,7 @@ if (!supabaseUrl || !supabaseKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
+console.log('Supabase URL:', supabaseUrl);
+console.log('Supabase Key (first 5 chars):', supabaseKey ? supabaseKey.substring(0, 5) : 'N/A');
+
 export const supabase = createClient<Database>(supabaseUrl, supabaseKey);
