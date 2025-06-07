@@ -44,8 +44,7 @@ function App() {
                 </Routes>
               </Layout>
             </Router>
-          </RecommendationsProv
-ider>
+          </RecommendationsProvider>
         </SpiritsProvider>
       </AuthProvider>
     </UserPreferencesProvider>
