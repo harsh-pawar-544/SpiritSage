@@ -15,6 +15,7 @@ import ExploreScreen from './src/screens/ExploreScreen';
 import AlcoholTypeScreen from './src/screens/AlcoholTypeScreen';
 import SubtypeScreen from './src/screens/SubtypeScreen';
 import BrandScreen from './src/screens/BrandScreen';
+import MyBarScreen from './src/screens/MyBarScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import AuthScreen from './src/screens/AuthScreen';
 
@@ -45,6 +46,8 @@ function TabNavigator() {
             iconName = focused ? 'home' : 'home-outline';
           } else if (route.name === 'Explore') {
             iconName = focused ? 'search' : 'search-outline';
+          } else if (route.name === 'MyBar') {
+            iconName = focused ? 'wine' : 'wine-outline';
           } else if (route.name === 'Settings') {
             iconName = focused ? 'settings' : 'settings-outline';
           } else {
@@ -60,6 +63,11 @@ function TabNavigator() {
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Explore" component={ExploreScreen} />
+      <Tab.Screen 
+        name="MyBar" 
+        component={MyBarScreen} 
+        options={{ tabBarLabel: 'My Bar' }}
+      />
       <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );
@@ -78,7 +86,7 @@ function AppNavigator() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {isAuthenticated ? (
           <>
-            <Stack.Screen name="Main\" component={TabNavigator} />
+            <Stack.Screen name="Main" component={TabNavigator} />
             <Stack.Screen 
               name="AlcoholType" 
               component={AlcoholTypeScreen}

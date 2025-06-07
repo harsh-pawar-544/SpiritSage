@@ -17,10 +17,10 @@ export default function AlcoholTypeScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const { id } = route.params as { id: string };
-  const { getAlcoholTypeById, getSubtypesByAlcoholTypeId } = useSpirits();
+  const { getAlcoholTypeById, getSubtypesByCategoryId, getBrandsBySubtypeId } = useSpirits();
   
   const [alcoholType, setAlcoholType] = useState<any>(null);
-  const [subtypes, setSubtypes] = useState<any[]>([]);
+  const [subtypesWithBrands, setSubtypesWithBrands] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,13 +30,26 @@ export default function AlcoholTypeScreen() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [typeData, subtypesData] = await Promise.all([
-        getAlcoholTypeById(id),
-        getSubtypesByAlcoholTypeId(id)
-      ]);
       
+      // Fetch the alcohol type
+      const typeData = await getAlcoholTypeById(id);
       setAlcoholType(typeData);
-      setSubtypes(subtypesData);
+      
+      // Fetch all subtypes for this alcohol type
+      const subtypes = getSubtypesByCategoryId(id);
+      
+      // For each subtype, fetch 2-3 example brands
+      const subtypesWithExamples = await Promise.all(
+        subtypes.map(async (subtype) => {
+          const brands = getBrandsBySubtypeId(subtype.id);
+          return {
+            ...subtype,
+            exampleBrands: brands.slice(0, 3) // Get first 3 brands as examples
+          };
+        })
+      );
+      
+      setSubtypesWithBrands(subtypesWithExamples);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -70,7 +83,7 @@ export default function AlcoholTypeScreen() {
         {/* Header Image */}
         <View style={styles.imageContainer}>
           <Image 
-            source={{ uri: alcoholType.image_url || 'https://images.pexels.com/photos/602750/pexels-photo-602750.jpeg' }} 
+            source={{ uri: alcoholType.image_url || alcoholType.image || 'https://images.pexels.com/photos/602750/pexels-photo-602750.jpeg' }} 
             style={styles.headerImage} 
           />
           <View style={styles.imageOverlay}>
@@ -107,28 +120,72 @@ export default function AlcoholTypeScreen() {
             </View>
           )}
 
-          {subtypes.length > 0 && (
+          {alcoholType.myths && alcoholType.myths.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Myths & Misconceptions</Text>
+              {alcoholType.myths.map((myth: string, index: number) => (
+                <View key={index} style={styles.factItem}>
+                  <Text style={styles.bullet}>•</Text>
+                  <Text style={styles.factText}>{myth}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Subtypes with Example Brands */}
+          {subtypesWithBrands.length > 0 && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Types of {alcoholType.name}</Text>
-              {subtypes.map((subtype) => (
-                <TouchableOpacity
-                  key={subtype.id}
-                  style={styles.subtypeCard}
-                  onPress={() => navigation.navigate('Subtype' as never, { id: subtype.id } as never)}
-                >
-                  <Image 
-                    source={{ uri: subtype.image_url || 'https://images.pexels.com/photos/602750/pexels-photo-602750.jpeg' }} 
-                    style={styles.subtypeImage} 
-                  />
-                  <View style={styles.subtypeContent}>
-                    <Text style={styles.subtypeName}>{subtype.name}</Text>
-                    <Text style={styles.subtypeDescription} numberOfLines={2}>
-                      {subtype.description}
-                    </Text>
-                    <Text style={styles.subtypeRegion}>{subtype.region}</Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={20} color="#6b7280" />
-                </TouchableOpacity>
+              {subtypesWithBrands.map((subtype) => (
+                <View key={subtype.id} style={styles.subtypeSection}>
+                  <TouchableOpacity
+                    style={styles.subtypeHeader}
+                    onPress={() => navigation.navigate('Subtype' as never, { id: subtype.id } as never)}
+                  >
+                    <Image 
+                      source={{ uri: subtype.image_url || subtype.image || 'https://images.pexels.com/photos/602750/pexels-photo-602750.jpeg' }} 
+                      style={styles.subtypeImage} 
+                    />
+                    <View style={styles.subtypeContent}>
+                      <Text style={styles.subtypeName}>{subtype.name}</Text>
+                      <Text style={styles.subtypeDescription} numberOfLines={2}>
+                        {subtype.description}
+                      </Text>
+                      <Text style={styles.subtypeRegion}>{subtype.region}</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={20} color="#6b7280" />
+                  </TouchableOpacity>
+
+                  {/* Example Brands Section */}
+                  {subtype.exampleBrands && subtype.exampleBrands.length > 0 && (
+                    <View style={styles.exampleBrandsSection}>
+                      <Text style={styles.exampleBrandsTitle}>Popular {subtype.name} Brands:</Text>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                        {subtype.exampleBrands.map((brand: any) => (
+                          <TouchableOpacity
+                            key={brand.id}
+                            style={styles.brandCard}
+                            onPress={() => navigation.navigate('Brand' as never, { id: brand.id } as never)}
+                          >
+                            <Image 
+                              source={{ uri: brand.image_url || brand.image || 'https://images.pexels.com/photos/602750/pexels-photo-602750.jpeg' }} 
+                              style={styles.brandImage} 
+                            />
+                            <View style={styles.brandInfo}>
+                              <Text style={styles.brandName} numberOfLines={1}>{brand.name}</Text>
+                              <Text style={styles.brandDescription} numberOfLines={2}>
+                                {brand.description}
+                              </Text>
+                              {brand.abv && (
+                                <Text style={styles.brandAbv}>{brand.abv}% ABV</Text>
+                              )}
+                            </View>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
+                </View>
               ))}
             </View>
           )}
@@ -212,13 +269,16 @@ const styles = StyleSheet.create({
     color: '#374151',
     lineHeight: 24,
   },
-  subtypeCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  subtypeSection: {
+    marginBottom: 24,
     backgroundColor: '#f9fafb',
     borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
+    padding: 16,
+  },
+  subtypeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   subtypeImage: {
     width: 60,
@@ -230,7 +290,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   subtypeName: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
     color: '#1f2937',
     marginBottom: 4,
@@ -242,6 +302,54 @@ const styles = StyleSheet.create({
   },
   subtypeRegion: {
     fontSize: 12,
+    color: '#9ca3af',
+  },
+  exampleBrandsSection: {
+    marginTop: 8,
+  },
+  exampleBrandsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 12,
+  },
+  brandCard: {
+    width: 140,
+    marginRight: 12,
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  brandImage: {
+    width: '100%',
+    height: 80,
+    borderRadius: 6,
+    marginBottom: 8,
+  },
+  brandInfo: {
+    flex: 1,
+  },
+  brandName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1f2937',
+    marginBottom: 4,
+  },
+  brandDescription: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginBottom: 4,
+  },
+  brandAbv: {
+    fontSize: 11,
     color: '#9ca3af',
   },
   loadingContainer: {
