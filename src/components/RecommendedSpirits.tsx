@@ -1,11 +1,8 @@
-// src/components/RecommendedSpirits.tsx
 import React from 'react';
 import { Info, X } from 'lucide-react';
 import { useRecommendations } from '../contexts/RecommendationsContext';
-// Removed useSpirits, as getRatingsForBrand is no longer directly used here.
-// Removed TransitionImage as it's now in RecommendedSpiritCard.
-import { getSpiritById } from '../data/spiritCategories'; // Still needed for mapping spirit IDs to full objects
-import RecommendedSpiritCard from './RecommendedSpiritCard'; // Import the new component
+import { getSpiritById } from '../data/spiritCategories';
+import RecommendedSpiritCard from './RecommendedSpiritCard';
 
 const RecommendedSpirits: React.FC = () => {
   const { recommendedSpirits, clearInteractionHistory, isLoading } = useRecommendations();
@@ -23,14 +20,17 @@ const RecommendedSpirits: React.FC = () => {
     );
   }
 
-  // Ensure getSpiritById correctly retrieves the full spirit object
-  // It's crucial that the 'spiritId' from recommendations matches an ID in spiritCategories
   const validSpirits = recommendedSpirits
     .map(spiritId => getSpiritById(spiritId))
     .filter((spirit): spirit is NonNullable<typeof spirit> => spirit !== undefined);
 
   if (validSpirits.length === 0) {
-    return null;
+    return (
+      <div className="text-center text-gray-500 dark:text-gray-400 p-8 border border-dashed rounded-lg">
+        <p className="mb-2">No recommendations yet.</p>
+        <p className="text-sm">Interact with some spirits (view, rate, favorite) to get started!</p>
+      </div>
+    );
   }
 
   return (
@@ -56,7 +56,6 @@ const RecommendedSpirits: React.FC = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {validSpirits.map(spirit => (
-          // Pass the spirit object and use its ID as the key
           <RecommendedSpiritCard key={spirit.id} spirit={spirit} />
         ))}
       </div>
