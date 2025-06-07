@@ -9,6 +9,13 @@ import {
   type Rating,
 } from '../data/types';
 
+interface FilterOptions {
+  alcoholTypes: Array<{ id: string; name: string }>;
+  subtypes: Array<{ id: string; name: string }>;
+  priceRanges: string[];
+  abvRanges: Array<{ min: number; max: number; label: string }>;
+}
+
 interface SpiritsContextType {
   alcoholTypes: AlcoholType[];
   loading: boolean;
@@ -22,6 +29,7 @@ interface SpiritsContextType {
   addRating: (brandId: string, rating: number, comment: string) => Promise<void>;
   getRatingsForBrand: (brandId: string) => Promise<Rating[]>;
   getTastingNotesForSpirit: (spiritId: string) => Promise<Array<{ term: string; percentage: number }>>;
+  getAvailableFilterOptions: () => FilterOptions;
 }
 
 const SpiritsContext = createContext<SpiritsContextType | undefined>(undefined);
@@ -179,6 +187,35 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     []
   );
 
+  const getAvailableFilterOptions = useCallback((): FilterOptions => {
+    const uniquePriceRanges = new Set<string>();
+    const allSubtypes: Array<{ id: string; name: string }> = [];
+
+    alcoholTypes.forEach(type => {
+      type.subtypes.forEach(subtype => {
+        allSubtypes.push({ id: subtype.id, name: subtype.name });
+        
+        subtype.brands.forEach(brand => {
+          if (brand.price_range) {
+            uniquePriceRanges.add(brand.price_range);
+          }
+        });
+      });
+    });
+
+    return {
+      alcoholTypes: alcoholTypes.map(type => ({ id: type.id, name: type.name })),
+      subtypes: allSubtypes,
+      priceRanges: Array.from(uniquePriceRanges).sort(),
+      abvRanges: [
+        { min: 0, max: 20, label: '0-20%' },
+        { min: 20, max: 40, label: '20-40%' },
+        { min: 40, max: 60, label: '40-60%' },
+        { min: 60, max: 100, label: '60%+' }
+      ]
+    };
+  }, [alcoholTypes]);
+
   const contextValue = {
     alcoholTypes,
     loading,
@@ -192,6 +229,7 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     addRating: async () => {}, // Placeholder if removed
     getRatingsForBrand: async () => [], // Placeholder if removed
     getTastingNotesForSpirit,
+    getAvailableFilterOptions,
   };
 
   return (
