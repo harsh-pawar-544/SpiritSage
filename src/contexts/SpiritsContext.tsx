@@ -64,6 +64,77 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // loadMyBarSpirits needs to be defined here first as it's a dependency for other callbacks
+  // We'll define it without a dependency array first, and then include it in the final context value.
+  // This is a common pattern to avoid circular dependencies with useCallback.
+  const loadMyBarSpirits = useCallback(async (): Promise<void> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setMyBarSpirits([]); // Clear spirits if no user
+        return;
+      }
+
+      console.log('Loading My Bar spirits for user:', user.id);
+      const { data, error } = await supabase
+        .from('user_spirits')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error loading My Bar spirits:', error);
+        throw new Error(`Failed to load My Bar spirits: ${error.message}`);
+      }
+
+      // These functions are used here, so they need to be available and stable.
+      // We'll include them in loadMyBarSpirits's dependency array once defined
+      // to ensure it re-runs if those methods change.
+      const spiritsWithData = await Promise.all(
+        (data || []).map(async (spirit) => {
+          let spirit_data;
+          try {
+            switch (spirit.spirit_type) {
+              case 'alcohol_type':
+                spirit_data = await supabase
+                  .from('alcohol_types')
+                  .select('*')
+                  .eq('id', spirit.spirit_id)
+                  .single();
+                spirit_data = spirit_data.data ? { ...spirit_data.data, image: spirit_data.data.image_url } : undefined;
+                break;
+              case 'subtype':
+                spirit_data = await supabase
+                  .from('subtypes')
+                  .select('*')
+                  .eq('id', spirit.spirit_id)
+                  .single();
+                spirit_data = spirit_data.data ? { ...spirit_data.data, image: spirit_data.data.image_url } : undefined;
+                break;
+              case 'brand':
+                spirit_data = await supabase
+                  .from('brands')
+                  .select('*')
+                  .eq('id', spirit.spirit_id)
+                  .single();
+                spirit_data = spirit_data.data ? { ...spirit_data.data, image: spirit_data.data.image_url } : undefined;
+                break;
+            }
+          } catch (error) {
+            console.error(`Error fetching spirit data for ${spirit.spirit_id}:`, error);
+            spirit_data = null;
+          }
+          return { ...spirit, spirit_data };
+        })
+      );
+      setMyBarSpirits(spiritsWithData as MyBarSpirit[]);
+    } catch (err: any) {
+      console.error('Error loading My Bar spirits:', err);
+      // It's good practice to set myBarSpirits to an empty array on error
+      setMyBarSpirits([]);
+    }
+  }, []); // Initial dependency array for loadMyBarSpirits is empty as it doesn't immediately use other context functions itself.
+
+
   // Initial fetch of all nested data (for lists and in-memory lookups)
   useEffect(() => {
     const fetchAlcoholData = async () => {
@@ -126,7 +197,9 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
 
     fetchAlcoholData();
-  }, []);
+  }, []); // Empty dependency array means this runs once on mount.
+
+  // --- Memoized Functions ---
 
   const getCategoryById = useCallback(
     (id: string): AlcoholType | undefined => {
@@ -161,7 +234,7 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         throw err;
       }
     },
-    []
+    [] // No external dependencies that would change per render
   );
 
   const getSubtypesByCategoryId = useCallback(
@@ -191,7 +264,6 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
           throw new Error(`Failed to fetch subtype: ${error.message}`);
         }
 
-        // Try to get alcohol type name separately to avoid complex joins
         let alcoholTypeName = null;
         if (data?.alcohol_type_id) {
           try {
@@ -206,8 +278,8 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
           }
         }
 
-        return data ? { 
-          ...data, 
+        return data ? {
+          ...data,
           image: data.image_url,
           alcohol_types: alcoholTypeName ? { name: alcoholTypeName } : null
         } as Subtype : undefined;
@@ -216,7 +288,7 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         throw err;
       }
     },
-    []
+    [] // No external dependencies that would change per render
   );
 
   const getBrandsBySubtypeId = useCallback(
@@ -233,151 +305,148 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     [alcoholTypes]
   );
 
-  const getBrandById = useCallback(
-    async (brandId: string): Promise<Brand | undefined> => {
-      try {
-        console.log(`Fetching brand by ID: ${brandId}`);
-        const { data, error } = await supabase
-          .from('brands')
-          .select('*')
-          .eq('id', brandId)
-          .single();
+  const getBrandById = useCallback(async (brandId: string) => {
+    try {
+      console.log(`Fetching brand by ID: ${brandId}`);
+      const { data, error } = await supabase
+        .from('brands')
+        .select('*')
+        .eq('id', brandId)
+        .single();
 
-        if (error) {
-          if (error.code === 'PGRST116') {
-            console.log(`Brand with ID ${brandId} not found`);
-            return undefined;
-          }
-          console.error(`Error fetching brand by ID ${brandId}:`, error);
-          throw new Error(`Failed to fetch brand: ${error.message}`);
+      if (error) {
+        if (error.code === 'PGRST116') {
+          console.log(`Brand with ID ${brandId} not found`);
+          return undefined;
         }
-
-        // Try to get subtype and alcohol type names separately
-        let subtypeName = null;
-        let alcoholTypeName = null;
-        
-        if (data?.subtype_id) {
-          try {
-            const { data: subtypeData } = await supabase
-              .from('subtypes')
-              .select('name, alcohol_type_id')
-              .eq('id', data.subtype_id)
-              .single();
-            
-            subtypeName = subtypeData?.name;
-            
-            if (subtypeData?.alcohol_type_id) {
-              const { data: alcoholTypeData } = await supabase
-                .from('alcohol_types')
-                .select('name')
-                .eq('id', subtypeData.alcohol_type_id)
-                .single();
-              alcoholTypeName = alcoholTypeData?.name;
-            }
-          } catch (relationError) {
-            console.warn('Could not fetch related data for brand:', relationError);
-          }
-        }
-
-        return data ? { 
-          ...data, 
-          image: data.image_url,
-          subtypes: subtypeName ? { 
-            name: subtypeName,
-            alcohol_types: alcoholTypeName ? { name: alcoholTypeName } : null
-          } : null
-        } as Brand : undefined;
-      } catch (err: any) {
-        console.error(`Exception fetching brand by ID ${brandId}:`, err);
-        throw err;
+        console.error(`Error fetching brand by ID ${brandId}:`, error);
+        throw new Error(`Failed to fetch brand: ${error.message}`);
       }
-    },
-    []
+
+      let subtypeName = null;
+      let alcoholTypeName = null;
+
+      if (data?.subtype_id) {
+        try {
+          const { data: subtypeData } = await supabase
+            .from('subtypes')
+            .select('name, alcohol_type_id')
+            .eq('id', data.subtype_id)
+            .single();
+
+          subtypeName = subtypeData?.name;
+
+          if (subtypeData?.alcohol_type_id) {
+            const { data: alcoholTypeData } = await supabase
+              .from('alcohol_types')
+              .select('name')
+              .eq('id', subtypeData.alcohol_type_id)
+              .single();
+            alcoholTypeName = alcoholTypeData?.name;
+          }
+        } catch (relationError) {
+          console.warn('Could not fetch related data for brand:', relationError);
+        }
+      }
+
+      return data ? {
+        ...data,
+        image: data.image_url,
+        subtypes: subtypeName ? {
+          name: subtypeName,
+          alcohol_types: alcoholTypeName ? { name: alcoholTypeName } : null
+        } : null
+      } as Brand : undefined;
+    } catch (err: any) {
+      console.error(`Exception fetching brand by ID ${brandId}:`, err);
+      throw err;
+    }
+  },
+  [] // No external dependencies that would change per render
   );
 
   const getFilteredSpirits = useCallback(
     (filters: FilterCriteria): Array<AlcoholType | Subtype | Brand> => {
       const results: Array<AlcoholType | Subtype | Brand> = [];
-      
+
       alcoholTypes.forEach(alcoholType => {
-        // Check if alcohol type matches filters
         let alcoholTypeMatches = true;
-        
+
         if (filters.alcoholTypeIds && filters.alcoholTypeIds.length > 0) {
           alcoholTypeMatches = filters.alcoholTypeIds.includes(alcoholType.id);
         }
-        
+
         if (filters.searchTerm && alcoholTypeMatches) {
           alcoholTypeMatches = alcoholType.name.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-                              (alcoholType.description && alcoholType.description.toLowerCase().includes(filters.searchTerm.toLowerCase()));
+            (alcoholType.description && alcoholType.description.toLowerCase().includes(filters.searchTerm.toLowerCase()));
         }
-        
+
         if (alcoholTypeMatches) {
           results.push(alcoholType);
         }
-        
-        // Check subtypes
+
         alcoholType.subtypes.forEach(subtype => {
           let subtypeMatches = true;
-          
+
           if (filters.subtypeIds && filters.subtypeIds.length > 0) {
             subtypeMatches = filters.subtypeIds.includes(subtype.id);
           }
-          
+
           if (filters.alcoholTypeIds && filters.alcoholTypeIds.length > 0) {
             subtypeMatches = subtypeMatches && filters.alcoholTypeIds.includes(alcoholType.id);
           }
-          
+
           if (filters.searchTerm && subtypeMatches) {
             subtypeMatches = subtype.name.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-                            (subtype.description && subtype.description.toLowerCase().includes(filters.searchTerm.toLowerCase()));
+              (subtype.description && subtype.description.toLowerCase().includes(filters.searchTerm.toLowerCase()));
           }
-          
+
           if (subtypeMatches) {
             results.push(subtype);
           }
-          
-          // Check brands
+
           subtype.brands.forEach(brand => {
             let brandMatches = true;
-            
+
             if (filters.alcoholTypeIds && filters.alcoholTypeIds.length > 0) {
               brandMatches = filters.alcoholTypeIds.includes(alcoholType.id);
             }
-            
+
             if (filters.subtypeIds && filters.subtypeIds.length > 0) {
               brandMatches = brandMatches && filters.subtypeIds.includes(subtype.id);
             }
-            
+
             if (filters.priceRanges && filters.priceRanges.length > 0 && brand.price_range) {
               brandMatches = brandMatches && filters.priceRanges.includes(brand.price_range);
             }
-            
+
             if (filters.abvRange && brand.abv) {
               const abv = parseFloat(brand.abv.toString());
               brandMatches = brandMatches && abv >= filters.abvRange.min && abv <= filters.abvRange.max;
             }
-            
+
             if (filters.searchTerm && brandMatches) {
               brandMatches = brand.name.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-                            (brand.description && brand.description.toLowerCase().includes(filters.searchTerm.toLowerCase()));
+                (brand.description && brand.description.toLowerCase().includes(filters.searchTerm.toLowerCase()));
             }
-            
+
             if (brandMatches) {
               results.push(brand);
             }
           });
         });
       });
-      
+
       return results;
     },
-    [alcoholTypes]
+    [alcoholTypes] // Depends on 'alcoholTypes' state for filtering
   );
 
   const getTastingNotesForSpirit = useCallback(
     async (spiritId: string): Promise<Array<{ term: string; percentage: number }>> => {
       console.log(`Fetching tasting notes for spirit: ${spiritId}`);
+      // As this is currently a placeholder, no dynamic dependencies.
+      // If you implement actual fetching here, add 'supabase' to dependencies.
       return [];
     },
     []
@@ -390,7 +459,7 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     alcoholTypes.forEach(type => {
       type.subtypes.forEach(subtype => {
         allSubtypes.push({ id: subtype.id, name: subtype.name });
-        
+
         subtype.brands.forEach(brand => {
           if (brand.price_range) {
             uniquePriceRanges.add(brand.price_range);
@@ -410,7 +479,7 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         { min: 60, max: 100, label: '60%+' }
       ]
     };
-  }, [alcoholTypes]);
+  }, [alcoholTypes]); // Depends on 'alcoholTypes' state
 
   const addRating = useCallback(
     async (brandId: string, rating: number, comment: string): Promise<void> => {
@@ -436,7 +505,7 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         throw err;
       }
     },
-    []
+    [] // No external dependencies that would change per render
   );
 
   const getRatingsForBrand = useCallback(
@@ -453,65 +522,15 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
           console.error('Error fetching ratings:', error);
           throw new Error(`Failed to fetch ratings: ${error.message}`);
         }
-        
+
         return data || [];
       } catch (err: any) {
         console.error('Error fetching ratings:', err);
         return [];
       }
     },
-    []
+    [] // No external dependencies that would change per render
   );
-
-  const loadMyBarSpirits = useCallback(async (): Promise<void> => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      console.log('Loading My Bar spirits for user:', user.id);
-      const { data, error } = await supabase
-        .from('user_spirits')
-        .select('*')
-        .eq('user_id', user.id);
-
-      if (error) {
-        console.error('Error loading My Bar spirits:', error);
-        throw new Error(`Failed to load My Bar spirits: ${error.message}`);
-      }
-
-      const spiritsWithData = await Promise.all(
-        (data || []).map(async (spirit) => {
-          let spirit_data;
-          
-          try {
-            switch (spirit.spirit_type) {
-              case 'alcohol_type':
-                spirit_data = await getAlcoholTypeById(spirit.spirit_id);
-                break;
-              case 'subtype':
-                spirit_data = await getSubtypeById(spirit.spirit_id);
-                break;
-              case 'brand':
-                spirit_data = await getBrandById(spirit.spirit_id);
-                break;
-            }
-          } catch (error) {
-            console.error(`Error fetching spirit data for ${spirit.spirit_id}:`, error);
-            spirit_data = null;
-          }
-          
-          return {
-            ...spirit,
-            spirit_data
-          };
-        })
-      );
-
-      setMyBarSpirits(spiritsWithData);
-    } catch (err: any) {
-      console.error('Error loading My Bar spirits:', err);
-    }
-  }, [getAlcoholTypeById, getSubtypeById, getBrandById]);
 
   const addSpiritToMyBar = useCallback(
     async (spiritId: string, spiritType: 'alcohol_type' | 'brand' | 'subtype', notes?: string): Promise<void> => {
@@ -532,14 +551,14 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
           console.error('Error adding spirit to My Bar:', error);
           throw new Error(`Failed to add spirit to My Bar: ${error.message}`);
         }
-        
-        await loadMyBarSpirits();
+
+        await loadMyBarSpirits(); // Calling the memoized function
       } catch (err: any) {
         console.error('Error adding spirit to My Bar:', err);
         throw err;
       }
     },
-    [loadMyBarSpirits]
+    [loadMyBarSpirits] // Depends on loadMyBarSpirits
   );
 
   const removeSpiritFromMyBar = useCallback(
@@ -559,14 +578,14 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
           console.error('Error removing spirit from My Bar:', error);
           throw new Error(`Failed to remove spirit from My Bar: ${error.message}`);
         }
-        
-        await loadMyBarSpirits();
+
+        await loadMyBarSpirits(); // Calling the memoized function
       } catch (err: any) {
         console.error('Error removing spirit from My Bar:', err);
         throw err;
       }
     },
-    [loadMyBarSpirits]
+    [loadMyBarSpirits] // Depends on loadMyBarSpirits
   );
 
   const updateMyBarNotes = useCallback(
@@ -586,14 +605,14 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
           console.error('Error updating My Bar notes:', error);
           throw new Error(`Failed to update My Bar notes: ${error.message}`);
         }
-        
-        await loadMyBarSpirits();
+
+        await loadMyBarSpirits(); // Calling the memoized function
       } catch (err: any) {
         console.error('Error updating My Bar notes:', err);
         throw err;
       }
     },
-    [loadMyBarSpirits]
+    [loadMyBarSpirits] // Depends on loadMyBarSpirits
   );
 
   const isInMyBar = useCallback(
@@ -602,13 +621,13 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         spirit => spirit.spirit_id === spiritId && spirit.spirit_type === spiritType
       );
     },
-    [myBarSpirits]
+    [myBarSpirits] // Depends on myBarSpirits state
   );
 
   // Load My Bar spirits on mount and when user changes
   useEffect(() => {
     loadMyBarSpirits();
-  }, [loadMyBarSpirits]);
+  }, [loadMyBarSpirits]); // loadMyBarSpirits is now memoized
 
   const contextValue = {
     alcoholTypes,
