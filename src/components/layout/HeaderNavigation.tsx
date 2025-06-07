@@ -24,9 +24,9 @@ const HeaderNavigation: React.FC = () => {
 
   const navLinks = [
     { name: 'Explore', path: '/explore' },
+    { name: 'About', path: '/about' },
     { name: 'Contact', path: '/contact' },
     { name: 'Settings', path: '/settings' },
-    { name: 'About', path: '/about' },
   ];
 
   return (
