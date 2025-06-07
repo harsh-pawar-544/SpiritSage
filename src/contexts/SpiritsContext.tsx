@@ -1,7 +1,7 @@
 // src/contexts/SpiritsContext.tsx
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { supabase } from '../lib/supabaseClient'; // Make sure this path is correct!
+import { supabase } from '../lib/supabase';
 import {
   type AlcoholType,
   type Subtype,
@@ -16,26 +16,51 @@ interface FilterOptions {
   abvRanges: Array<{ min: number; max: number; label: string }>;
 }
 
+interface FilterCriteria {
+  alcoholTypeIds?: string[];
+  subtypeIds?: string[];
+  priceRanges?: string[];
+  abvRange?: { min: number; max: number };
+  searchTerm?: string;
+}
+
+interface MyBarSpirit {
+  id: string;
+  spirit_id: string;
+  spirit_type: 'alcohol_type' | 'brand' | 'subtype';
+  notes?: string;
+  added_at: string;
+  spirit_data?: AlcoholType | Subtype | Brand;
+}
+
 interface SpiritsContextType {
   alcoholTypes: AlcoholType[];
   loading: boolean;
   error: string | null;
+  myBarSpirits: MyBarSpirit[];
   getCategoryById: (id: string) => AlcoholType | undefined;
   getAlcoholTypeById: (id: string) => Promise<AlcoholType | undefined>;
   getSubtypesByCategoryId: (categoryId: string) => Subtype[];
-  getSubtypeById: (id: string) => Promise<Subtype | undefined>; // <--- ADDED TO INTERFACE
+  getSubtypeById: (id: string) => Promise<Subtype | undefined>;
   getBrandsBySubtypeId: (subtypeId: string) => Brand[];
   getBrandById: (brandId: string) => Promise<Brand | undefined>;
+  getFilteredSpirits: (filters: FilterCriteria) => Array<AlcoholType | Subtype | Brand>;
   addRating: (brandId: string, rating: number, comment: string) => Promise<void>;
   getRatingsForBrand: (brandId: string) => Promise<Rating[]>;
   getTastingNotesForSpirit: (spiritId: string) => Promise<Array<{ term: string; percentage: number }>>;
   getAvailableFilterOptions: () => FilterOptions;
+  addSpiritToMyBar: (spiritId: string, spiritType: 'alcohol_type' | 'brand' | 'subtype', notes?: string) => Promise<void>;
+  removeSpiritFromMyBar: (spiritId: string, spiritType: 'alcohol_type' | 'brand' | 'subtype') => Promise<void>;
+  updateMyBarNotes: (spiritId: string, spiritType: 'alcohol_type' | 'brand' | 'subtype', notes: string) => Promise<void>;
+  isInMyBar: (spiritId: string, spiritType: 'alcohol_type' | 'brand' | 'subtype') => boolean;
+  loadMyBarSpirits: () => Promise<void>;
 }
 
 const SpiritsContext = createContext<SpiritsContextType | undefined>(undefined);
 
 export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [alcoholTypes, setAlcoholTypes] = useState<AlcoholType[]>([]);
+  const [myBarSpirits, setMyBarSpirits] = useState<MyBarSpirit[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -121,7 +146,7 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     [alcoholTypes]
   );
 
-  const getSubtypeById = useCallback( // This function is correctly defined here
+  const getSubtypeById = useCallback(
     async (id: string): Promise<Subtype | undefined> => {
       try {
         const { data, error } = await supabase
@@ -179,6 +204,86 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     []
   );
 
+  const getFilteredSpirits = useCallback(
+    (filters: FilterCriteria): Array<AlcoholType | Subtype | Brand> => {
+      const results: Array<AlcoholType | Subtype | Brand> = [];
+      
+      alcoholTypes.forEach(alcoholType => {
+        // Check if alcohol type matches filters
+        let alcoholTypeMatches = true;
+        
+        if (filters.alcoholTypeIds && filters.alcoholTypeIds.length > 0) {
+          alcoholTypeMatches = filters.alcoholTypeIds.includes(alcoholType.id);
+        }
+        
+        if (filters.searchTerm && alcoholTypeMatches) {
+          alcoholTypeMatches = alcoholType.name.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+                              (alcoholType.description && alcoholType.description.toLowerCase().includes(filters.searchTerm.toLowerCase()));
+        }
+        
+        if (alcoholTypeMatches) {
+          results.push(alcoholType);
+        }
+        
+        // Check subtypes
+        alcoholType.subtypes.forEach(subtype => {
+          let subtypeMatches = true;
+          
+          if (filters.subtypeIds && filters.subtypeIds.length > 0) {
+            subtypeMatches = filters.subtypeIds.includes(subtype.id);
+          }
+          
+          if (filters.alcoholTypeIds && filters.alcoholTypeIds.length > 0) {
+            subtypeMatches = subtypeMatches && filters.alcoholTypeIds.includes(alcoholType.id);
+          }
+          
+          if (filters.searchTerm && subtypeMatches) {
+            subtypeMatches = subtype.name.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+                            (subtype.description && subtype.description.toLowerCase().includes(filters.searchTerm.toLowerCase()));
+          }
+          
+          if (subtypeMatches) {
+            results.push(subtype);
+          }
+          
+          // Check brands
+          subtype.brands.forEach(brand => {
+            let brandMatches = true;
+            
+            if (filters.alcoholTypeIds && filters.alcoholTypeIds.length > 0) {
+              brandMatches = filters.alcoholTypeIds.includes(alcoholType.id);
+            }
+            
+            if (filters.subtypeIds && filters.subtypeIds.length > 0) {
+              brandMatches = brandMatches && filters.subtypeIds.includes(subtype.id);
+            }
+            
+            if (filters.priceRanges && filters.priceRanges.length > 0 && brand.price_range) {
+              brandMatches = brandMatches && filters.priceRanges.includes(brand.price_range);
+            }
+            
+            if (filters.abvRange && brand.abv) {
+              const abv = parseFloat(brand.abv.toString());
+              brandMatches = brandMatches && abv >= filters.abvRange.min && abv <= filters.abvRange.max;
+            }
+            
+            if (filters.searchTerm && brandMatches) {
+              brandMatches = brand.name.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+                            (brand.description && brand.description.toLowerCase().includes(filters.searchTerm.toLowerCase()));
+            }
+            
+            if (brandMatches) {
+              results.push(brand);
+            }
+          });
+        });
+      });
+      
+      return results;
+    },
+    [alcoholTypes]
+  );
+
   const getTastingNotesForSpirit = useCallback(
     async (spiritId: string): Promise<Array<{ term: string; percentage: number }>> => {
       console.log(`Fetching tasting notes for spirit: ${spiritId}`);
@@ -216,20 +321,196 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
   }, [alcoholTypes]);
 
+  const addRating = useCallback(
+    async (brandId: string, rating: number, comment: string): Promise<void> => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+
+        const { error } = await supabase
+          .from('ratings')
+          .insert({
+            spirit_id: brandId,
+            user_id: user.id,
+            rating,
+            comment
+          });
+
+        if (error) throw error;
+      } catch (err: any) {
+        console.error('Error adding rating:', err.message);
+        throw err;
+      }
+    },
+    []
+  );
+
+  const getRatingsForBrand = useCallback(
+    async (brandId: string): Promise<Rating[]> => {
+      try {
+        const { data, error } = await supabase
+          .from('ratings')
+          .select('*')
+          .eq('spirit_id', brandId)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        return data || [];
+      } catch (err: any) {
+        console.error('Error fetching ratings:', err.message);
+        return [];
+      }
+    },
+    []
+  );
+
+  const loadMyBarSpirits = useCallback(async (): Promise<void> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('user_spirits')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      const spiritsWithData = await Promise.all(
+        (data || []).map(async (spirit) => {
+          let spirit_data;
+          
+          switch (spirit.spirit_type) {
+            case 'alcohol_type':
+              spirit_data = await getAlcoholTypeById(spirit.spirit_id);
+              break;
+            case 'subtype':
+              spirit_data = await getSubtypeById(spirit.spirit_id);
+              break;
+            case 'brand':
+              spirit_data = await getBrandById(spirit.spirit_id);
+              break;
+          }
+          
+          return {
+            ...spirit,
+            spirit_data
+          };
+        })
+      );
+
+      setMyBarSpirits(spiritsWithData);
+    } catch (err: any) {
+      console.error('Error loading My Bar spirits:', err.message);
+    }
+  }, [getAlcoholTypeById, getSubtypeById, getBrandById]);
+
+  const addSpiritToMyBar = useCallback(
+    async (spiritId: string, spiritType: 'alcohol_type' | 'brand' | 'subtype', notes?: string): Promise<void> => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+
+        const { error } = await supabase
+          .from('user_spirits')
+          .insert({
+            user_id: user.id,
+            spirit_id: spiritId,
+            spirit_type: spiritType,
+            notes
+          });
+
+        if (error) throw error;
+        await loadMyBarSpirits();
+      } catch (err: any) {
+        console.error('Error adding spirit to My Bar:', err.message);
+        throw err;
+      }
+    },
+    [loadMyBarSpirits]
+  );
+
+  const removeSpiritFromMyBar = useCallback(
+    async (spiritId: string, spiritType: 'alcohol_type' | 'brand' | 'subtype'): Promise<void> => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+
+        const { error } = await supabase
+          .from('user_spirits')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('spirit_id', spiritId)
+          .eq('spirit_type', spiritType);
+
+        if (error) throw error;
+        await loadMyBarSpirits();
+      } catch (err: any) {
+        console.error('Error removing spirit from My Bar:', err.message);
+        throw err;
+      }
+    },
+    [loadMyBarSpirits]
+  );
+
+  const updateMyBarNotes = useCallback(
+    async (spiritId: string, spiritType: 'alcohol_type' | 'brand' | 'subtype', notes: string): Promise<void> => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+
+        const { error } = await supabase
+          .from('user_spirits')
+          .update({ notes })
+          .eq('user_id', user.id)
+          .eq('spirit_id', spiritId)
+          .eq('spirit_type', spiritType);
+
+        if (error) throw error;
+        await loadMyBarSpirits();
+      } catch (err: any) {
+        console.error('Error updating My Bar notes:', err.message);
+        throw err;
+      }
+    },
+    [loadMyBarSpirits]
+  );
+
+  const isInMyBar = useCallback(
+    (spiritId: string, spiritType: 'alcohol_type' | 'brand' | 'subtype'): boolean => {
+      return myBarSpirits.some(
+        spirit => spirit.spirit_id === spiritId && spirit.spirit_type === spiritType
+      );
+    },
+    [myBarSpirits]
+  );
+
+  // Load My Bar spirits on mount and when user changes
+  useEffect(() => {
+    loadMyBarSpirits();
+  }, [loadMyBarSpirits]);
+
   const contextValue = {
     alcoholTypes,
     loading,
     error,
+    myBarSpirits,
     getCategoryById,
     getAlcoholTypeById,
     getSubtypesByCategoryId,
-    getSubtypeById, // <--- ADDED TO CONTEXT VALUE
+    getSubtypeById,
     getBrandsBySubtypeId,
     getBrandById,
-    addRating: async () => {}, // Placeholder if removed
-    getRatingsForBrand: async () => [], // Placeholder if removed
+    getFilteredSpirits,
+    addRating,
+    getRatingsForBrand,
     getTastingNotesForSpirit,
     getAvailableFilterOptions,
+    addSpiritToMyBar,
+    removeSpiritFromMyBar,
+    updateMyBarNotes,
+    isInMyBar,
+    loadMyBarSpirits,
   };
 
   return (
