@@ -27,8 +27,9 @@ const MyBarPage: React.FC = () => {
     }
   }, [user, loadMyBarSpirits]);
 
-  const filteredSpirits = myBarSpirits.filter(spirit =>
-    spirit.spirit_data?.name.toLowerCase().includes(searchQuery.toLowerCase())
+  // Add safety check for myBarSpirits and spirit_data
+  const filteredSpirits = (myBarSpirits || []).filter(spirit =>
+    spirit?.spirit_data?.name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleRemoveSpirit = async (spiritId: string, spiritName: string) => {
@@ -93,15 +94,18 @@ const MyBarPage: React.FC = () => {
     );
   }
 
+  // Add safety check for myBarSpirits length
+  const spiritsCount = myBarSpirits?.length || 0;
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">
       <div className="mb-8">
         <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">My Bar</h1>
         <p className="text-xl text-gray-600 dark:text-gray-400 mb-6">
-          {myBarSpirits.length} spirit{myBarSpirits.length !== 1 ? 's' : ''} in your collection
+          {spiritsCount} spirit{spiritsCount !== 1 ? 's' : ''} in your collection
         </p>
 
-        {myBarSpirits.length > 0 && (
+        {spiritsCount > 0 && (
           <div className="relative max-w-md">
             <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
               <Search className="h-5 w-5 text-gray-400" />
@@ -121,15 +125,15 @@ const MyBarPage: React.FC = () => {
         <div className="text-center py-16">
           <Wine className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            {myBarSpirits.length === 0 ? 'Your Bar is Empty' : 'No Matching Spirits'}
+            {spiritsCount === 0 ? 'Your Bar is Empty' : 'No Matching Spirits'}
           </h2>
           <p className="text-gray-600 dark:text-gray-400 mb-8">
-            {myBarSpirits.length === 0 
+            {spiritsCount === 0 
               ? 'Start building your collection by exploring spirits and adding them to your bar.'
               : 'Try adjusting your search to find spirits in your collection.'
             }
           </p>
-          {myBarSpirits.length === 0 && (
+          {spiritsCount === 0 && (
             <Link
               to="/explore"
               className="inline-flex items-center px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
