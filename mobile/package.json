@@ -8,6 +8,9 @@
     "start-lan": "expo start --lan",
     "start-localhost": "expo start --localhost",
     "start-web": "expo start --web",
+    "start-workaround": "node expo-network-workaround.js",
+    "start-offline": "EXPO_OFFLINE=true EXPO_NO_TELEMETRY=true expo start --localhost --clear",
+    "start-safe": "expo start --web --localhost --clear",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
@@ -19,7 +22,8 @@
     "analyze": "npx expo install --fix && expo doctor",
     "clear-cache": "expo start --clear",
     "reset": "rm -rf node_modules package-lock.json && npm install",
-    "tunnel-free": "expo start --localhost --clear"
+    "tunnel-free": "expo start --localhost --clear",
+    "fix-network": "node expo-network-workaround.js"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.2",
