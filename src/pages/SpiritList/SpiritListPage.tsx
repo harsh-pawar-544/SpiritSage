@@ -9,15 +9,6 @@ import toast from 'react-hot-toast';
 
 type SortOption = 'nameAsc' | 'nameDesc' | 'popularityAsc' | 'popularityDesc';
 
-interface FilterOptions {
-  regions: string[];
-  flavorProfiles: string[];
-  priceRanges: string[];
-  abvRanges: string[];
-  ageStatements: string[];
-  distilleries: string[];
-}
-
 const SpiritListPage: React.FC = () => {
   const { 
     alcoholTypes, 
@@ -35,29 +26,32 @@ const SpiritListPage: React.FC = () => {
   const [showFilterModal, setShowFilterModal] = useState(false);
   
   // Filter states
-  const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
-  const [selectedFlavorProfiles, setSelectedFlavorProfiles] = useState<string[]>([]);
+  const [selectedAlcoholTypeIds, setSelectedAlcoholTypeIds] = useState<string[]>([]);
+  const [selectedSubtypeIds, setSelectedSubtypeIds] = useState<string[]>([]);
   const [selectedPriceRanges, setSelectedPriceRanges] = useState<string[]>([]);
-  const [selectedAbvRanges, setSelectedAbvRanges] = useState<string[]>([]);
-  const [selectedAgeStatements, setSelectedAgeStatements] = useState<string[]>([]);
-  const [selectedDistilleries, setSelectedDistilleries] = useState<string[]>([]);
+  const [selectedAbvRange, setSelectedAbvRange] = useState<{ min: number; max: number } | undefined>();
 
   const filterOptions = getAvailableFilterOptions();
 
   const filteredAndSortedSpirits = useMemo(() => {
     const filters = {
-      regions: selectedRegions,
-      flavorProfiles: selectedFlavorProfiles,
+      alcoholTypeIds: selectedAlcoholTypeIds,
+      subtypeIds: selectedSubtypeIds,
       priceRanges: selectedPriceRanges,
-      abvRanges: selectedAbvRanges,
-      ageStatements: selectedAgeStatements,
-      distilleries: selectedDistilleries,
+      abvRange: selectedAbvRange,
+      searchTerm: searchQuery,
     };
 
-    const filtered = getFilteredSpirits(filters, searchQuery);
-    let result = [...filtered.alcoholTypes];
+    // getFilteredSpirits returns an array directly, not an object with alcoholTypes
+    const filtered = getFilteredSpirits(filters);
+    
+    // Filter to only show alcohol types for the main listing page
+    const alcoholTypesOnly = filtered.filter(item => 
+      alcoholTypes.some(type => type.id === item.id)
+    );
 
-    result.sort((a, b) => {
+    // Sort the results
+    alcoholTypesOnly.sort((a, b) => {
       switch (sortOption) {
         case 'nameAsc':
           return a.name.localeCompare(b.name);
@@ -72,43 +66,32 @@ const SpiritListPage: React.FC = () => {
       }
     });
 
-    return result;
-  }, [alcoholTypes, searchQuery, sortOption, selectedRegions, selectedFlavorProfiles, selectedPriceRanges, selectedAbvRanges, selectedAgeStatements, selectedDistilleries, getFilteredSpirits]);
+    return alcoholTypesOnly;
+  }, [alcoholTypes, searchQuery, sortOption, selectedAlcoholTypeIds, selectedSubtypeIds, selectedPriceRanges, selectedAbvRange, getFilteredSpirits]);
 
-  const toggleFilter = (filterType: keyof FilterOptions, value: string) => {
-    const setters = {
-      regions: setSelectedRegions,
-      flavorProfiles: setSelectedFlavorProfiles,
-      priceRanges: setSelectedPriceRanges,
-      abvRanges: setSelectedAbvRanges,
-      ageStatements: setSelectedAgeStatements,
-      distilleries: setSelectedDistilleries,
-    };
+  const toggleAlcoholTypeFilter = (typeId: string) => {
+    setSelectedAlcoholTypeIds(prev =>
+      prev.includes(typeId) ? prev.filter(id => id !== typeId) : [...prev, typeId]
+    );
+  };
 
-    const currentLists = {
-      regions: selectedRegions,
-      flavorProfiles: selectedFlavorProfiles,
-      priceRanges: selectedPriceRanges,
-      abvRanges: selectedAbvRanges,
-      ageStatements: selectedAgeStatements,
-      distilleries: selectedDistilleries,
-    };
+  const toggleSubtypeFilter = (subtypeId: string) => {
+    setSelectedSubtypeIds(prev =>
+      prev.includes(subtypeId) ? prev.filter(id => id !== subtypeId) : [...prev, subtypeId]
+    );
+  };
 
-    const setter = setters[filterType];
-    const currentList = currentLists[filterType];
-
-    setter((prev: string[]) =>
-      prev.includes(value) ? prev.filter(item => item !== value) : [...prev, value]
+  const togglePriceRangeFilter = (priceRange: string) => {
+    setSelectedPriceRanges(prev =>
+      prev.includes(priceRange) ? prev.filter(range => range !== priceRange) : [...prev, priceRange]
     );
   };
 
   const clearAllFilters = () => {
-    setSelectedRegions([]);
-    setSelectedFlavorProfiles([]);
+    setSelectedAlcoholTypeIds([]);
+    setSelectedSubtypeIds([]);
     setSelectedPriceRanges([]);
-    setSelectedAbvRanges([]);
-    setSelectedAgeStatements([]);
-    setSelectedDistilleries([]);
+    setSelectedAbvRange(undefined);
   };
 
   const handleAddToMyBar = async (alcoholType: any) => {
@@ -125,12 +108,30 @@ const SpiritListPage: React.FC = () => {
     }
   };
 
-  const renderFilterChips = (options: string[], selected: string[], filterType: keyof FilterOptions) => (
+  const renderFilterChips = (options: Array<{id: string; name: string}>, selected: string[], onToggle: (id: string) => void) => (
+    <div className="flex flex-wrap gap-2 mb-4">
+      {options.map(option => (
+        <button
+          key={option.id}
+          onClick={() => onToggle(option.id)}
+          className={`px-3 py-1 rounded-full text-sm transition-colors ${
+            selected.includes(option.id)
+              ? 'bg-indigo-600 text-white'
+              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+          }`}
+        >
+          {option.name}
+        </button>
+      ))}
+    </div>
+  );
+
+  const renderPriceRangeChips = (options: string[], selected: string[], onToggle: (range: string) => void) => (
     <div className="flex flex-wrap gap-2 mb-4">
       {options.map(option => (
         <button
           key={option}
-          onClick={() => toggleFilter(filterType, option)}
+          onClick={() => onToggle(option)}
           className={`px-3 py-1 rounded-full text-sm transition-colors ${
             selected.includes(option)
               ? 'bg-indigo-600 text-white'
@@ -138,6 +139,24 @@ const SpiritListPage: React.FC = () => {
           }`}
         >
           {option}
+        </button>
+      ))}
+    </div>
+  );
+
+  const renderAbvRangeChips = (options: Array<{min: number; max: number; label: string}>, selected: {min: number; max: number} | undefined, onToggle: (range: {min: number; max: number}) => void) => (
+    <div className="flex flex-wrap gap-2 mb-4">
+      {options.map(option => (
+        <button
+          key={option.label}
+          onClick={() => onToggle({min: option.min, max: option.max})}
+          className={`px-3 py-1 rounded-full text-sm transition-colors ${
+            selected && selected.min === option.min && selected.max === option.max
+              ? 'bg-indigo-600 text-white'
+              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+          }`}
+        >
+          {option.label}
         </button>
       ))}
     </div>
@@ -227,13 +246,13 @@ const SpiritListPage: React.FC = () => {
                 <button
                   onClick={() => handleAddToMyBar(alcoholType)}
                   className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                    isInMyBar(alcoholType.id)
+                    isInMyBar(alcoholType.id, 'alcohol_type')
                       ? 'bg-green-600 text-white'
                       : 'bg-indigo-600 text-white hover:bg-indigo-700'
                   }`}
-                  disabled={isInMyBar(alcoholType.id)}
+                  disabled={isInMyBar(alcoholType.id, 'alcohol_type')}
                 >
-                  {isInMyBar(alcoholType.id) ? (
+                  {isInMyBar(alcoholType.id, 'alcohol_type') ? (
                     <>
                       <BookmarkCheck className="h-4 w-4" />
                       In My Bar
@@ -270,33 +289,23 @@ const SpiritListPage: React.FC = () => {
 
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Region</h3>
-                {renderFilterChips(filterOptions.regions, selectedRegions, 'regions')}
+                <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Spirit Types</h3>
+                {renderFilterChips(filterOptions.alcoholTypes, selectedAlcoholTypeIds, toggleAlcoholTypeFilter)}
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Flavor Profile</h3>
-                {renderFilterChips(filterOptions.flavorProfiles, selectedFlavorProfiles, 'flavorProfiles')}
+                <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Subtypes</h3>
+                {renderFilterChips(filterOptions.subtypes, selectedSubtypeIds, toggleSubtypeFilter)}
               </div>
 
               <div>
                 <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Price Range</h3>
-                {renderFilterChips(filterOptions.priceRanges, selectedPriceRanges, 'priceRanges')}
+                {renderPriceRangeChips(filterOptions.priceRanges, selectedPriceRanges, togglePriceRangeFilter)}
               </div>
 
               <div>
                 <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">ABV Range</h3>
-                {renderFilterChips(filterOptions.abvRanges, selectedAbvRanges, 'abvRanges')}
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Age Statements</h3>
-                {renderFilterChips(filterOptions.ageStatements, selectedAgeStatements, 'ageStatements')}
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Distilleries</h3>
-                {renderFilterChips(filterOptions.distilleries.slice(0, 20), selectedDistilleries, 'distilleries')}
+                {renderAbvRangeChips(filterOptions.abvRanges, selectedAbvRange, setSelectedAbvRange)}
               </div>
             </div>
 
