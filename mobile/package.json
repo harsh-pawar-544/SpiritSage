@@ -4,6 +4,9 @@
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
     "start": "expo start",
+    "start-tunnel": "expo start --tunnel",
+    "start-lan": "expo start --lan",
+    "start-localhost": "expo start --localhost",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
@@ -12,7 +15,9 @@
     "build:all": "eas build --platform all",
     "submit:android": "eas submit --platform android",
     "submit:ios": "eas submit --platform ios",
-    "analyze": "npx expo install --fix && expo doctor"
+    "analyze": "npx expo install --fix && expo doctor",
+    "clear-cache": "expo start --clear",
+    "reset": "rm -rf node_modules package-lock.json && npm install"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.2",
