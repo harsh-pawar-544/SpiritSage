@@ -1,40 +1,47 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom'; // Added useNavigate
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { useSpirits } from '../../contexts/SpiritsContext'; // Assuming Rating is imported from types now, not SpiritRating
+import { useSpirits } from '../../contexts/SpiritsContext';
+import { useRecommendations } from '../../contexts/RecommendationsContext'; // <-- Import useRecommendations
 import RatingForm from '../../components/SpiritRating/RatingForm';
 import RatingsList from '../../components/SpiritRating/RatingsList';
 import ConfirmationModal from '../../components/ConfirmationModal';
-import { Brand, Rating } from '../../data/types'; // Import Rating type directly from types
+import { Brand, Rating } from '../../data/types';
+import { supabase } from '../../lib/supabaseClient'; // <-- Assuming this path for Supabase client
 
 const SpiritDetailPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>(); // The ID of the spirit (brand, subtype, or alcohol_type)
-  const navigate = useNavigate(); // For navigating back on error or not found
+  // Extract 'id' from the URL. Currently, this page assumes the 'id' belongs to a Brand.
+  // If your routing allows for '/spirits/:type/:id', you would extract 'type' here too:
+  // const { type, id } = useParams<{ type: 'alcohol_type' | 'subtype' | 'brand', id: string }>();
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
 
   const {
-    loading: spiritsContextLoading, // Loading state from the context's initial data fetch
-    error: spiritsContextError,   // Error state from the context's initial data fetch
-    getBrandById, // Function to fetch a specific brand
-    addRating, // Re-exporting addRating for use in RatingForm
-    getRatingsForBrand, // Correct function for getting ratings for a brand
-    // Assuming you will implement deleteRating and updateRating in SpiritsContext
-    // If not, these will need to be added to SpiritsContext and imported here:
-    // deleteRating, // You might need to implement this in context
-    // updateRating, // You might need to implement this in context
+    loading: spiritsContextLoading,
+    error: spiritsContextError,
+    getBrandById,
+    addRating,
+    getRatingsForBrand,
+    // Add deleteRating and updateRating here once implemented in SpiritsContext:
+    // deleteRating,
+    // updateRating,
   } = useSpirits();
+
+  // Get the trackInteraction function from your RecommendationsContext
+  const { trackInteraction } = useRecommendations(); // <-- Destructure trackInteraction
 
   const [spirit, setSpirit] = useState<Brand | null>(null);
   const [spiritLoading, setSpiritLoading] = useState<boolean>(true);
   const [spiritError, setSpiritError] = useState<string | null>(null);
-  const [brandRatings, setBrandRatings] = useState<Rating[]>([]); // State to hold ratings for the brand
+  const [brandRatings, setBrandRatings] = useState<Rating[]>([]);
 
   const [showRatingForm, setShowRatingForm] = useState(false);
-  const [editingRating, setEditingRating] = useState<Rating | null>(null); // Use Rating type
+  const [editingRating, setEditingRating] = useState<Rating | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [ratingToDeleteId, setRatingToDeleteId] = useState<string | null>(null);
 
 
-  // *** Fetch Spirit Data (Brand) ***
+  // --- Fetch Spirit Data (Brand) ---
   useEffect(() => {
     const fetchSpiritData = async () => {
       if (!id) {
@@ -48,13 +55,18 @@ const SpiritDetailPage: React.FC = () => {
       setSpirit(null); // Clear previous spirit data
 
       try {
-        // ASSUMPTION: We are fetching a Brand here.
-        // If your recommended spirits can be AlcoholTypes or Subtypes,
-        // you will need more complex logic or a different URL structure (e.g., /spirits/:type/:id)
+        // ASSUMPTION: This page is currently set up to fetch Brand details.
+        // If you want this page to handle AlcoholType or Subtype details as well,
+        // you'll need to pass the spiritType in the URL (e.g., /spirits/:type/:id)
+        // and add logic here to call getAlcoholTypeById, getSubtypeById, or getBrandById based on that type.
         const fetchedBrand = await getBrandById(id);
 
         if (fetchedBrand) {
           setSpirit(fetchedBrand);
+          // --- Track 'view' interaction here ---
+          // Assuming 'brand' as the spiritType since getBrandById is used.
+          // If you implement dynamic type fetching, use the actual spiritType.
+          trackInteraction(fetchedBrand.id, 'brand', 'view'); // <-- Added this line
         } else {
           setSpiritError('Spirit not found or invalid ID.');
         }
@@ -67,17 +79,20 @@ const SpiritDetailPage: React.FC = () => {
     };
 
     // Only fetch if context is not globally loading or has no error
+    // and trigger a re-fetch if 'id' or context loading/error states change.
+    // Also, include `trackInteraction` in dependencies to satisfy ESLint, though it's
+    // memoized in RecommendationsContext, so it shouldn't cause unnecessary re-renders.
     if (!spiritsContextLoading && !spiritsContextError) {
       fetchSpiritData();
     }
-  }, [id, getBrandById, spiritsContextLoading, spiritsContextError]); // Re-fetch if ID changes or context state changes
+  }, [id, getBrandById, spiritsContextLoading, spiritsContextError, trackInteraction]); // <-- Added trackInteraction to dependencies
 
-  // *** Fetch Ratings for the Spirit ***
+  // --- Fetch Ratings for the Spirit ---
   useEffect(() => {
     const fetchRatings = async () => {
       if (spirit && spirit.id) { // Ensure spirit is loaded and has an ID
         try {
-          const ratings = await getRatingsForBrand(spirit.id); // Use the correct function
+          const ratings = await getRatingsForBrand(spirit.id);
           setBrandRatings(ratings);
         } catch (err) {
           console.error('Error fetching ratings:', err);
@@ -86,17 +101,15 @@ const SpiritDetailPage: React.FC = () => {
       }
     };
     fetchRatings();
-  }, [spirit, getRatingsForBrand]); // Re-fetch ratings when spirit data changes
+  }, [spirit, getRatingsForBrand]); // Re-fetch ratings when spirit data changes or getRatingsForBrand changes
 
   // --- Handlers for Rating Form and Deletion ---
 
-  // Placeholder for user rating, assuming you'll fetch this from context or local state.
-  // The SpiritsContext type doesn't have getUserRatingForSpirit.
-  // You'd typically filter `brandRatings` for the current user's rating or fetch it separately.
-  const userRating = brandRatings.find(r => r.user_id === supabase.auth.user()?.id); // Assuming user is available and you can match by ID
+  // Find the current user's rating for this spirit, if it exists
+  // Make sure `supabase` is imported if you're using `supabase.auth.user()` here.
+  const userRating = brandRatings.find(r => r.user_id === supabase.auth.user()?.id);
 
-
-  const handleEditRating = (rating: Rating) => { // Use Rating type
+  const handleEditRating = (rating: Rating) => {
     setEditingRating(rating);
     setShowRatingForm(true);
   };
@@ -106,15 +119,16 @@ const SpiritDetailPage: React.FC = () => {
     setShowDeleteModal(true);
   };
 
-  const confirmDelete = async () => { // Make async if deleteRating is async
-    if (ratingToDeleteId) {
+  const confirmDelete = async () => {
+    if (ratingToDeleteId && spirit) { // Ensure spirit is available for re-fetching ratings
       try {
-        // You'll need to implement deleteRating in SpiritsContext
+        // You'll need to implement and import `deleteRating` from SpiritsContext
         // For now, it's a placeholder:
         // await deleteRating(ratingToDeleteId);
         console.log(`Simulating delete for rating ID: ${ratingToDeleteId}`);
-        // After successful deletion, re-fetch ratings to update the list
-        const updatedRatings = await getRatingsForBrand(spirit!.id);
+
+        // After successful deletion (or simulation), re-fetch ratings to update the list
+        const updatedRatings = await getRatingsForBrand(spirit.id);
         setBrandRatings(updatedRatings);
         setRatingToDeleteId(null);
         setShowDeleteModal(false);
@@ -188,7 +202,7 @@ const SpiritDetailPage: React.FC = () => {
       <div className="relative">
         <div className="h-[400px] w-full overflow-hidden rounded-xl">
           <img
-            src={spirit.image || 'https://via.placeholder.com/600x400.png?text=No+Image'} // Fallback image
+            src={spirit.image || 'https://via.placeholder.com/600x400.png?text=No+Image'}
             alt={spirit.name}
             className="w-full h-full object-cover"
           />
@@ -214,19 +228,15 @@ const SpiritDetailPage: React.FC = () => {
             {spirit.origin && <li><span className="font-medium">Origin:</span> {spirit.origin}</li>}
             {spirit.price_range && <li><span className="font-medium">Price Range:</span> {spirit.price_range}</li>}
             {spirit.producer && <li><span className="font-medium">Producer:</span> {spirit.producer}</li>}
-            {/* You can add more brand-specific details here */}
           </ul>
         </section>
-
-        {/* Removed static tasting notes, history, fun facts as they belong to Brand data */}
-        {/* If your Brand type has these fields, you can re-add them using spirit.tasting_notes etc. */}
 
         <section className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
               Ratings & Reviews
             </h2>
-            {!showRatingForm && !userRating && ( // Only show "Write a Review" if not already reviewing and no existing user rating
+            {!showRatingForm && !userRating && (
               <button
                 onClick={() => setShowRatingForm(true)}
                 className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
@@ -247,7 +257,6 @@ const SpiritDetailPage: React.FC = () => {
                 initialRating={editingRating?.rating}
                 initialComment={editingRating?.comment}
                 ratingId={editingRating?.id}
-                // addRating prop for the form if it's not already using context directly
                 onSubmit={addRating}
                 onCancel={() => {
                   setShowRatingForm(false);
@@ -258,7 +267,7 @@ const SpiritDetailPage: React.FC = () => {
           )}
 
           <RatingsList
-            ratings={brandRatings} // Use the fetched ratings
+            ratings={brandRatings}
             onEdit={handleEditRating}
             onDelete={handleDeleteRating}
           />
