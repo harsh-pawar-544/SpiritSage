@@ -1,4 +1,4 @@
-import { type SpiritSubtype, type SpiritCategory } from './types';
+import { type AlcoholType, type Brand } from './types'; // We'll map SpiritCategory to AlcoholType and SpiritSubtype to Brandimport { type SpiritSubtype, type SpiritCategory } from './types';
 
 export const spiritCategories: SpiritCategory[] = [
   {
