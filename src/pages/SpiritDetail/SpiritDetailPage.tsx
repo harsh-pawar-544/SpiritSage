@@ -60,6 +60,7 @@ const SpiritDetailPage: React.FC = () => {
           // --- Debug Logs: Verify trackInteraction is called ---
           console.log("SpiritDetailPage: Spirit fetched, attempting to track interaction.");
           console.log("SpiritDetailPage: Spirit ID for tracking:", fetchedBrand.id, "Spirit Type:", 'brand');
+          console.log("SpiritDetailPage: ABOUT TO CALL trackInteraction!"); // NEW LOG
           // --- Track 'view' interaction here ---
           trackInteraction(fetchedBrand.id, 'brand', 'view'); // <-- This is the important line
         } else {
@@ -148,6 +149,8 @@ const SpiritDetailPage: React.FC = () => {
     if (spirit && spirit.id) {
       const updatedRatings = await getRatingsForBrand(spirit.id);
       setBrandRatings(updatedRatings);
+      // After successfully submitting/updating a rating, also track this interaction
+      // trackInteraction(spirit.id, 'brand', 'rate', { rating: userRating?.rating }); // You might want to pass the actual new rating here
     }
   };
 
