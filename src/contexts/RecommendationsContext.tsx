@@ -314,6 +314,7 @@ export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = 
         clearInteractionHistory,
         isLoading
       }}
+    
     >
       {children}
     </RecommendationsContext.Provider>
