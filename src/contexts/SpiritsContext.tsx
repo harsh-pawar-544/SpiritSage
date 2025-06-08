@@ -64,7 +64,6 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // Helper function to find spirit data in the already loaded alcoholTypes state
   const findSpiritDataInState = useCallback((spiritId: string, spiritType: MyBarSpirit['spirit_type']): AlcoholType | Subtype | Brand | undefined => {
-    // console.log('findSpiritDataInState called with alcoholTypes:', alcoholTypes.length); // Enable for debugging
     switch (spiritType) {
       case 'alcohol_type':
         return alcoholTypes.find(at => at.id === spiritId);
@@ -76,8 +75,8 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         return undefined;
       case 'brand':
         for (const at of alcoholTypes) {
-          for (const s of (at.subtypes || [])) { // Ensure subtypes array exists
-            const brand = s.brands?.find(b => b.id === spiritId); // Ensure brands array exists
+          for (const s of (at.subtypes || [])) {
+            const brand = s.brands?.find(b => b.id === spiritId);
             if (brand) return brand;
           }
         }
@@ -189,7 +188,7 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
 
     fetchAlcoholData();
-  }, [loadMyBarSpirits]); // `loadMyBarSpirits` is a dependency here.
+  }, []); // <--- CRITICAL FIX: Empty dependency array to run only once on mount.
 
   // --- Memoized Functions ---
 
