@@ -1,5 +1,3 @@
-// src/contexts/SpiritsContext.tsx
-
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import {
@@ -66,6 +64,7 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // Helper function to find spirit data in the already loaded alcoholTypes state
   const findSpiritDataInState = useCallback((spiritId: string, spiritType: MyBarSpirit['spirit_type']): AlcoholType | Subtype | Brand | undefined => {
+    // console.log('findSpiritDataInState called with alcoholTypes:', alcoholTypes.length); // Enable for debugging
     switch (spiritType) {
       case 'alcohol_type':
         return alcoholTypes.find(at => at.id === spiritId);
@@ -89,8 +88,9 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [alcoholTypes]); // This callback depends on `alcoholTypes` state
 
   const loadMyBarSpirits = useCallback(async (): Promise<void> => {
+    console.log('loadMyBarSpirits called'); // Debugging: See when this runs
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } = {} } = await supabase.auth.getUser(); // Safely destructure user
       if (!user) {
         setMyBarSpirits([]);
         return;
@@ -107,13 +107,11 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         throw new Error(`Failed to load My Bar spirits: ${error.message}`);
       }
 
-      // --- OPTIMIZATION START ---
-      // Instead of making new Supabase calls, look up the data from the `alcoholTypes` state
+      // OPTIMIZATION: Instead of new Supabase calls, look up data from `alcoholTypes` state
       const spiritsWithData = (data || []).map((spirit) => {
         const spirit_data = findSpiritDataInState(spirit.spirit_id, spirit.spirit_type);
         return { ...spirit, spirit_data };
       });
-      // --- OPTIMIZATION END ---
 
       setMyBarSpirits(spiritsWithData as MyBarSpirit[]);
     } catch (err: any) {
@@ -123,7 +121,12 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [findSpiritDataInState]); // This callback now depends on `findSpiritDataInState`
 
   // Initial fetch of all nested data (for lists and in-memory lookups)
-  
+  useEffect(() => {
+    const fetchAlcoholData = async () => {
+      console.log('fetchAlcoholData useEffect called'); // Debugging: See when this runs
+      try {
+        setLoading(true);
+        setError(null);
 
         console.log('Fetching alcohol types...');
         const { data: typesData, error: typesError } = await supabase
@@ -170,11 +173,12 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }));
 
         setAlcoholTypes(processedAlcoholTypes);
-        console.log('Data loaded successfully');
+        console.log('Data loaded successfully and setAlcoholTypes called.'); // Debugging
 
         // IMPORTANT: Call loadMyBarSpirits *after* alcoholTypes has been set.
         // This ensures findSpiritDataInState has data to work with.
         await loadMyBarSpirits();
+        console.log('loadMyBarSpirits completed after initial data fetch.'); // Debugging
 
       } catch (err: any) {
         console.error('Error in fetchAlcoholData:', err);
@@ -187,7 +191,7 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     fetchAlcoholData();
   }, [loadMyBarSpirits]); // `loadMyBarSpirits` is a dependency here.
 
-  // --- Memoized Functions (no changes needed for these from my previous review) ---
+  // --- Memoized Functions ---
 
   const getCategoryById = useCallback(
     (id: string): AlcoholType | undefined => {
@@ -470,7 +474,7 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const addRating = useCallback(
     async (brandId: string, rating: number, comment: string): Promise<void> => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } = {} } = await supabase.auth.getUser();
         if (!user) throw new Error('User not authenticated');
 
         const { error } = await supabase
@@ -521,7 +525,7 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const addSpiritToMyBar = useCallback(
     async (spiritId: string, spiritType: 'alcohol_type' | 'brand' | 'subtype', notes?: string): Promise<void> => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } = {} } = await supabase.auth.getUser();
         if (!user) throw new Error('User not authenticated');
 
         const { error } = await supabase
@@ -550,7 +554,7 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const removeSpiritFromMyBar = useCallback(
     async (spiritId: string, spiritType: 'alcohol_type' | 'brand' | 'subtype'): Promise<void> => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } = {} } = await supabase.auth.getUser();
         if (!user) throw new Error('User not authenticated');
 
         const { error } = await supabase
@@ -577,7 +581,7 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const updateMyBarNotes = useCallback(
     async (spiritId: string, spiritType: 'alcohol_type' | 'brand' | 'subtype', notes: string): Promise<void> => {
       try {
-        const { data: { user } = {} } = await supabase.auth.getUser(); // Safely destructure user
+        const { data: { user } = {} } = await supabase.auth.getUser();
         if (!user) throw new Error('User not authenticated');
 
         const { error } = await supabase
@@ -609,13 +613,6 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     },
     [myBarSpirits]
   );
-
-  // This useEffect now just ensures `loadMyBarSpirits` runs when `loadMyBarSpirits` itself changes (due to its dependencies)
-  // Or when alcoholTypes becomes available after initial fetch.
-  // We explicitly call loadMyBarSpirits inside fetchAlcoholData's try block.
-  // The old dependency `[loadMyBarSpirits]` is fine for ensuring re-runs if the function reference itself changes,
-  // but the initial call needs to be timed after alcoholTypes is ready.
-  // The current setup ensures it's called after initial data fetch.
 
   const contextValue = {
     alcoholTypes,
