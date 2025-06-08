@@ -123,11 +123,7 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [findSpiritDataInState]); // This callback now depends on `findSpiritDataInState`
 
   // Initial fetch of all nested data (for lists and in-memory lookups)
-  useEffect(() => {
-    const fetchAlcoholData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  
 
         console.log('Fetching alcohol types...');
         const { data: typesData, error: typesError } = await supabase
