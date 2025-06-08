@@ -5,16 +5,14 @@ import { useSpirits } from '../contexts/SpiritsContext'; // <-- Import useSpirit
 
 const ExplorePage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  // Get brands, loading, error from SpiritsContext
   const { brands, loading, error } = useSpirits();
 
-  // Filter brands based on search query
   const filteredBrands = brands?.filter(brand =>
     brand.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     brand.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     brand.origin?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     brand.producer?.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || []; // Ensure filteredBrands is always an array, even if 'brands' is undefined/null
+  ) || [];
 
   if (loading) {
     return (
@@ -57,15 +55,16 @@ const ExplorePage: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {filteredBrands.map((brand) => ( // <-- Now mapping over 'brands' data
+        {filteredBrands.map((brand) => (
           <Link
             key={brand.id}
-            to={`/spirit/${brand.id}`} // <-- Linking to the brand's actual UUID
+            // --- THIS IS THE CRUCIAL CHANGE ---
+            to={`/spirit/${brand.id}`} // <--- Make sure it's "/spirit/"
+            // --- END CRUCIAL CHANGE ---
             className="block group"
           >
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 transition-all duration-200 hover:shadow-xl hover:scale-[1.02] border border-gray-100 dark:border-gray-700">
               <div className="text-center mb-4">
-                {/* Displaying brand image or placeholder */}
                 <img
                   src={brand.image || 'https://via.placeholder.com/150.png?text=Spirit'}
                   alt={brand.name}
