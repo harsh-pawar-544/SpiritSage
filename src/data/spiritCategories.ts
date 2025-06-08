@@ -8,7 +8,7 @@ export const spiritCategories: SpiritCategory[] = [
     image: 'https://images.pexels.com/photos/5947028/pexels-photo-5947028.jpeg',
     subtypes: [
       {
-        id: 'japanese',
+        id: 'd8a83b44-92d7-461d-899c-1f5a5747b5a6',
         name: 'Elegance Blossom Japanese Whisky',
         description: 'Japanese whisky embodies a philosophy of meticulous craftsmanship, balance, and understated elegance. Often inspired by Scotch methods but with a distinct Japanese sensitivity, these whiskies are renowned for their exceptional smoothness, purity, and subtle complexities. They typically feature pristine water sources, diverse aging casks (including Mizunara oak), and unique blending artistry that results in harmonious flavor profiles ranging from delicate floral and fruity notes to deep, rich caramel and smoky undertones. Each sip offers a journey of refined discovery.',
         image: 'https://images.pexels.com/photos/6638640/pexels-photo-6638640.jpeg',
