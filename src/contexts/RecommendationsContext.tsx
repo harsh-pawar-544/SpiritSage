@@ -230,7 +230,7 @@ export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = 
     return fetchedDetails;
   }, [alcoholTypes, subtypes, brands]); // Dependencies: all spirit data from SpiritsContext
 
-  // --- Main Effect for Recommendation Update ---
+  // --- Main Function to Update Recommendations (Debounced) ---
   const debouncedUpdateRecommendations = useCallback(
     debounce(async () => {
       console.log("RecommendationsContext: debouncedUpdateRecommendations triggered."); // Debug log
@@ -255,14 +255,15 @@ export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = 
     [calculateSpiritScores, selectTopRecommendations, fetchRecommendedSpiritDetails, spiritsContextLoading, spiritsContextError]
   );
 
-  // Trigger recommendation update when interactions or core spirit data changes
+  // --- Effect for Initial Load and SpiritsContext Changes ---
+  // This useEffect will run when the component mounts, or when SpiritsContext data state changes
+  // It no longer depends on 'interactions' directly because 'trackInteraction' now triggers updates.
   useEffect(() => {
-    console.log("RecommendationsContext: Main useEffect for updates triggered. isLoading:", isLoading, "spiritsContextLoading:", spiritsContextLoading, "spiritsContextError:", spiritsContextError, "interactions count:", interactions.length); // Debug log
-    // Only run if the initial interaction loading is done and core spirit data is ready
+    console.log("RecommendationsContext: Initial/SpiritsContext-change useEffect triggered. isLoading:", isLoading, "spiritsContextLoading:", spiritsContextLoading, "spiritsContextError:", spiritsContextError); // Debug log
     if (!isLoading && !spiritsContextLoading && !spiritsContextError) {
       debouncedUpdateRecommendations();
     }
-  }, [interactions, isLoading, spiritsContextLoading, spiritsContextError, debouncedUpdateRecommendations]);
+  }, [isLoading, spiritsContextLoading, spiritsContextError, debouncedUpdateRecommendations]);
 
 
   // --- Interaction Tracking ---
@@ -287,12 +288,15 @@ export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = 
         ].slice(0, MAX_INTERACTIONS);
 
         console.log("RecommendationsContext: trackInteraction called.", newInteraction); // Debug log
+        console.log("RecommendationsContext: Interactions state will be updated. New count (pending):", newInteractions.length); // Debug log
         return newInteractions;
       });
 
-      // Recommendations will be updated by the useEffect above
+      // KEY CHANGE: Trigger recommendation update directly after setting interactions
+      // This ensures the update is scheduled after the state change.
+      debouncedUpdateRecommendations();
     },
-    [] // No external dependencies for this function's logic
+    [debouncedUpdateRecommendations] // Dependency for useCallback: ensures this function re-creates if debounce changes
   );
 
   const clearInteractionHistory = useCallback(() => {
