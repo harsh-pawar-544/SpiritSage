@@ -5,11 +5,8 @@ import { useSpirits } from '../contexts/SpiritsContext'; // <-- Import useSpirit
 
 const ExplorePage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const { brands, loading, error } = useSpirits(); // <-- Get brands, loading, error from SpiritsContext
-
-  // You can still keep your categories array if you plan to use it for filtering later,
-  // but for direct links to spirit pages, we'll use 'brands'.
-  // const categories = [ ... ]; // Your existing categories array is fine, but not used for direct linking here.
+  // Get brands, loading, error from SpiritsContext
+  const { brands, loading, error } = useSpirits();
 
   // Filter brands based on search query
   const filteredBrands = brands?.filter(brand =>
@@ -17,7 +14,7 @@ const ExplorePage: React.FC = () => {
     brand.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     brand.origin?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     brand.producer?.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || []; // Ensure filteredBrands is always an array
+  ) || []; // Ensure filteredBrands is always an array, even if 'brands' is undefined/null
 
   if (loading) {
     return (
@@ -60,10 +57,10 @@ const ExplorePage: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {filteredBrands.map((brand) => ( // <-- ITERATING OVER BRANDS NOW
+        {filteredBrands.map((brand) => ( // <-- Now mapping over 'brands' data
           <Link
             key={brand.id}
-            to={`/spirit/${brand.id}`} // <-- LINKING TO THE BRAND'S ACTUAL UUID
+            to={`/spirit/${brand.id}`} // <-- Linking to the brand's actual UUID
             className="block group"
           >
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 transition-all duration-200 hover:shadow-xl hover:scale-[1.02] border border-gray-100 dark:border-gray-700">
