@@ -44,9 +44,6 @@ export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = 
     alcoholTypes,
     subtypes,
     brands,
-    // getAlcoholTypeById, // Not directly used here, but good to have access
-    // getSubtypeById,     // Not directly used here, but good to have access
-    // getBrandById,       // Not directly used here, but good to have access
     loading: spiritsContextLoading, // Consider spirits context loading as well
     error: spiritsContextError
   } = useSpirits();
@@ -58,8 +55,9 @@ export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = 
       try {
         const parsed = JSON.parse(stored);
         setInteractions(parsed);
+        console.log("RecommendationsContext: Loaded interactions from localStorage. Count:", parsed.length); // Debug log
       } catch (error) {
-        console.error('Error loading interactions:', error);
+        console.error('RecommendationsContext: Error loading interactions from localStorage:', error); // Debug error log
       }
     }
     setIsLoading(false); // Initial loading of interactions is done
@@ -68,6 +66,10 @@ export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = 
   // Save interactions to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(interactions));
+    console.log("RecommendationsContext: Interactions updated and saved to localStorage. Current count:", interactions.length); // Debug log
+    if (interactions.length > 0) {
+      console.log("RecommendationsContext: Latest interaction:", interactions[0]); // Debug log
+    }
   }, [interactions]);
 
   // --- Core Recommendation Logic ---
@@ -77,6 +79,9 @@ export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = 
     const now = Date.now();
     const scores = new Map<string, number>(); // Map UUID to score
     const categoryScores = new Map<string, number>(); // To prioritize diverse categories
+
+    console.log("RecommendationsContext: Starting calculateSpiritScores."); // Debug log
+    console.log("RecommendationsContext: Current Interactions count:", interactions.length); // Debug log
 
     interactions.forEach(interaction => {
       const age = (now - interaction.timestamp) / (1000 * 60 * 60 * 24); // Age in days
@@ -94,7 +99,7 @@ export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = 
       if (interaction.spiritType === 'alcohol_type') {
         mainCategory = interaction.spiritId; // AlcoholType ID is its own category
       } else if (interaction.spiritType === 'subtype') {
-        // Use optional chaining for 'subtypes' array
+        // Use optional chaining for 'subtypes' array to prevent forEach error
         const subtype = subtypes?.find(s => s.id === interaction.spiritId);
         mainCategory = subtype?.alcohol_type_id || ''; // Get parent alcohol_type_id
       } else if (interaction.spiritType === 'brand') {
@@ -116,13 +121,19 @@ export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = 
     const allUniqueSpiritIds: { id: string; type: 'alcohol_type' | 'subtype' | 'brand'; categoryId: string }[] = [];
 
     // Use nullish coalescing to ensure arrays are empty if undefined/null
+    // This is the primary fix for "forEach of undefined" errors
     alcoholTypes?.forEach(at => allUniqueSpiritIds.push({ id: at.id, type: 'alcohol_type', categoryId: at.id }));
     subtypes?.forEach(st => allUniqueSpiritIds.push({ id: st.id, type: 'subtype', categoryId: st.alcohol_type_id }));
     brands?.forEach(b => {
-      const subtype = subtypes?.find(s => s.id === b.subtype_id); // And here for 'subtypes'
+      const subtype = subtypes?.find(s => s.id === b.subtype_id); // Optional chaining here too
       allUniqueSpiritIds.push({ id: b.id, type: 'brand', categoryId: subtype?.alcohol_type_id || '' });
     });
 
+    console.log("RecommendationsContext: All unique spirit IDs collected. Count:", allUniqueSpiritIds.length); // Debug log
+    if (allUniqueSpiritIds.length === 0) {
+      console.warn("RecommendationsContext: No unique spirits loaded from SpiritsContext! Check SpiritsContext data."); // Crucial warning
+      console.log("SpiritsContext Data - AlcoholTypes length:", alcoholTypes?.length, "Subtypes length:", subtypes?.length, "Brands length:", brands?.length); // Debug log
+    }
 
     // Rank all spirits based on their calculated score (default 0 if not interacted with)
     const rankedSpiritIds = allUniqueSpiritIds
@@ -135,6 +146,7 @@ export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = 
       }))
       .sort((a, b) => b.score - a.score); // Sort by individual spirit score
 
+    console.log("RecommendationsContext: calculateSpiritScores - Ranked spirits count:", rankedSpiritIds.length); // Debug log
     return rankedSpiritIds;
   }, [interactions, alcoholTypes, subtypes, brands]); // Dependencies: interactions and all spirit data from SpiritsContext
 
@@ -143,6 +155,7 @@ export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = 
     const recommendations: string[] = []; // Will store UUIDs
     const usedCategories = new Set<string>(); // For diversity
 
+    console.log("RecommendationsContext: Starting selectTopRecommendations."); // Debug log
     // Prioritize spirits with high individual scores, ensuring category diversity
     for (const spirit of rankedSpiritIds) {
         if (recommendations.length >= RECOMMENDATION_COUNT) break;
@@ -173,12 +186,13 @@ export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = 
             recommendations.push(spirit.id);
         }
     }
-
+    console.log("RecommendationsContext: selectTopRecommendations - Top IDs selected:", recommendations); // Debug log
     return recommendations; // Return UUIDs
   }, []);
 
   // Step 3: Fetch full spirit details for the recommended UUIDs
   const fetchRecommendedSpiritDetails = useCallback(async (ids: string[]) => {
+    console.log("RecommendationsContext: Starting fetchRecommendedSpiritDetails for IDs:", ids); // Debug log
     const fetchedDetails: RecommendedSpiritItem[] = [];
     const fetchPromises = ids.map(async id => {
       // Try to find the spirit by ID across all types
@@ -205,18 +219,25 @@ export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = 
           image: (spirit as any).image || 'https://via.placeholder.com/150.png?text=Spirit',
           type: type,
         });
+      } else {
+        console.warn(`RecommendationsContext: Could not find details for recommended spirit ID: ${id}.`); // Debug warn
       }
     });
 
     await Promise.all(fetchPromises);
+    console.log("RecommendationsContext: fetchRecommendedSpiritDetails - Full details count:", fetchedDetails.length); // Debug log
+    console.log("RecommendationsContext: Final recommended spirits:", fetchedDetails); // Debug log
     return fetchedDetails;
   }, [alcoholTypes, subtypes, brands]); // Dependencies: all spirit data from SpiritsContext
 
   // --- Main Effect for Recommendation Update ---
   const debouncedUpdateRecommendations = useCallback(
     debounce(async () => {
+      console.log("RecommendationsContext: debouncedUpdateRecommendations triggered."); // Debug log
+
       // Ensure SpiritsContext data is loaded before calculating/fetching recommendations
       if (spiritsContextLoading || spiritsContextError) {
+        console.log("RecommendationsContext: SpiritsContext still loading or error, deferring recommendations.", { spiritsContextLoading, spiritsContextError }); // Debug log
         setIsLoading(true); // Keep loading if SpiritsContext isn't ready
         return;
       }
@@ -229,12 +250,14 @@ export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = 
       const fullDetails = await fetchRecommendedSpiritDetails(topIds);
       setRecommendedSpirits(fullDetails); // Update final state with full objects
       setIsLoading(false);
+      console.log("RecommendationsContext: Recommendations update complete."); // Debug log
     }, 500),
     [calculateSpiritScores, selectTopRecommendations, fetchRecommendedSpiritDetails, spiritsContextLoading, spiritsContextError]
   );
 
   // Trigger recommendation update when interactions or core spirit data changes
   useEffect(() => {
+    console.log("RecommendationsContext: Main useEffect for updates triggered. isLoading:", isLoading, "spiritsContextLoading:", spiritsContextLoading, "spiritsContextError:", spiritsContextError, "interactions count:", interactions.length); // Debug log
     // Only run if the initial interaction loading is done and core spirit data is ready
     if (!isLoading && !spiritsContextLoading && !spiritsContextError) {
       debouncedUpdateRecommendations();
@@ -251,17 +274,19 @@ export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = 
       data?: { rating?: number; comment?: string }
     ) => {
       setInteractions(prev => {
-        const newInteractions = [
-          {
+        const newInteraction = {
             spiritId,
             spiritType,
             type,
             timestamp: Date.now(),
             ...(data?.rating !== undefined ? { rating: data.rating } : {})
-          },
+          };
+        const newInteractions = [
+          newInteraction,
           ...prev
         ].slice(0, MAX_INTERACTIONS);
 
+        console.log("RecommendationsContext: trackInteraction called.", newInteraction); // Debug log
         return newInteractions;
       });
 
@@ -274,6 +299,7 @@ export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = 
     setInteractions([]);
     setRecommendedSpiritIds([]);
     setRecommendedSpirits([]);
+    console.log("RecommendationsContext: Interaction history cleared."); // Debug log
   }, []);
 
   return (
