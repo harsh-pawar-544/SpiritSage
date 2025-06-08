@@ -17,14 +17,11 @@ import SpiritSubtypesPage from './pages/SpiritSubtypes/SpiritSubtypesPage';
 import AlcoholTypeDetailPage from './pages/AlcoholType/[id]';
 import SubtypeDetailPage from './pages/Subtype/[id]';
 
-// --- THIS IS THE CHANGE ---
-// Assuming SpiritDetailPage.tsx is in the same folder as SpiritProfilePage.tsx:
-import SpiritDetailPage from './pages/Spirit/[id]'; // <--- CHANGE THIS LINE to import SpiritDetailPage
-
-// If your SpiritDetailPage.tsx is in a different path, adjust accordingly.
-// For example, if it's in ./components/SpiritDetailPage:
-// import SpiritDetailPage from './components/SpiritDetailPage';
-// --- END CHANGE ---
+// --- THIS IS THE CRUCIAL, FINAL CHANGE ---
+// Now importing the correct component name (SpiritProfilePage)
+// from the correct file path (./pages/Spirit/[id])
+import SpiritProfilePage from './pages/Spirit/[id]';
+// --- END CRUCIAL, FINAL CHANGE ---
 
 
 import AboutPage from './pages/About/AboutPage';
@@ -48,14 +45,15 @@ function App() {
                   <Route path="/alcohol-type/:id/subtypes" element={<SpiritSubtypesPage />} />
                   <Route path="/subtype/:id" element={<SubtypeDetailPage />} />
 
-                  {/* --- THIS IS THE CHANGE --- */}
-                  <Route path="/spirit/:id" element={<SpiritDetailPage />} /> {/* <--- RENDER SpiritDetailPage */}
-                  {/* --- END CHANGE --- */}
+                  {/* --- THIS IS THE CRUCIAL, FINAL CHANGE --- */}
+                  {/* Now rendering the correctly imported SpiritProfilePage component */}
+                  <Route path="/spirit/:id" element={<SpiritProfilePage />} />
+                  {/* --- END CRUCIAL, FINAL CHANGE --- */}
 
                   <Route path="/category/:id" element={<SpiritOverviewPage />} />
                   <Route path="/about" element={<AboutPage />} />
                   <Route path="/contact" element={<ContactPage />} />
-                  <Route path="/settings" element={<SettingsPage />} />
+                  <Route path="/settings" />
                 </Routes>
               </Layout>
             </Router>
