@@ -41,6 +41,11 @@ const SpiritDetailPage: React.FC = () => {
   // --- Fetch Spirit Data (Brand) ---
   useEffect(() => {
     const fetchSpiritData = async () => {
+      // --- START NEW DEBUG LOGS HERE ---
+      console.log("SpiritDetailPage: fetchSpiritData started.");
+      console.log("SpiritDetailPage: Current URL ID parameter:", id);
+      // --- END NEW DEBUG LOGS HERE ---
+
       if (!id) {
         setSpiritError('Spirit ID is missing.');
         setSpiritLoading(false);
@@ -58,9 +63,10 @@ const SpiritDetailPage: React.FC = () => {
         if (fetchedBrand) {
           setSpirit(fetchedBrand);
           // --- Debug Logs: Verify trackInteraction is called ---
+          console.log("SpiritDetailPage: Spirit fetched successfully:", fetchedBrand.name, "ID:", fetchedBrand.id); // NEW LOG
           console.log("SpiritDetailPage: Spirit fetched, attempting to track interaction.");
           console.log("SpiritDetailPage: Spirit ID for tracking:", fetchedBrand.id, "Spirit Type:", 'brand');
-          console.log("SpiritDetailPage: ABOUT TO CALL trackInteraction!"); // NEW LOG
+          console.log("SpiritDetailPage: ABOUT TO CALL trackInteraction!");
           // --- Track 'view' interaction here ---
           trackInteraction(fetchedBrand.id, 'brand', 'view'); // <-- This is the important line
         } else {
@@ -72,6 +78,7 @@ const SpiritDetailPage: React.FC = () => {
         setSpiritError(`Failed to load spirit: ${err.message || 'Unknown error'}`);
       } finally {
         setSpiritLoading(false);
+        console.log("SpiritDetailPage: fetchSpiritData completed. SpiritLoading set to false."); // NEW LOG
       }
     };
 
