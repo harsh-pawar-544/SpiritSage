@@ -10,9 +10,6 @@ import { Brand, Rating } from '../../data/types';
 import { supabase } from '../../lib/supabaseClient'; // <-- Assuming this path for Supabase client
 
 const SpiritDetailPage: React.FC = () => {
-  // Extract 'id' from the URL. Currently, this page assumes the 'id' belongs to a Brand.
-  // If your routing allows for '/spirits/:type/:id', you would extract 'type' here too:
-  // const { type, id } = useParams<{ type: 'alcohol_type' | 'subtype' | 'brand', id: string }>();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
@@ -47,6 +44,7 @@ const SpiritDetailPage: React.FC = () => {
       if (!id) {
         setSpiritError('Spirit ID is missing.');
         setSpiritLoading(false);
+        console.log("SpiritDetailPage: Spirit ID is missing."); // Debug log
         return;
       }
 
@@ -55,23 +53,21 @@ const SpiritDetailPage: React.FC = () => {
       setSpirit(null); // Clear previous spirit data
 
       try {
-        // ASSUMPTION: This page is currently set up to fetch Brand details.
-        // If you want this page to handle AlcoholType or Subtype details as well,
-        // you'll need to pass the spiritType in the URL (e.g., /spirits/:type/:id)
-        // and add logic here to call getAlcoholTypeById, getSubtypeById, or getBrandById based on that type.
         const fetchedBrand = await getBrandById(id);
 
         if (fetchedBrand) {
           setSpirit(fetchedBrand);
+          // --- Debug Logs: Verify trackInteraction is called ---
+          console.log("SpiritDetailPage: Spirit fetched, attempting to track interaction.");
+          console.log("SpiritDetailPage: Spirit ID for tracking:", fetchedBrand.id, "Spirit Type:", 'brand');
           // --- Track 'view' interaction here ---
-          // Assuming 'brand' as the spiritType since getBrandById is used.
-          // If you implement dynamic type fetching, use the actual spiritType.
-          trackInteraction(fetchedBrand.id, 'brand', 'view'); // <-- Added this line
+          trackInteraction(fetchedBrand.id, 'brand', 'view'); // <-- This is the important line
         } else {
           setSpiritError('Spirit not found or invalid ID.');
+          console.log("SpiritDetailPage: Spirit not found for ID:", id); // Debug log if not found
         }
       } catch (err: any) {
-        console.error('Error fetching spirit:', err);
+        console.error('SpiritDetailPage: Error fetching spirit:', err); // Debug error log
         setSpiritError(`Failed to load spirit: ${err.message || 'Unknown error'}`);
       } finally {
         setSpiritLoading(false);
@@ -79,62 +75,68 @@ const SpiritDetailPage: React.FC = () => {
     };
 
     // Only fetch if context is not globally loading or has no error
-    // and trigger a re-fetch if 'id' or context loading/error states change.
-    // Also, include `trackInteraction` in dependencies to satisfy ESLint, though it's
-    // memoized in RecommendationsContext, so it shouldn't cause unnecessary re-renders.
     if (!spiritsContextLoading && !spiritsContextError) {
+      console.log("SpiritDetailPage: SpiritsContext ready, initiating spirit data fetch."); // Debug log
       fetchSpiritData();
+    } else {
+      console.log("SpiritDetailPage: Deferring spirit data fetch due to SpiritsContext loading or error.", { spiritsContextLoading, spiritsContextError }); // Debug log
     }
-  }, [id, getBrandById, spiritsContextLoading, spiritsContextError, trackInteraction]); // <-- Added trackInteraction to dependencies
+  }, [id, getBrandById, spiritsContextLoading, spiritsContextError, trackInteraction]);
+
 
   // --- Fetch Ratings for the Spirit ---
   useEffect(() => {
     const fetchRatings = async () => {
       if (spirit && spirit.id) { // Ensure spirit is loaded and has an ID
+        console.log("SpiritDetailPage: Fetching ratings for spirit ID:", spirit.id); // Debug log
         try {
           const ratings = await getRatingsForBrand(spirit.id);
           setBrandRatings(ratings);
+          console.log("SpiritDetailPage: Ratings fetched successfully. Count:", ratings.length); // Debug log
         } catch (err) {
-          console.error('Error fetching ratings:', err);
+          console.error('SpiritDetailPage: Error fetching ratings:', err); // Debug error log
           // Handle error, e.g., set an error state for ratings
         }
+      } else {
+        console.log("SpiritDetailPage: Not fetching ratings, spirit or spirit ID is missing."); // Debug log
       }
     };
     fetchRatings();
-  }, [spirit, getRatingsForBrand]); // Re-fetch ratings when spirit data changes or getRatingsForBrand changes
+  }, [spirit, getRatingsForBrand]);
+
 
   // --- Handlers for Rating Form and Deletion ---
-
-  // Find the current user's rating for this spirit, if it exists
-  // Make sure `supabase` is imported if you're using `supabase.auth.user()` here.
   const userRating = brandRatings.find(r => r.user_id === supabase.auth.user()?.id);
 
   const handleEditRating = (rating: Rating) => {
     setEditingRating(rating);
     setShowRatingForm(true);
+    console.log("SpiritDetailPage: Editing rating for ID:", rating.id); // Debug log
   };
 
   const handleDeleteRating = (ratingId: string) => {
     setRatingToDeleteId(ratingId);
     setShowDeleteModal(true);
+    console.log("SpiritDetailPage: Preparing to delete rating ID:", ratingId); // Debug log
   };
 
   const confirmDelete = async () => {
-    if (ratingToDeleteId && spirit) { // Ensure spirit is available for re-fetching ratings
+    if (ratingToDeleteId && spirit) {
+      console.log("SpiritDetailPage: Confirming delete for rating ID:", ratingToDeleteId); // Debug log
       try {
         // You'll need to implement and import `deleteRating` from SpiritsContext
         // For now, it's a placeholder:
         // await deleteRating(ratingToDeleteId);
-        console.log(`Simulating delete for rating ID: ${ratingToDeleteId}`);
+        console.log(`SpiritDetailPage: Simulating delete for rating ID: ${ratingToDeleteId}`);
 
         // After successful deletion (or simulation), re-fetch ratings to update the list
         const updatedRatings = await getRatingsForBrand(spirit.id);
         setBrandRatings(updatedRatings);
         setRatingToDeleteId(null);
         setShowDeleteModal(false);
+        console.log("SpiritDetailPage: Rating deleted (simulated) and ratings re-fetched."); // Debug log
       } catch (err) {
-        console.error('Error deleting rating:', err);
-        // Display error to user
+        console.error('SpiritDetailPage: Error deleting rating:', err); // Debug error log
       }
     }
   };
@@ -142,7 +144,7 @@ const SpiritDetailPage: React.FC = () => {
   const handleRatingSuccess = async () => {
     setShowRatingForm(false);
     setEditingRating(null);
-    // After adding/editing, re-fetch ratings to update the list
+    console.log("SpiritDetailPage: Rating submission successful, re-fetching ratings."); // Debug log
     if (spirit && spirit.id) {
       const updatedRatings = await getRatingsForBrand(spirit.id);
       setBrandRatings(updatedRatings);
@@ -154,7 +156,6 @@ const SpiritDetailPage: React.FC = () => {
     return (
       <div className="min-h-[50vh] flex flex-col items-center justify-center">
         <p className="text-2xl text-gray-600 dark:text-gray-400">Loading spirit...</p>
-        {/* Optional: Add a spinner here */}
       </div>
     );
   }
