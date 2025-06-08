@@ -39,14 +39,14 @@ export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = 
   const [recommendedSpirits, setRecommendedSpirits] = useState<RecommendedSpiritItem[]>([]); // Final state for full spirit objects
   const [isLoading, setIsLoading] = useState(true);
 
-  // Get the fetching functions from SpiritsContext
+  // Get the fetching functions and data arrays from SpiritsContext
   const {
     alcoholTypes,
     subtypes,
     brands,
-    getAlcoholTypeById,
-    getSubtypeById,
-    getBrandById,
+    // getAlcoholTypeById, // Not directly used here, but good to have access
+    // getSubtypeById,     // Not directly used here, but good to have access
+    // getBrandById,       // Not directly used here, but good to have access
     loading: spiritsContextLoading, // Consider spirits context loading as well
     error: spiritsContextError
   } = useSpirits();
@@ -90,17 +90,17 @@ export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = 
       );
 
       // We need to map spiritId (UUID) back to its main category for diversity
-      // This is tricky without knowing the full type. For simplicity, let's derive from current data.
-      // A more robust solution would be to store the main category in the interaction itself.
       let mainCategory = '';
       if (interaction.spiritType === 'alcohol_type') {
         mainCategory = interaction.spiritId; // AlcoholType ID is its own category
       } else if (interaction.spiritType === 'subtype') {
-        const subtype = subtypes.find(s => s.id === interaction.spiritId);
+        // Use optional chaining for 'subtypes' array
+        const subtype = subtypes?.find(s => s.id === interaction.spiritId);
         mainCategory = subtype?.alcohol_type_id || ''; // Get parent alcohol_type_id
       } else if (interaction.spiritType === 'brand') {
-        const brand = brands.find(b => b.id === interaction.spiritId);
-        const subtype = subtypes.find(s => s.id === brand?.subtype_id);
+        // Use optional chaining for 'brands' and 'subtypes' arrays
+        const brand = brands?.find(b => b.id === interaction.spiritId);
+        const subtype = subtypes?.find(s => s.id === brand?.subtype_id);
         mainCategory = subtype?.alcohol_type_id || ''; // Get parent alcohol_type_id
       }
 
@@ -115,10 +115,11 @@ export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = 
     // Create a list of all possible unique spirits (UUIDs) from your loaded data
     const allUniqueSpiritIds: { id: string; type: 'alcohol_type' | 'subtype' | 'brand'; categoryId: string }[] = [];
 
-    alcoholTypes.forEach(at => allUniqueSpiritIds.push({ id: at.id, type: 'alcohol_type', categoryId: at.id }));
-    subtypes.forEach(st => allUniqueSpiritIds.push({ id: st.id, type: 'subtype', categoryId: st.alcohol_type_id }));
-    brands.forEach(b => {
-      const subtype = subtypes.find(s => s.id === b.subtype_id);
+    // Use nullish coalescing to ensure arrays are empty if undefined/null
+    alcoholTypes?.forEach(at => allUniqueSpiritIds.push({ id: at.id, type: 'alcohol_type', categoryId: at.id }));
+    subtypes?.forEach(st => allUniqueSpiritIds.push({ id: st.id, type: 'subtype', categoryId: st.alcohol_type_id }));
+    brands?.forEach(b => {
+      const subtype = subtypes?.find(s => s.id === b.subtype_id); // And here for 'subtypes'
       allUniqueSpiritIds.push({ id: b.id, type: 'brand', categoryId: subtype?.alcohol_type_id || '' });
     });
 
@@ -185,13 +186,13 @@ export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = 
       let type: RecommendedSpiritItem['type'] | undefined;
 
       // Prioritize brand, then subtype, then alcohol type for details
-      spirit = brands.find(b => b.id === id);
+      spirit = brands?.find(b => b.id === id); // Optional chaining
       if (spirit) { type = 'brand'; }
       else {
-        spirit = subtypes.find(s => s.id === id);
+        spirit = subtypes?.find(s => s.id === id); // Optional chaining
         if (spirit) { type = 'subtype'; }
         else {
-          spirit = alcoholTypes.find(at => at.id === id);
+          spirit = alcoholTypes?.find(at => at.id === id); // Optional chaining
           if (spirit) { type = 'alcohol_type'; }
         }
       }
