@@ -1,99 +1,184 @@
-import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom'; // Added useNavigate
 import { ArrowLeft } from 'lucide-react';
-import { useSpirits, SpiritRating } from '../../contexts/SpiritsContext';
+import { useSpirits } from '../../contexts/SpiritsContext'; // Assuming Rating is imported from types now, not SpiritRating
 import RatingForm from '../../components/SpiritRating/RatingForm';
 import RatingsList from '../../components/SpiritRating/RatingsList';
 import ConfirmationModal from '../../components/ConfirmationModal';
-
-const spiritsData = {
-  whiskies: {
-    name: 'Highland Single Malt Whiskey',
-    image: 'https://images.unsplash.com/photo-1569529465841-dfecdab7503b?auto=format&fit=crop&q=80',
-    tastingNotes: 'Rich and smooth with hints of caramel, vanilla, and oak. The palate opens with honeyed sweetness, followed by warm spices and a touch of smoke. A long finish reveals layers of dried fruit and subtle maritime influences.',
-    history: 'Crafted in the heart of the Scottish Highlands, this distinguished single malt carries centuries of tradition. The distillery, established in 1826, draws its water from ancient springs filtered through layers of granite.',
-    funFacts: 'The unique microclimate of the region, combined with traditional floor malting and copper pot stills, creates a spirit of exceptional character and complexity. The surrounding heather-clad hills contribute to its distinctive flavor profile.'
-  },
-  gins: {
-    name: 'London Dry Gin',
-    image: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&q=80',
-    tastingNotes: 'Crisp and refreshing with prominent juniper notes, followed by citrus peel, coriander, and angelica root. A balanced blend of botanical flavors creates a clean, classic gin profile.',
-    history: 'London Dry Gin emerged in the late 19th century as a response to the gin crisis of the previous century. The style became synonymous with quality and purity in gin production.',
-    funFacts: 'Despite its name, London Dry Gin doesn\'t have to be made in London. The term refers to the production method rather than the location, requiring all botanicals to be added during distillation.'
-  },
-  rums: {
-    name: 'Caribbean Aged Rum',
-    image: 'https://images.unsplash.com/photo-1614313511387-1436a4480ebb?auto=format&fit=crop&q=80',
-    tastingNotes: 'Deep and complex with notes of tropical fruits, brown sugar, and vanilla. The aging process imparts rich flavors of oak, toffee, and subtle spices, leading to a warm, lingering finish.',
-    history: 'Born in the Caribbean islands during the 17th century, rum became an integral part of colonial trade. Each island developed its own distinct style, influenced by local traditions and available resources.',
-    funFacts: 'The aging process in the Caribbean is accelerated due to the tropical climate, with rum aging up to three times faster than spirits aged in cooler climates. This phenomenon is known as "tropical aging."'
-  },
-  tequila: {
-    name: 'Premium Blue Agave Tequila',
-    image: 'https://images.unsplash.com/photo-1583303341936-c2431a7c9f19?auto=format&fit=crop&q=80',
-    tastingNotes: 'Earthy, sweet, with hints of citrus and pepper. The agave\'s natural sweetness is complemented by subtle mineral notes and a smooth, clean finish.',
-    history: 'Originates from Mexico, made from the blue agave plant. Traditionally consumed neat or in cocktails like Margarita.',
-    funFacts: 'Tequila must be made in specific regions of Mexico to be called tequila legally. The blue agave plant takes 7-10 years to reach maturity before it can be harvested.'
-  },
-  brandy: {
-    name: 'Fine Aged Brandy',
-    image: 'https://images.unsplash.com/photo-1609760321567-3be05aa1d95b?auto=format&fit=crop&q=80',
-    tastingNotes: 'Warm, fruity, with notes of oak and vanilla. Rich layers of dried fruits and honey are balanced by subtle wood tannins.',
-    history: 'Distilled from wine or fermented fruit juice, brandy dates back to the 16th century in Europe.',
-    funFacts: 'Cognac and Armagnac are famous types of brandy from France. The word "brandy" comes from the Dutch word "brandewijn," meaning "burned wine."'
-  },
-  cognac: {
-    name: 'Fine Champagne Cognac',
-    image: 'https://images.unsplash.com/photo-1608283036724-a24b723a7583?auto=format&fit=crop&q=80',
-    tastingNotes: 'Smooth, rich, with hints of caramel and spice. Complex aromas of dried fruit, vanilla, and subtle floral notes lead to a long, elegant finish.',
-    history: 'A type of brandy from the Cognac region of France, double-distilled in copper pot stills.',
-    funFacts: 'Cognac is aged in French oak barrels for several years. The age classifications (VS, VSOP, XO) indicate the minimum aging period of the youngest brandy in the blend.'
-  }
-};
+import { Brand, Rating } from '../../data/types'; // Import Rating type directly from types
 
 const SpiritDetailPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  const spirit = id ? spiritsData[id as keyof typeof spiritsData] : null;
-  const { getRatingsForSpirit, getUserRatingForSpirit, deleteRating } = useSpirits();
-  
+  const { id } = useParams<{ id: string }>(); // The ID of the spirit (brand, subtype, or alcohol_type)
+  const navigate = useNavigate(); // For navigating back on error or not found
+
+  const {
+    loading: spiritsContextLoading, // Loading state from the context's initial data fetch
+    error: spiritsContextError,   // Error state from the context's initial data fetch
+    getBrandById, // Function to fetch a specific brand
+    addRating, // Re-exporting addRating for use in RatingForm
+    getRatingsForBrand, // Correct function for getting ratings for a brand
+    // Assuming you will implement deleteRating and updateRating in SpiritsContext
+    // If not, these will need to be added to SpiritsContext and imported here:
+    // deleteRating, // You might need to implement this in context
+    // updateRating, // You might need to implement this in context
+  } = useSpirits();
+
+  const [spirit, setSpirit] = useState<Brand | null>(null);
+  const [spiritLoading, setSpiritLoading] = useState<boolean>(true);
+  const [spiritError, setSpiritError] = useState<string | null>(null);
+  const [brandRatings, setBrandRatings] = useState<Rating[]>([]); // State to hold ratings for the brand
+
   const [showRatingForm, setShowRatingForm] = useState(false);
-  const [editingRating, setEditingRating] = useState<SpiritRating | null>(null);
+  const [editingRating, setEditingRating] = useState<Rating | null>(null); // Use Rating type
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [ratingToDelete, setRatingToDelete] = useState<string | null>(null);
+  const [ratingToDeleteId, setRatingToDeleteId] = useState<string | null>(null);
 
-  if (!spirit || !id) {
-    return (
-      <div className="min-h-[50vh] flex items-center justify-center">
-        <p className="text-2xl text-gray-600 dark:text-gray-400">Spirit not found</p>
-      </div>
-    );
-  }
 
-  const ratings = getRatingsForSpirit(id);
-  const userRating = getUserRatingForSpirit(id);
+  // *** Fetch Spirit Data (Brand) ***
+  useEffect(() => {
+    const fetchSpiritData = async () => {
+      if (!id) {
+        setSpiritError('Spirit ID is missing.');
+        setSpiritLoading(false);
+        return;
+      }
 
-  const handleEditRating = (rating: SpiritRating) => {
+      setSpiritLoading(true);
+      setSpiritError(null);
+      setSpirit(null); // Clear previous spirit data
+
+      try {
+        // ASSUMPTION: We are fetching a Brand here.
+        // If your recommended spirits can be AlcoholTypes or Subtypes,
+        // you will need more complex logic or a different URL structure (e.g., /spirits/:type/:id)
+        const fetchedBrand = await getBrandById(id);
+
+        if (fetchedBrand) {
+          setSpirit(fetchedBrand);
+        } else {
+          setSpiritError('Spirit not found or invalid ID.');
+        }
+      } catch (err: any) {
+        console.error('Error fetching spirit:', err);
+        setSpiritError(`Failed to load spirit: ${err.message || 'Unknown error'}`);
+      } finally {
+        setSpiritLoading(false);
+      }
+    };
+
+    // Only fetch if context is not globally loading or has no error
+    if (!spiritsContextLoading && !spiritsContextError) {
+      fetchSpiritData();
+    }
+  }, [id, getBrandById, spiritsContextLoading, spiritsContextError]); // Re-fetch if ID changes or context state changes
+
+  // *** Fetch Ratings for the Spirit ***
+  useEffect(() => {
+    const fetchRatings = async () => {
+      if (spirit && spirit.id) { // Ensure spirit is loaded and has an ID
+        try {
+          const ratings = await getRatingsForBrand(spirit.id); // Use the correct function
+          setBrandRatings(ratings);
+        } catch (err) {
+          console.error('Error fetching ratings:', err);
+          // Handle error, e.g., set an error state for ratings
+        }
+      }
+    };
+    fetchRatings();
+  }, [spirit, getRatingsForBrand]); // Re-fetch ratings when spirit data changes
+
+  // --- Handlers for Rating Form and Deletion ---
+
+  // Placeholder for user rating, assuming you'll fetch this from context or local state.
+  // The SpiritsContext type doesn't have getUserRatingForSpirit.
+  // You'd typically filter `brandRatings` for the current user's rating or fetch it separately.
+  const userRating = brandRatings.find(r => r.user_id === supabase.auth.user()?.id); // Assuming user is available and you can match by ID
+
+
+  const handleEditRating = (rating: Rating) => { // Use Rating type
     setEditingRating(rating);
     setShowRatingForm(true);
   };
 
   const handleDeleteRating = (ratingId: string) => {
-    setRatingToDelete(ratingId);
+    setRatingToDeleteId(ratingId);
     setShowDeleteModal(true);
   };
 
-  const confirmDelete = () => {
-    if (ratingToDelete) {
-      deleteRating(ratingToDelete);
-      setRatingToDelete(null);
-      setShowDeleteModal(false);
+  const confirmDelete = async () => { // Make async if deleteRating is async
+    if (ratingToDeleteId) {
+      try {
+        // You'll need to implement deleteRating in SpiritsContext
+        // For now, it's a placeholder:
+        // await deleteRating(ratingToDeleteId);
+        console.log(`Simulating delete for rating ID: ${ratingToDeleteId}`);
+        // After successful deletion, re-fetch ratings to update the list
+        const updatedRatings = await getRatingsForBrand(spirit!.id);
+        setBrandRatings(updatedRatings);
+        setRatingToDeleteId(null);
+        setShowDeleteModal(false);
+      } catch (err) {
+        console.error('Error deleting rating:', err);
+        // Display error to user
+      }
     }
   };
 
+  const handleRatingSuccess = async () => {
+    setShowRatingForm(false);
+    setEditingRating(null);
+    // After adding/editing, re-fetch ratings to update the list
+    if (spirit && spirit.id) {
+      const updatedRatings = await getRatingsForBrand(spirit.id);
+      setBrandRatings(updatedRatings);
+    }
+  };
+
+  // --- Render Logic for Loading/Error/Not Found ---
+  if (spiritsContextLoading || spiritLoading) {
+    return (
+      <div className="min-h-[50vh] flex flex-col items-center justify-center">
+        <p className="text-2xl text-gray-600 dark:text-gray-400">Loading spirit...</p>
+        {/* Optional: Add a spinner here */}
+      </div>
+    );
+  }
+
+  if (spiritsContextError || spiritError) {
+    return (
+      <div className="min-h-[50vh] flex flex-col items-center justify-center">
+        <p className="text-2xl text-red-600 dark:text-red-400 mb-4">Error: {spiritsContextError || spiritError}</p>
+        <button
+          onClick={() => navigate('/explore')}
+          className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+        >
+          Back to Explore
+        </button>
+      </div>
+    );
+  }
+
+  // If spirit is null after loading, it means it wasn't found
+  if (!spirit) {
+    return (
+      <div className="min-h-[50vh] flex flex-col items-center justify-center">
+        <p className="text-2xl text-gray-600 dark:text-gray-400 mb-4">Spirit not found</p>
+        <button
+          onClick={() => navigate('/explore')}
+          className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+        >
+          Back to Explore
+        </button>
+      </div>
+    );
+  }
+
+  // --- Main Render (Spirit Details) ---
   return (
     <div className="max-w-5xl mx-auto px-4">
-      <Link 
-        to="/explore" 
+      <Link
+        to="/explore"
         className="inline-flex items-center text-indigo-600 hover:text-indigo-700 mb-8 group"
       >
         <ArrowLeft className="w-5 h-5 mr-2 transition-transform group-hover:-translate-x-1" />
@@ -103,7 +188,7 @@ const SpiritDetailPage: React.FC = () => {
       <div className="relative">
         <div className="h-[400px] w-full overflow-hidden rounded-xl">
           <img
-            src={spirit.image}
+            src={spirit.image || 'https://via.placeholder.com/600x400.png?text=No+Image'} // Fallback image
             alt={spirit.name}
             className="w-full h-full object-cover"
           />
@@ -117,37 +202,31 @@ const SpiritDetailPage: React.FC = () => {
       <div className="mt-12 space-y-10">
         <section>
           <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
-            Tasting Notes
+            Details
           </h2>
-          <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed">
-            {spirit.tastingNotes}
-          </p>
+          {spirit.description && (
+            <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
+              {spirit.description}
+            </p>
+          )}
+          <ul className="text-lg text-gray-700 dark:text-gray-300 space-y-2">
+            {spirit.abv && <li><span className="font-medium">ABV:</span> {spirit.abv}%</li>}
+            {spirit.origin && <li><span className="font-medium">Origin:</span> {spirit.origin}</li>}
+            {spirit.price_range && <li><span className="font-medium">Price Range:</span> {spirit.price_range}</li>}
+            {spirit.producer && <li><span className="font-medium">Producer:</span> {spirit.producer}</li>}
+            {/* You can add more brand-specific details here */}
+          </ul>
         </section>
 
-        <section>
-          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
-            History
-          </h2>
-          <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed">
-            {spirit.history}
-          </p>
-        </section>
-
-        <section>
-          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
-            Fun Facts
-          </h2>
-          <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed">
-            {spirit.funFacts}
-          </p>
-        </section>
+        {/* Removed static tasting notes, history, fun facts as they belong to Brand data */}
+        {/* If your Brand type has these fields, you can re-add them using spirit.tasting_notes etc. */}
 
         <section className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
               Ratings & Reviews
             </h2>
-            {!showRatingForm && !userRating && (
+            {!showRatingForm && !userRating && ( // Only show "Write a Review" if not already reviewing and no existing user rating
               <button
                 onClick={() => setShowRatingForm(true)}
                 className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
@@ -164,19 +243,22 @@ const SpiritDetailPage: React.FC = () => {
               </h3>
               <RatingForm
                 spiritId={id}
-                onSuccess={() => {
-                  setShowRatingForm(false);
-                  setEditingRating(null);
-                }}
+                onSuccess={handleRatingSuccess}
                 initialRating={editingRating?.rating}
                 initialComment={editingRating?.comment}
                 ratingId={editingRating?.id}
+                // addRating prop for the form if it's not already using context directly
+                onSubmit={addRating}
+                onCancel={() => {
+                  setShowRatingForm(false);
+                  setEditingRating(null);
+                }}
               />
             </div>
           )}
 
           <RatingsList
-            ratings={ratings}
+            ratings={brandRatings} // Use the fetched ratings
             onEdit={handleEditRating}
             onDelete={handleDeleteRating}
           />
