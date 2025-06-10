@@ -70,6 +70,10 @@ export interface Brand {
   tasting_notes: string[] | null;
   price_range: string | null;
   image_url: string | null; // The URL directly from the database
+  subtype_id: string; // Add this
+  subtype_name?: string | null; // Add this
+  alcohol_type_id: string; // Add this
+  alcohol_type_name?: string | null; // Add this
 
   // Optional: If you preprocess and attach a display-ready image property
   image?: string | null; // A convenient property for components, often derived from image_url
