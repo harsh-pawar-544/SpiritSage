@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { useSpirits } from '../contexts/SpiritsContext';
 import RatingStars from './RatingStars';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { Link } from 'react-router-dom'; // <--- IMPORTANT: Import Link
 
 interface SpiritDetailModalProps {
   isOpen: boolean;
@@ -12,11 +13,16 @@ interface SpiritDetailModalProps {
   spirit: {
     id: string;
     name: string;
-    type: string;
     description: string;
-    imageSrc: string;
+    imageSrc: string; // This seems to be a display-ready URL
     flavorProfile: string[];
     history: string;
+    // --- ADDED THESE NEW PROPERTIES ---
+    subtype_id?: string; // The ID of the spirit's direct subtype
+    subtype_name?: string; // The name of the spirit's direct subtype (e.g., "Scotch Whisky")
+    alcohol_type_id?: string; // The ID of the parent alcohol type (category)
+    alcohol_type_name?: string; // The name of the parent alcohol type (e.g., "Whisky")
+    // --- END ADDED PROPERTIES ---
   };
 }
 
@@ -76,8 +82,33 @@ const SpiritDetailModal: React.FC<SpiritDetailModalProps> = ({
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
             <div className="absolute bottom-6 left-6 right-6">
               <div className="flex items-center text-white space-x-2 mb-2">
-                <span className="text-sm font-medium">{spirit.type}</span>
-                <ChevronRight className="w-4 h-4" />
+                {/* Condition for the Alcohol Type (Category) link */}
+                {spirit.alcohol_type_id && spirit.alcohol_type_name && (
+                  <>
+                    <Link
+                      to={`/alcohol-type/${spirit.alcohol_type_id}`}
+                      className="text-sm font-medium hover:underline"
+                      onClick={onClose} // Close modal when navigating
+                    >
+                      {spirit.alcohol_type_name}
+                    </Link>
+                    <ChevronRight className="w-4 h-4" />
+                  </>
+                )}
+                {/* Condition for the Subtype link */}
+                {spirit.subtype_id && spirit.subtype_name && (
+                  <>
+                    <Link
+                      to={`/subtype/${spirit.subtype_id}`}
+                      className="text-sm font-medium hover:underline"
+                      onClick={onClose} // Close modal when navigating
+                    >
+                      {spirit.subtype_name}
+                    </Link>
+                    <ChevronRight className="w-4 h-4" />
+                  </>
+                )}
+                {/* The current spirit's name */}
                 <span className="text-lg font-semibold">{spirit.name}</span>
               </div>
               <div className="flex items-center space-x-4">
@@ -220,7 +251,7 @@ const SpiritDetailModal: React.FC<SpiritDetailModalProps> = ({
                       </p>
                     </div>
                   ))}
-                  
+
                   {ratings.length === 0 && (
                     <div className="text-center py-8 text-gray-500">
                       <Info className="w-12 h-12 mx-auto mb-3 opacity-50" />
