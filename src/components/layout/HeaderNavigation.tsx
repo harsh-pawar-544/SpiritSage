@@ -56,8 +56,8 @@ const HeaderNavigation: React.FC = () => {
               <span className="text-xl font-semibold">SpiritSage</span>
               
               {/* ADD THIS IMG TAG FOR "POWERED BY BOLT AI" */}
-              <img
-                src="public/logos/logotext_poweredby.png" // MAKE SURE THIS PATH IS CORRECT
+              <img  
+                src="/logos/logotext_poweredby.png" // MAKE SURE THIS PATH IS CORRECT
                 alt="Powered by Bolt AI"
                 className="h-4 sm:h-5 ml-2 mt-1 opacity-70 invert dark:invert-0" // Add invert for light theme, dark:invert-0 for dark theme
               />
