@@ -3,7 +3,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 // CORRECTED: Import 'Home' component from 'home.tsx' directly in src/
-import Home from './home'; 
+import Home from './src/home'; 
 
 import ExplorePage from './pages/ExplorePage';
 import SpiritProfilePage from './pages/Spirit/[id]'; // Your spirit detail page
