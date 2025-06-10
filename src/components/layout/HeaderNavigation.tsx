@@ -57,7 +57,7 @@ const HeaderNavigation: React.FC = () => {
               
               {/* ADD THIS IMG TAG FOR "POWERED BY BOLT AI" */}
               <img
-                src="/logos/logotext_poweredby_.png" // MAKE SURE THIS PATH IS CORRECT
+                src="public/logos/logotext_poweredby_.png" // MAKE SURE THIS PATH IS CORRECT
                 alt="Powered by Bolt AI"
                 className="h-4 sm:h-5 ml-2 mt-1 opacity-70" // Adjust h- and ml- as needed for visual balance
               />
