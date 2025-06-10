@@ -1,3 +1,4 @@
+// src/contexts/SpiritsContext.tsx
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import {
@@ -5,12 +6,12 @@ import {
   type Subtype,
   type Brand,
   type Rating,
-} from '../data/types';
+} from '../data/types'; // Ensure this path is correct
 
 interface FilterOptions {
-  regions: string[];
+  alcoholTypeNames: string[]; // Renamed from 'regions'
   flavorProfiles: string[];
-  priceRanges: string[];
+  priceRanges: string[]; // Will now contain actual ranges like "$20-25"
   abvRanges: string[];
   ageStatements: string[];
   distilleries: string[];
@@ -33,7 +34,7 @@ interface SpiritsContextType {
   myBarSpirits: MyBarSpirit[];
   loading: boolean;
   error: string | null;
-  
+
   // Existing methods
   getCategoryById: (id: string) => AlcoholType | undefined;
   getAlcoholTypeById: (id: string) => Promise<AlcoholType | undefined>;
@@ -41,7 +42,7 @@ interface SpiritsContextType {
   getSubtypeById: (id: string) => Promise<Subtype | undefined>;
   getBrandsBySubtypeId: (subtypeId: string) => Brand[];
   getBrandById: (brandId: string) => Promise<Brand | undefined>;
-  
+
   // New filtering methods
   getFilteredSpirits: (filters: Partial<FilterOptions>, searchQuery?: string) => {
     alcoholTypes: AlcoholType[];
@@ -49,14 +50,14 @@ interface SpiritsContextType {
     brands: Brand[];
   };
   getAvailableFilterOptions: () => FilterOptions;
-  
+
   // My Bar functionality
   addSpiritToMyBar: (spiritId: string, spiritType: 'alcohol_type' | 'subtype' | 'brand', notes?: string) => Promise<void>;
   removeSpiritFromMyBar: (spiritId: string) => Promise<void>;
   updateMyBarNotes: (spiritId: string, notes: string) => Promise<void>;
   isInMyBar: (spiritId: string) => boolean;
   loadMyBarSpirits: () => Promise<void>;
-  
+
   // Rating functionality
   addRating: (brandId: string, rating: number, comment: string) => Promise<void>;
   getRatingsForBrand: (brandId: string) => Promise<Rating[]>;
@@ -78,7 +79,7 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const fetchAllSpiritsData = async () => {
       try {
         setLoading(true);
-        
+
         // Fetch all data in parallel
         const [typesData, subtypesData, brandsData] = await Promise.all([
           supabase.from('alcohol_types').select('*, history, fun_facts, myths, image_url'),
@@ -119,13 +120,13 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setAlcoholTypes(processedAlcoholTypes);
         setAllSubtypes(processedSubtypes);
         setAllBrands(processedBrands);
-        
+
         // Load user's bar if authenticated
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           await loadMyBarSpirits();
         }
-        
+
       } catch (err: any) {
         console.error('Error fetching spirits data:', err.message);
         setError(err.message || 'Failed to fetch spirits data.');
@@ -135,7 +136,7 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
 
     fetchAllSpiritsData();
-  }, []);
+  }, []); // Removed loadMyBarSpirits from dependency array to prevent infinite loop on first load
 
   // Existing methods
   const getCategoryById = useCallback(
@@ -237,11 +238,11 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const query = searchQuery.toLowerCase();
       filteredAlcoholTypes = filteredAlcoholTypes.filter(type =>
         type.name.toLowerCase().includes(query) ||
-        type.description.toLowerCase().includes(query)
+        (type.description && type.description.toLowerCase().includes(query)) // Ensure description exists
       );
       filteredSubtypes = filteredSubtypes.filter(sub =>
         sub.name.toLowerCase().includes(query) ||
-        sub.description.toLowerCase().includes(query)
+        (sub.description && sub.description.toLowerCase().includes(query)) // Ensure description exists
       );
       filteredBrands = filteredBrands.filter(brand =>
         brand.name.toLowerCase().includes(query) ||
@@ -249,71 +250,127 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       );
     }
 
-    // Apply region filter
-    if (filters.regions && filters.regions.length > 0) {
-      filteredSubtypes = filteredSubtypes.filter(sub =>
-        filters.regions!.includes(sub.region)
-      );
-      // Filter alcohol types that have matching subtypes
-      const matchingAlcoholTypeIds = new Set(filteredSubtypes.map(sub => sub.alcohol_type_id));
+    // Apply alcohol type names filter (formerly regions)
+    if (filters.alcoholTypeNames && filters.alcoholTypeNames.length > 0) {
+      // Filter alcohol types by their name
       filteredAlcoholTypes = filteredAlcoholTypes.filter(type =>
-        matchingAlcoholTypeIds.has(type.id)
+        filters.alcoholTypeNames!.includes(type.name)
       );
-      // Filter brands that belong to matching subtypes
-      const matchingSubtypeIds = new Set(filteredSubtypes.map(sub => sub.id));
-      filteredBrands = filteredBrands.filter(brand =>
-        matchingSubtypeIds.has(brand.subtype_id)
+
+      // Now filter subtypes and brands that belong to these filtered alcohol types
+      const matchingAlcoholTypeIds = new Set(filteredAlcoholTypes.map(type => type.id));
+      filteredSubtypes = filteredSubtypes.filter(sub =>
+        matchingAlcoholTypeIds.has(sub.alcohol_type_id)
       );
+      filteredBrands = filteredBrands.filter(brand => {
+        // Find the subtype of the brand
+        const brandSubtype = allSubtypes.find(sub => sub.id === brand.subtype_id);
+        return brandSubtype && matchingAlcoholTypeIds.has(brandSubtype.alcohol_type_id);
+      });
     }
 
     // Apply flavor profile filter
     if (filters.flavorProfiles && filters.flavorProfiles.length > 0) {
+      // Filter subtypes
       filteredSubtypes = filteredSubtypes.filter(sub =>
         sub.flavor_profile && sub.flavor_profile.some(fp =>
           filters.flavorProfiles!.includes(fp)
         )
       );
+      // Filter brands: A brand's tasting notes should match any selected flavor profile
       filteredBrands = filteredBrands.filter(brand =>
-        brand.tasting_notes && brand.tasting_notes.some(note =>
+        brand.tasting_notes && brand.tasting_notes.some((note: string) => // Ensure tasting_notes is an array of strings
           filters.flavorProfiles!.includes(note)
+        )
+      );
+      // Filter alcohol types: If any of their subtypes or brands match flavor profile
+      const matchingSubtypeIds = new Set(filteredSubtypes.map(sub => sub.id));
+      const matchingAlcoholTypeIdsFromSubtypes = new Set(
+        filteredSubtypes.map(sub => sub.alcohol_type_id)
+      );
+      filteredAlcoholTypes = filteredAlcoholTypes.filter(type =>
+        matchingAlcoholTypeIdsFromSubtypes.has(type.id) ||
+        allSubtypes.some(sub =>
+          sub.alcohol_type_id === type.id &&
+          allBrands.some(brand =>
+            brand.subtype_id === sub.id &&
+            brand.tasting_notes &&
+            brand.tasting_notes.some((note: string) =>
+              filters.flavorProfiles!.includes(note)
+            )
+          )
         )
       );
     }
 
     // Apply ABV range filter
     if (filters.abvRanges && filters.abvRanges.length > 0) {
-      const abvFilter = (abv: number | null) => {
-        if (!abv) return false;
-        return filters.abvRanges!.some(range => {
+      const abvFilter = (abv: number | null | undefined, filterRanges: string[]) => {
+        if (abv === null || abv === undefined) return false;
+        return filterRanges.some(range => {
           switch (range) {
-            case '<20%': return abv < 20;
-            case '20-40%': return abv >= 20 && abv <= 40;
-            case '40-60%': return abv > 40 && abv <= 60;
-            case '>60%': return abv > 60;
+            case '0-20%': return abv >= 0 && abv < 20;
+            case '20-40%': return abv >= 20 && abv < 40;
+            case '40-60%': return abv >= 40 && abv <= 60; // Usually 40-60% includes 60
+            case '60%+': return abv > 60;
             default: return false;
           }
         });
       };
 
       filteredSubtypes = filteredSubtypes.filter(sub =>
-        abvFilter(sub.abv_min) || abvFilter(sub.abv_max)
+        abvFilter(sub.abv_min, filters.abvRanges!) || abvFilter(sub.abv_max, filters.abvRanges!)
       );
-      filteredBrands = filteredBrands.filter(brand => abvFilter(brand.abv));
+      filteredBrands = filteredBrands.filter(brand => abvFilter(brand.abv, filters.abvRanges!));
+
+      // Propagate ABV filter to alcohol types
+      const matchingSubtypeIdsForAbv = new Set(filteredSubtypes.map(sub => sub.id));
+      const matchingBrandsForAbv = new Set(filteredBrands.map(brand => brand.id));
+
+      const alcoholTypesWithMatchingSubtypes = new Set(
+          filteredSubtypes.filter(sub => matchingSubtypeIdsForAbv.has(sub.id)).map(sub => sub.alcohol_type_id)
+      );
+
+      const alcoholTypesWithMatchingBrands = new Set(
+          filteredBrands.filter(brand => matchingBrandsForAbv.has(brand.id))
+              .map(brand => allSubtypes.find(sub => sub.id === brand.subtype_id)?.alcohol_type_id)
+              .filter(Boolean) as string[]
+      );
+
+      filteredAlcoholTypes = filteredAlcoholTypes.filter(type =>
+          alcoholTypesWithMatchingSubtypes.has(type.id) || alcoholTypesWithMatchingBrands.has(type.id)
+      );
     }
 
+
     // Apply price range filter
+    // Now directly matches the string from the dropdown
     if (filters.priceRanges && filters.priceRanges.length > 0) {
-      filteredBrands = filteredBrands.filter(brand => {
-        if (!brand.price_range) return false;
-        const priceLevel = brand.price_range.split('-')[0]; // Get first part like "$30" from "$30-40"
-        if (priceLevel.includes('$')) {
-          const dollarCount = (priceLevel.match(/\$/g) || []).length;
-          const priceCategory = '$'.repeat(Math.min(dollarCount, 3));
-          return filters.priceRanges!.includes(priceCategory);
-        }
-        return false;
-      });
+      filteredBrands = filteredBrands.filter(brand =>
+        brand.price_range && filters.priceRanges!.includes(brand.price_range)
+      );
+      // Propagate price filter to subtypes and alcohol types
+      const matchingSubtypeIds = new Set(filteredBrands.map(brand => brand.subtype_id));
+      filteredSubtypes = filteredSubtypes.filter(sub =>
+        matchingSubtypeIds.has(sub.id)
+      );
+      const matchingAlcoholTypeIds = new Set(filteredSubtypes.map(sub => sub.alcohol_type_id));
+      filteredAlcoholTypes = filteredAlcoholTypes.filter(type =>
+        matchingAlcoholTypeIds.has(type.id)
+      );
     }
+
+    // Add other filters if you implement them (ageStatements, distilleries)
+    // For now, these are not fully implemented for filtering logic
+    if (filters.ageStatements && filters.ageStatements.length > 0) {
+        // You'll need to implement logic to parse age from brand names/descriptions
+        // For example: filteredBrands = filteredBrands.filter(brand => brand.name.includes(filters.ageStatements[0]));
+    }
+    if (filters.distilleries && filters.distilleries.length > 0) {
+        // You'll need to implement logic to filter by distillery, likely a field on Brand or Subtype
+        // For example: filteredBrands = filteredBrands.filter(brand => brand.distillery === filters.distilleries[0]);
+    }
+
 
     return {
       alcoholTypes: filteredAlcoholTypes,
@@ -323,37 +380,51 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [alcoholTypes, allSubtypes, allBrands]);
 
   const getAvailableFilterOptions = useCallback((): FilterOptions => {
-    const regions = [...new Set(allSubtypes.map(sub => sub.region).filter(Boolean))];
-    const flavorProfiles = [...new Set(allSubtypes.flatMap(sub => sub.flavor_profile || []))];
-    const priceRanges = ['$', '$$', '$$$'];
-    const abvRanges = ['<20%', '20-40%', '40-60%', '>60%'];
+    // Collect all unique alcohol type names
+    const alcoholTypeNames = [...new Set(alcoholTypes.map(type => type.name))];
     
+    // Collect all unique flavor profiles from subtypes
+    const flavorProfiles = [...new Set(allSubtypes.flatMap(sub => sub.flavor_profile || []))];
+    
+    // Collect all unique price ranges from brands (e.g., "$15-20", "$30-40")
+    const priceRanges = [...new Set(allBrands.map(brand => brand.price_range).filter(Boolean))].sort((a, b) => {
+        // Simple alphanumeric sort, consider custom sorting for actual price values if needed
+        const parsePrice = (range: string) => parseFloat(range.replace('$', '').split('-')[0]);
+        return parsePrice(a) - parsePrice(b);
+    });
+    
+    const abvRanges = ['0-20%', '20-40%', '40-60%', '60%+']; // These are fixed ranges for display
+
     // Extract age statements from brand names/descriptions
     const ageStatements = [...new Set(
       allBrands.flatMap(brand => {
-        const ageMatches = brand.name.match(/(\d+)\s*(year|yr|YO)/gi) || [];
+        // Example: "10 Year", "12 YO", "Aged 15 yrs"
+        const ageMatches = brand.name.match(/(\d+)\s*(year|yr|YO|yrs)/gi) || [];
         return ageMatches.map(match => match.replace(/\s+/g, ' ').trim());
       })
-    )];
+    )].sort();
 
     // Extract distillery names (simplified - could be more sophisticated)
     const distilleries = [...new Set(
       allBrands.map(brand => {
-        // Extract potential distillery names from brand names
+        // Placeholder: Assuming a 'distillery' field on brand or extracting from name
+        // If you have a 'distillery_id' or 'distillery_name' field on 'brands' table, use that.
+        // For example: return brand.distillery_name;
+        // For now, keeping your existing simple approach:
         const words = brand.name.split(' ');
         return words[0]; // Simple approach - take first word
       }).filter(Boolean)
-    )];
+    )].sort();
 
     return {
-      regions: regions.sort(),
-      flavorProfiles: flavorProfiles.sort(),
-      priceRanges,
+      alcoholTypeNames: alcoholTypeNames.sort(), // Sort alphabetically
+      flavorProfiles: flavorProfiles.sort(),     // Sort alphabetically
+      priceRanges, // Already sorted by parsing
       abvRanges,
-      ageStatements: ageStatements.sort(),
-      distilleries: distilleries.sort()
+      ageStatements,
+      distilleries
     };
-  }, [allSubtypes, allBrands]);
+  }, [alcoholTypes, allSubtypes, allBrands]);
 
   // My Bar functionality
   const loadMyBarSpirits = useCallback(async () => {
@@ -391,7 +462,7 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } catch (error) {
       console.error('Error loading My Bar spirits:', error);
     }
-  }, [alcoholTypes, allSubtypes, allBrands]);
+  }, [alcoholTypes, allSubtypes, allBrands]); // Dependencies needed here as well for enrichment
 
   const addSpiritToMyBar = useCallback(async (spiritId: string, spiritType: 'alcohol_type' | 'subtype' | 'brand', notes?: string) => {
     try {
@@ -535,7 +606,7 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   return (
     <SpiritsContext.Provider value={contextValue}>
       {children}
-    </SpiritsContext.Provider>
+    </SpitsContext.Provider>
   );
 };
 
