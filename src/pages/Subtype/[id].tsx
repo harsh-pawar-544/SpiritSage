@@ -5,6 +5,8 @@ import { useSpirits } from '../../contexts/SpiritsContext';
 import TransitionImage from '../../components/ui/TransitionImage';
 import { Subtype } from '../../data/types'; // Removed 'Brand' as it's no longer used here for exampleBrands
 
+
+
 const SubtypeDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   // Removed getBrandsBySubtypeId from destructuring as it's no longer needed for exampleBrands
@@ -25,6 +27,7 @@ const SubtypeDetailPage: React.FC = () => {
       setError(null);
       try {
         const subtypeData = await getSubtypeById(id);
+        console.log("SubtypeDetailPage: Fetched subtypeData:", subtypeData);
         if (subtypeData) {
           setSubtype(subtypeData);
           // Removed: Logic to fetch and set exampleBrands is no longer needed
