@@ -54,35 +54,28 @@ const RelatedSpirits: React.FC<RelatedSpiritsProps> = ({ subtypeId }) => {
       <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Popular Examples</h4>
       <div className="flex overflow-x-auto space-x-4 pb-4 scrollbar-hide">
         {brands.map((brand) => ( // Mapping over brands
-          <div key={brand.id} className="flex-none w-48 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-sm overflow-hidden flex flex-col">
+          // Wrap the entire brand card content in a Link component
+          <Link
+            key={brand.id}
+            to={`/spirit/${brand.id}`} // Link to the spirit (brand) detail page
+            className="flex-none w-48 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-sm overflow-hidden flex flex-col group hover:shadow-md transition-shadow duration-200" // Added group and hover styles for Link
+          >
             <div className="relative w-full h-32">
               <TransitionImage
                 src={brand.image || 'https://via.placeholder.com/150'} // Use brand.image or brand.image_url
                 alt={brand.name}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" // Added group-hover scale
               />
-              {/* If your brand data has a save_percentage, display it */}
-              {/* {brand.save_percentage && (
-                <span className="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                  Save {brand.save_percentage}%
-                </span>
-              )} */}
             </div>
             <div className="p-3 flex-grow flex flex-col justify-between">
               <div>
-                <h5 className="font-medium text-gray-900 dark:text-white line-clamp-2">{brand.name}</h5>
-                {/* If your brand data has average_rating and ratings, display them */}
-                {/* {brand.average_rating && (
-                  <div className="flex items-center text-sm text-gray-600 dark:text-gray-300 mt-1">
-                    <span className="text-yellow-500 mr-1">★</span>{brand.average_rating} ({brand.ratings} ratings)
-                  </div>
-                )} */}
+                <h5 className="font-medium text-gray-900 dark:text-white line-clamp-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{brand.name}</h5>
               </div>
               {brand.price_range && ( // Use brand.price_range for price
                 <p className="text-md font-bold text-gray-900 dark:text-white mt-2">{brand.price_range}</p>
               )}
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </div>
