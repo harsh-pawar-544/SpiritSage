@@ -17,16 +17,11 @@ import SpiritSubtypesPage from './pages/SpiritSubtypes/SpiritSubtypesPage';
 import AlcoholTypeDetailPage from './pages/AlcoholType/[id]';
 import SubtypeDetailPage from './pages/Subtype/[id]';
 
-// --- THIS IS THE CRUCIAL, FINAL CHANGE ---
-// Now importing the correct component name (SpiritProfilePage)
-// from the correct file path (./pages/Spirit/[id])
 import SpiritProfilePage from './pages/Spirit/[id]';
-// --- END CRUCIAL, FINAL CHANGE ---
-
 
 import AboutPage from './pages/About/AboutPage';
 import ContactPage from './pages/Contact/ContactPage';
-import SettingsPage from './pages/Settings/SettingsPage';
+import SettingsPage from './pages/Settings/SettingsPage'; // <-- Make sure this import is here
 
 function App() {
   return (
@@ -45,15 +40,12 @@ function App() {
                   <Route path="/alcohol-type/:id/subtypes" element={<SpiritSubtypesPage />} />
                   <Route path="/subtype/:id" element={<SubtypeDetailPage />} />
 
-                  {/* --- THIS IS THE CRUCIAL, FINAL CHANGE --- */}
-                  {/* Now rendering the correctly imported SpiritProfilePage component */}
                   <Route path="/spirit/:id" element={<SpiritProfilePage />} />
-                  {/* --- END CRUCIAL, FINAL CHANGE --- */}
 
                   <Route path="/category/:id" element={<SpiritOverviewPage />} />
                   <Route path="/about" element={<AboutPage />} />
                   <Route path="/contact" element={<ContactPage />} />
-                  <Route path="/settings" />
+                  <Route path="/settings" element={<SettingsPage />} /> {/* <--- THE FIX IS HERE! */}
                 </Routes>
               </Layout>
             </Router>
