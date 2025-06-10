@@ -135,7 +135,7 @@ export default function AlcoholTypeScreen() {
           {/* Subtypes with Example Brands */}
           {subtypesWithBrands.length > 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Types of {alcoholType.name}</Text>
+              <Text style={styles.sectionTitle}> {alcoholType.name}</Text>
               {subtypesWithBrands.map((subtype) => (
                 <View key={subtype.id} style={styles.subtypeSection}>
                   <TouchableOpacity
