@@ -34,7 +34,7 @@ export interface Subtype {
   name: string;
   description: string | null;
   image_url: string | null; // The URL directly from the database
-
+  alcohol_type_name?: string | null; // Add this
   // Optional: If you preprocess and attach a display-ready image property
   image?: string | null; // A convenient property for components, often derived from image_url
 
