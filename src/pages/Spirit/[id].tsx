@@ -4,17 +4,17 @@ import { ArrowLeft } from 'lucide-react';
 import { useSpirits } from '../../contexts/SpiritsContext';
 import { useRecommendations } from '../../contexts/RecommendationsContext';
 import TransitionImage from '../../components/ui/TransitionImage';
-import { Brand } from '../../data/types'; // Make sure your Brand type includes 'image_url' and other fields
+import { Brand } from '../../data/types';
 
 const SpiritProfilePage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams<{ id: string }>(); // This 'id' is the brandId
   const { getBrandById, getTastingNotesForSpirit } = useSpirits();
   const { trackInteraction } = useRecommendations();
   const [isLoading, setIsLoading] = useState(true);
   const [tastingNotes, setTastingNotes] = useState<Array<{ term: string; percentage: number }>>([]);
   const [spirit, setSpirit] = useState<Brand | null>(null);
   // const [similarSpirits, setSimilarSpirits] = useState<any[]>([]); // This state is not used
-  const parentCategoryId = id?.split('-')[0]; // Assuming your ID structure allows this
+  // const parentCategoryId = id?.split('-')[0]; // <-- REMOVE OR COMMENT OUT THIS LINE
 
   useEffect(() => {
     if (id) {
@@ -22,21 +22,17 @@ const SpiritProfilePage: React.FC = () => {
 
       Promise.all([
         getBrandById(id),
-        getTastingNotesForSpirit(id) // This likely fetches based on 'tasting_notes' column
+        getTastingNotesForSpirit(id)
       ])
         .then(([spiritData, tastingNotesData]) => {
           console.log("SpiritProfilePage: Raw spiritData from getBrandById:", spiritData);
           console.log("SpiritProfilePage: image_url in raw spiritData:", spiritData?.image_url);
           
           setSpirit(spiritData);
-          // Ensure tastingNotesData is an array, map if necessary
-          // Assuming tastingNotesData is already formatted correctly as { term: string; percentage: number }[]
-          setTastingNotes(tastingNotesData || []); // Provide empty array if null
+          setTastingNotes(tastingNotesData || []);
           setIsLoading(false);
 
           if (spiritData) {
-            // Track interaction ONLY after successful data load
-            // Assuming 'brand' is the correct spiritType for this page's ID
             trackInteraction(id, 'brand', 'view');
           }
         })
@@ -62,42 +58,43 @@ const SpiritProfilePage: React.FC = () => {
     return (
       <div className="min-h-[50vh] flex items-center justify-center flex-col">
         <p className="text-2xl text-gray-600 dark:text-gray-400 mb-4">Spirit not found or an error occurred.</p>
+        {/* Fallback link in case spirit data isn't found */}
         <Link
-          to={`/category/${parentCategoryId || ''}`}
+          to={`/category/`} // Go back to a general categories page if parent is unknown
           className="inline-flex items-center text-indigo-600 hover:text-indigo-700 group"
         >
           <ArrowLeft className="w-5 h-5 mr-2 transition-transform group-hover:-translate-x-1" />
-          Back to Overview
+          Back to Categories
         </Link>
       </div>
     );
   }
 
+  // Use spirit.subtype_id directly for the "Back to Subtypes" link
+  // Ensure spirit.subtype_id exists before using it, fallback to '/' if needed.
+  const subtypeIdToNavigate = spirit.subtype_id;
+
   // --- Main Content Rendering with all fields ---
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
       <Link
-        to={`/category/${parentCategoryId || ''}`}
+        // Use spirit.subtype_id here
+        to={`/category/${subtypeIdToNavigate || ''}`} 
         className="inline-flex items-center text-indigo-600 hover:text-indigo-700 mb-8 group"
       >
         <ArrowLeft className="w-5 h-5 mr-2 transition-transform group-hover:-translate-x-1" />
-        Back to Subtypes {/* Changed "Overview" to "Subtypes" as it's more specific here */}
+        Back to Subtypes
       </Link>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
         {/* Spirit Image Section */}
         <div className="flex justify-center md:justify-end">
-          {/* !!! CRUCIAL CHANGE: Added a wrapper div with defined height !!! */}
-          {/* This `div` gives `TransitionImage`'s `h-full` a reference height */}
-          <div className="relative w-full max-w-xs md:max-w-md h-96"> {/* Example height: h-96 (24rem or 384px) */}
+          <div className="relative w-full max-w-xs md:max-w-md h-96">
             <TransitionImage
-              // Use spirit.image_url and provide a fallback if it's null or undefined
               src={spirit.image_url || 'https://via.placeholder.com/300x400?text=No+Image'}
               alt={spirit.name}
-              // Simplified className as sizing is now handled by the outer div
-              className="w-full h-full object-contain rounded-lg shadow-lg" 
-              // width and height props passed to the img element directly for image sizing
-              width={300} 
+              className="w-full h-full object-contain rounded-lg shadow-lg"
+              width={300}
               height={400}
             />
           </div>
