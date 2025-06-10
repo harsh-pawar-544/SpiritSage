@@ -1,10 +1,10 @@
 // src/App.tsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-// Removed: import Navbar from './components/common/Navbar';
-// Removed: import Footer from './components/common/Footer';
 
-import HomePage from './pages/HomePage';
+// CORRECTED: Import 'Home' component from 'home.tsx' directly in src/
+import Home from './home'; 
+
 import ExplorePage from './pages/ExplorePage';
 import SpiritProfilePage from './pages/Spirit/[id]'; // Your spirit detail page
 import SpiritOverviewPage from './pages/AlcoholType/[id]'; // Alcohol type detail page
@@ -29,10 +29,11 @@ const App: React.FC = () => {
         <SpiritsProvider>
           <RecommendationsProvider>
             <div className="flex flex-col min-h-screen dark:bg-gray-900">
-              {/* Removed: <Navbar /> */}
               <main className="flex-grow">
                 <Routes>
-                  <Route path="/" element={<HomePage />} />
+                  {/* CORRECTED: Use 'Home' component for the root path */}
+                  <Route path="/" element={<Home />} /> 
+                  
                   <Route path="/explore" element={<ExplorePage />} />
                   <Route path="/my-bar" element={<MyBarPage />} />
                   <Route path="/about" element={<AboutPage />} />
@@ -51,7 +52,6 @@ const App: React.FC = () => {
                   <Route path="/other-alcohol" element={<OtherAlcoholPage />} />
                 </Routes>
               </main>
-              {/* Removed: <Footer /> */}
             </div>
           </RecommendationsProvider>
         </SpiritsProvider>
