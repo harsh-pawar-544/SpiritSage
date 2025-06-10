@@ -1,94 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { useSpirits } from '../../contexts/SpiritsContext'; // Make sure this path is correct
+import { useSpirits } from '../../contexts/SpiritsContext';
 import TransitionImage from '../../components/ui/TransitionImage';
-import { Brand } from '../../data/types'; // Import the Brand type
-
-// New component to display related spirits/brands for a given subtype
-interface RelatedSpiritsProps {
-  subtypeId: string;
-}
-
-const RelatedSpirits: React.FC<RelatedSpiritsProps> = ({ subtypeId }) => {
-  const { getBrandsBySubtypeId } = useSpirits(); // Now using getBrandsBySubtypeId
-  const [brands, setBrands] = useState<Brand[]>([]); // State for brands
-  const [isLoadingBrands, setIsLoadingBrands] = useState(true);
-
-  useEffect(() => {
-    const fetchBrands = () => { // No longer async as data is in-memory
-      try {
-        setIsLoadingBrands(true);
-        const data = getBrandsBySubtypeId(subtypeId); // Directly get from in-memory data
-        // Take a few examples, e.g., the first 3 or 4
-        setBrands(data.slice(0, 4));
-      } catch (error) {
-        console.error(`Error fetching brands for subtype ${subtypeId}:`, error);
-        setBrands([]); // Clear brands on error
-      } finally {
-        setIsLoadingBrands(false);
-      }
-    };
-
-    fetchBrands();
-  }, [subtypeId, getBrandsBySubtypeId]); // Dependencies: subtypeId and the memoized function
-
-  if (isLoadingBrands) {
-    return (
-      <div className="flex justify-center items-center py-4">
-        <p className="text-gray-500 dark:text-gray-400">Loading examples...</p>
-      </div>
-    );
-  }
-
-  if (!brands.length) {
-    return (
-      <div className="flex justify-center items-center py-4">
-        <p className="text-gray-500 dark:text-gray-400">No examples found for this type.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="mt-6">
-      <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Popular Examples</h4>
-      <div className="flex overflow-x-auto space-x-4 pb-4 scrollbar-hide">
-        {brands.map((brand) => ( // Mapping over brands
-          <div key={brand.id} className="flex-none w-48 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-sm overflow-hidden flex flex-col">
-            <div className="relative w-full h-32">
-              <TransitionImage
-                src={brand.image || 'https://via.placeholder.com/150'} // Use brand.image or brand.image_url
-                alt={brand.name}
-                className="w-full h-full object-cover"
-              />
-              {/* If your brand data has a save_percentage, display it */}
-              {/* {brand.save_percentage && (
-                <span className="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                  Save {brand.save_percentage}%
-                </span>
-              )} */}
-            </div>
-            <div className="p-3 flex-grow flex flex-col justify-between">
-              <div>
-                <h5 className="font-medium text-gray-900 dark:text-white line-clamp-2">{brand.name}</h5>
-                {/* If your brand data has average_rating and ratings, display them */}
-                {/* {brand.average_rating && (
-                  <div className="flex items-center text-sm text-gray-600 dark:text-gray-300 mt-1">
-                    <span className="text-yellow-500 mr-1">★</span>{brand.average_rating} ({brand.ratings} ratings)
-                  </div>
-                )} */}
-              </div>
-              {brand.price_range && ( // Use brand.price_range for price
-                <p className="text-md font-bold text-gray-900 dark:text-white mt-2">{brand.price_range}</p>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
+// Removed: import { Brand } from '../../data/types'; // No longer needed if RelatedSpirits is removed
 
 const SpiritSubtypesPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -151,21 +66,18 @@ const SpiritSubtypesPage: React.FC = () => {
         {subtypes.map(subtype => (
           <div
             key={subtype.id}
-            className="group focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-xl overflow-hidden"
+            className="cursor-pointer group focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-xl"
+            onClick={() => navigate(`/subtype/${subtype.id}`)}
+            role="button"
+            tabIndex={0}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                navigate(`/subtype/${subtype.id}`);
+              }
+            }}
           >
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transition-all duration-300 transform hover:shadow-xl hover:-translate-y-1">
-              {/* Subtype Card Header */}
-              <div
-                className="relative aspect-[4/3] cursor-pointer"
-                onClick={() => navigate(`/subtype/${subtype.id}`)}
-                role="button"
-                tabIndex={0}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    navigate(`/subtype/${subtype.id}`);
-                  }
-                }}
-              >
+              <div className="relative aspect-[4/3]">
                 <TransitionImage
                   src={subtype.image}
                   alt={subtype.name}
@@ -177,11 +89,7 @@ const SpiritSubtypesPage: React.FC = () => {
                   <p className="text-sm text-gray-200 line-clamp-2">{subtype.description}</p>
                 </div>
               </div>
-
-              {/* Related Spirits/Brands Section */}
-              <div className="p-4">
-                <RelatedSpirits subtypeId={subtype.id} />
-              </div>
+              {/* Removed: Related Spirits/Brands Section */}
             </div>
           </div>
         ))}
@@ -191,3 +99,5 @@ const SpiritSubtypesPage: React.FC = () => {
 };
 
 export default SpiritSubtypesPage;
+
+// Removed: RelatedSpirits component definition
