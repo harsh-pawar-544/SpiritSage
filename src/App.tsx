@@ -1,7 +1,7 @@
 // src/App.tsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Navbar from './components/common/Navbar';
+// import Navbar from './components/common/Navbar'; // THIS LINE IS REMOVED
 import Footer from './components/common/Footer';
 import HomePage from './pages/HomePage';
 import ExplorePage from './pages/ExplorePage';
@@ -19,17 +19,16 @@ import { AuthProvider } from './contexts/AuthContext';
 import { SpiritsProvider } from './contexts/SpiritsContext';
 import { RecommendationsProvider } from './contexts/RecommendationsContext';
 
-// NEW IMPORT (make sure this path is correct based on your file structure)
 import OtherAlcoholPage from './pages/OtherAlcoholPage';
 
 const App: React.FC = () => {
   return (
     <Router>
       <AuthProvider>
-        <SpiritsProvider> {/* SpiritsContext is still used */}
+        <SpiritsProvider>
           <RecommendationsProvider>
             <div className="flex flex-col min-h-screen dark:bg-gray-900">
-              <Navbar />
+              {/* <Navbar /> -- THIS COMPONENT USAGE IS REMOVED */}
               <main className="flex-grow">
                 <Routes>
                   <Route path="/" element={<HomePage />} />
