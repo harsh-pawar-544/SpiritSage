@@ -25,13 +25,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="flex justify-center items-center space-x-4">
             {/* Using the White Circle Badge for a presumed dark footer background in dark mode */}
             <img
-              src="/logos/bolt-white-circle.png" // Ensure this path is correct: public/logos/bolt-white-circle.png
+              src="/logos/white_circle.png" // Ensure this path is correct: public/logos/bolt-white-circle.png
               alt="Powered by Bolt AI"
               className="h-9 w-auto rounded-full" // Adjust sizing as needed
             />
             {/* You can add other badge variations here if you want to display all three, e.g.: */}
             {/* <img
-              src="/logos/bolt-black-circle.png"
+              src="/logos/black_circle.png"
               alt="Bolt AI Badge"
               className="h-9 w-auto rounded-full"
             />
