@@ -1,8 +1,9 @@
 // src/App.tsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-// import Navbar from './components/common/Navbar'; // THIS LINE IS REMOVED
-import Footer from './components/common/Footer';
+// Removed: import Navbar from './components/common/Navbar';
+// Removed: import Footer from './components/common/Footer';
+
 import HomePage from './pages/HomePage';
 import ExplorePage from './pages/ExplorePage';
 import SpiritProfilePage from './pages/Spirit/[id]'; // Your spirit detail page
@@ -28,7 +29,7 @@ const App: React.FC = () => {
         <SpiritsProvider>
           <RecommendationsProvider>
             <div className="flex flex-col min-h-screen dark:bg-gray-900">
-              {/* <Navbar /> -- THIS COMPONENT USAGE IS REMOVED */}
+              {/* Removed: <Navbar /> */}
               <main className="flex-grow">
                 <Routes>
                   <Route path="/" element={<HomePage />} />
@@ -50,7 +51,7 @@ const App: React.FC = () => {
                   <Route path="/other-alcohol" element={<OtherAlcoholPage />} />
                 </Routes>
               </main>
-              <Footer />
+              {/* Removed: <Footer /> */}
             </div>
           </RecommendationsProvider>
         </SpiritsProvider>
