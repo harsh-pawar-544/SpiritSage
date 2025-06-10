@@ -1,63 +1,66 @@
-// src/App.tsx
+// Inside src/App.tsx
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-
-// CORRECTED: Import 'Home' component from 'home.tsx' directly in src/
-import Home from './pages/home'; 
-
-import ExplorePage from './pages/ExplorePage';
-import SpiritProfilePage from './pages/Spirit/[id]'; // Your spirit detail page
-import SpiritOverviewPage from './pages/AlcoholType/[id]'; // Alcohol type detail page
-import SubtypeDetailPage from './pages/Subtype/[id]'; // Subtype detail page
-import MyBarPage from './pages/MyBarPage';
-import AboutPage from './pages/AboutPage';
-import ContactPage from './pages/ContactPage';
-import SettingsPage from './pages/SettingsPage';
-import SignInPage from './pages/SignInPage';
-import SignUpPage from './pages/SignUpPage';
-import ResetPasswordPage from './pages/ResetPasswordPage';
+import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
 import { SpiritsProvider } from './contexts/SpiritsContext';
+import { UserPreferencesProvider } from './contexts/UserPreferencesContext';
 import { RecommendationsProvider } from './contexts/RecommendationsContext';
+import Layout from './components/layout/Layout';
+import Home from './pages/Home'; // Confirmed: pages/Home.tsx
+import SpiritListPage from './pages/SpiritList/SpiritListPage'; // This is your 'ExplorePage'
+import MyBarPage from './pages/MyBar/MyBarPage';
+import SpiritOverviewPage from './pages/SpiritOverview/SpiritOverviewPage';
+import SpiritSubtypesPage from './pages/SpiritSubtypes/SpiritSubtypesPage';
 
-import OtherAlcoholPage from './pages/OtherAlcoholPage';
 
-const App: React.FC = () => {
+import AlcoholTypeDetailPage from './pages/AlcoholType/[id]';
+import SubtypeDetailPage from './pages/Subtype/[id]';
+
+import SpiritProfilePage from './pages/Spirit/[id]';
+
+import AboutPage from './pages/About/AboutPage';
+import ContactPage from './pages/Contact/ContactPage';
+import SettingsPage from './pages/Settings/SettingsPage';
+
+// NEW IMPORT for Other Alcohol
+import OtherAlcoholPage from './pages/OtherAlcoholPage'; // You'll need to create this file if it doesn't exist
+
+function App() {
   return (
-    <Router>
+    <UserPreferencesProvider>
       <AuthProvider>
         <SpiritsProvider>
           <RecommendationsProvider>
-            <div className="flex flex-col min-h-screen dark:bg-gray-900">
-              <main className="flex-grow">
+            <Router>
+              <Toaster position="top-center" />
+              <Layout>
                 <Routes>
-                  {/* CORRECTED: Use 'Home' component for the root path */}
-                  <Route path="/" element={<Home />} /> 
-                  
-                  <Route path="/explore" element={<ExplorePage />} />
+                  <Route path="/" element={<Home />} />
+                  <Route path="/explore" element={<SpiritListPage />} /> {/* This is your main explore/list page */}
                   <Route path="/my-bar" element={<MyBarPage />} />
+                  <Route path="/alcohol-type/:id" element={<AlcoholTypeDetailPage />} />
+                  <Route path="/alcohol-type/:id/subtypes" element={<SpiritSubtypesPage />} />
+                  <Route path="/subtype/:id" element={<SubtypeDetailPage />} />
+
+                  <Route path="/spirit/:id" element={<SpiritProfilePage />} />
+
+                  <Route path="/category/:id" element={<SpiritOverviewPage />} />
                   <Route path="/about" element={<AboutPage />} />
                   <Route path="/contact" element={<ContactPage />} />
                   <Route path="/settings" element={<SettingsPage />} />
-                  <Route path="/signin" element={<SignInPage />} />
-                  <Route path="/signup" element={<SignUpPage />} />
-                  <Route path="/reset-password" element={<ResetPasswordPage />} />
-
-                  {/* Spirit/Alcohol Detail Routes */}
-                  <Route path="/spirit/:id" element={<SpiritProfilePage />} />
-                  <Route path="/alcohol-type/:id" element={<SpiritOverviewPage />} />
-                  <Route path="/subtype/:id" element={<SubtypeDetailPage />} />
 
                   {/* NEW ROUTE for Other Alcohol */}
                   <Route path="/other-alcohol" element={<OtherAlcoholPage />} />
                 </Routes>
-              </main>
-            </div>
+              </Layout>
+            </Router>
           </RecommendationsProvider>
         </SpiritsProvider>
       </AuthProvider>
-    </Router>
+    </UserPreferencesProvider>
   );
-};
+}
 
 export default App;
