@@ -26,7 +26,7 @@ const SpiritProfilePage: React.FC = () => {
       ])
         .then(([spiritData, tastingNotesData]) => {
           console.log("SpiritProfilePage: Raw spiritData from getBrandById:", spiritData);
-        console.log("SpiritProfilePage: image_url in raw spiritData:", spiritData?.image_url);
+          console.log("SpiritProfilePage: image_url in raw spiritData:", spiritData?.image_url);
           
           setSpirit(spiritData);
           // Ensure tastingNotesData is an array, map if necessary
@@ -81,20 +81,26 @@ const SpiritProfilePage: React.FC = () => {
         className="inline-flex items-center text-indigo-600 hover:text-indigo-700 mb-8 group"
       >
         <ArrowLeft className="w-5 h-5 mr-2 transition-transform group-hover:-translate-x-1" />
-        Back to Subtypes
+        Back to Subtypes {/* Changed "Overview" to "Subtypes" as it's more specific here */}
       </Link>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
         {/* Spirit Image Section */}
         <div className="flex justify-center md:justify-end">
-          <TransitionImage
-            // Use spirit.image_url and provide a fallback if it's null or undefined
-            src={spirit.image_url || 'https://via.placeholder.com/300x400?text=No+Image'}
-            alt={spirit.name}
-            className="w-full max-w-xs md:max-w-md rounded-lg shadow-lg object-contain"
-            width={300} // Consider setting a fixed width/height for image container
-            height={400}
-          />
+          {/* !!! CRUCIAL CHANGE: Added a wrapper div with defined height !!! */}
+          {/* This `div` gives `TransitionImage`'s `h-full` a reference height */}
+          <div className="relative w-full max-w-xs md:max-w-md h-96"> {/* Example height: h-96 (24rem or 384px) */}
+            <TransitionImage
+              // Use spirit.image_url and provide a fallback if it's null or undefined
+              src={spirit.image_url || 'https://via.placeholder.com/300x400?text=No+Image'}
+              alt={spirit.name}
+              // Simplified className as sizing is now handled by the outer div
+              className="w-full h-full object-contain rounded-lg shadow-lg" 
+              // width and height props passed to the img element directly for image sizing
+              width={300} 
+              height={400}
+            />
+          </div>
         </div>
 
         {/* Spirit Details Section */}
@@ -121,7 +127,6 @@ const SpiritProfilePage: React.FC = () => {
           )}
 
           {/* Display Tasting Notes */}
-          {/* Ensure getTastingNotesForSpirit returns an array of { term, percentage } */}
           {tastingNotes && tastingNotes.length > 0 && (
             <div className="mt-6">
               <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-3">Tasting Notes</h2>
