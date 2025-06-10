@@ -59,7 +59,7 @@ const HeaderNavigation: React.FC = () => {
               <img
                 src="public/logos/logotext_poweredby_.png" // MAKE SURE THIS PATH IS CORRECT
                 alt="Powered by Bolt AI"
-                className="h-4 sm:h-5 ml-2 mt-1 opacity-70" // Adjust h- and ml- as needed for visual balance
+                className="h-4 sm:h-5 ml-2 mt-1 opacity-70 invert dark:invert-0" // Add invert for light theme, dark:invert-0 for dark theme
               />
               {/* END ADDITION */}
 
