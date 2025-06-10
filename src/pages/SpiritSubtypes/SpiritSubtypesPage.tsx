@@ -152,7 +152,7 @@ const SpiritSubtypesPage: React.FC = () => {
             Back to Categories
           </Link>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Types of {subtypes.length > 0 ? subtypes[0].category_name : 'Spirit'}
+             {subtypes.length > 0 ? subtypes[0].category_name : 'Spirit'}
           </h1>
         </div>
       </div>
