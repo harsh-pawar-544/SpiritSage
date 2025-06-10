@@ -1,79 +1,110 @@
 // src/data/types.ts
 
-// The Brand interface
-export interface Brand {
-  id: string;
-  subtype_id: string; // Foreign key
-  name: string;
-  description: string | null;
-  abv: number | null; // Assumed from PDF's "Typical ABV" for individual products
-  tasting_notes: string[] | null; // Assumed from PDF's "Tasting Notes" column, if added and is array
-  price_range: string | null; // Assumed from PDF's "Price Range" if exists
-  image_url: string | null; // This is the single source of truth for the image URL
+// Forward declarations for interfaces that reference each other
+// This helps TypeScript resolve circular dependencies in interfaces
+// if you were to strictly type all nested arrays (e.g., AlcoholType has Subtype[], Subtype has Brand[])
+// For this simple case, direct definition should be fine, but it's good practice.
 
-  // These should correspond to columns in your 'brands' table, or be derived
-  // from nested joins (e.g., subtype details for category/origin)
-  history: string | null;
-  fun_facts: string[] | null; // Assuming this is an array if multi-valued
-  myths: string[] | null; // Assuming this is an array if multi-valued
-
-  // Derived from joins, or direct column if you have it
-  origin?: string | null; // From subtype or brand directly
-  category_name?: string | null; // From alcohol_types through subtypes
-  // ... any other columns specific to your 'brands' table
-}
-
-// Updated Subtype interface to include detailed content
-export interface Subtype {
-  id: string;
-  alcohol_type_id: string; // Foreign key
-  name: string;
-  description: string | null;
-  image_url: string | null; // This is the single source of truth for the image URL
-
-  // Details fields, matching what you want to display for a subtype
-  region: string | null; // From PDF's Country/Region
-  abv_min: number | null; // From PDF's Typical ABV range
-  abv_max: number | null; // From PDF's Typical ABV range
-  flavor_profile: string[] | null; // Assuming this is an array of strings
-  characteristics: string[] | null; // Assuming this is an array of strings
-  production_method: string | null;
-  history: string | null;
-  fun_facts: string[] | null;
-  myths: string[] | null;
-  
-  // For nested data from joins, if you need these
-  alcohol_types?: { name: string } | null; // For 'alcohol_types(name)' join
-
-  // If you also want nested brands inside the subtype object (for listing)
-  brands?: Brand[];
-}
-
-// Updated AlcoholType interface to include detailed content
+// --- AlcoholType Interface ---
+// Represents the top-level alcohol categories (e.g., "Whisky", "Vodka")
 export interface AlcoholType {
   id: string;
   name: string;
   description: string | null;
-  image_url: string | null; // This is the single source of truth for the image URL
-  subtype: Subtype[]
-  // Details fields, matching what you want to display for a parent category
+  image_url: string | null; // The URL directly from the database
+
+  // Optional: If you preprocess and attach a display-ready image property
+  image?: string | null; // A convenient property for components, often derived from image_url
+
+  // Detailed content fields for the category page
   history: string | null;
   fun_facts: string[] | null;
   myths: string[] | null;
 
-  // If you want nested subtypes inside the alcoholType object (for listing)
-  subtypes?: Subtype[];
+  // Nested Subtypes: When fetching AlcoholType data with its related subtypes
+  subtypes?: Subtype[]; // An array of associated Subtype objects
 }
 
+// --- Subtype Interface ---
+// Represents a specific type of alcohol within a category (e.g., "Scotch Whisky", "Irish Whiskey")
+export interface Subtype {
+  id: string;
+  alcohol_type_id: string; // Foreign key linking back to AlcoholType
+
+  name: string;
+  description: string | null;
+  image_url: string | null; // The URL directly from the database
+
+  // Optional: If you preprocess and attach a display-ready image property
+  image?: string | null; // A convenient property for components, often derived from image_url
+
+  // Detailed content fields for the subtype page
+  region: string | null;
+  abv_min: number | null;
+  abv_max: number | null;
+  flavor_profile: string[] | null;
+  characteristics: string[] | null;
+  production_method: string | null;
+  history: string | null;
+  fun_facts: string[] | null;
+  myths: string[] | null;
+
+  // IMPORTANT: This property is for the *parent AlcoholType's name and ID*
+  // It's used when you fetch a Subtype and want to know its parent category's details
+  // This matches the `{ id: string; name: string } | null` structure we decided to return in getSubtypeById
+  alcohol_types?: { id: string; name: string } | null; // Matches the joined data structure
+
+  // Nested Brands: When fetching Subtype data with its related brands
+  brands?: Brand[]; // An array of associated Brand objects
+}
+
+// --- Brand Interface ---
+// Represents an individual spirit brand (e.g., "Johnnie Walker Black Label")
+export interface Brand {
+  id: string;
+  subtype_id: string; // Foreign key linking back to Subtype
+
+  name: string;
+  description: string | null;
+  abv: number | null; // Alcohol by Volume (e.g., 40)
+  tasting_notes: string[] | null;
+  price_range: string | null;
+  image_url: string | null; // The URL directly from the database
+
+  // Optional: If you preprocess and attach a display-ready image property
+  image?: string | null; // A convenient property for components, often derived from image_url
+
+  // Detailed content fields for the brand page
+  history: string | null;
+  fun_facts: string[] | null;
+  myths: string[] | null;
+
+  // Derived/joined parent information for display or navigation
+  // This is used when you fetch a Brand and need to know its parent subtype/alcohol type
+  subtypes?: { // Nested object for parent subtype's details
+    id: string; // Include ID for accurate linking
+    name: string;
+    alcohol_types?: { // Nested object for parent alcohol type's details
+      id: string; // Include ID for accurate linking
+      name: string;
+    } | null;
+  } | null;
+
+  // You might want to include 'origin' if it's a direct column on 'brands'
+  // origin?: string | null;
+}
+
+// --- Rating Interface ---
+// Represents a user's rating and comment for a spirit brand
 export interface Rating {
   id: string;
-  spirit_id: string; // Should be uuid in Supabase to match brands.id
+  spirit_id: string; // Should be uuid from 'brands.id'
   user_id: string;
-  rating: number;
+  rating: number; // e.g., 1-5 stars
   comment: string | null;
   created_at: string;
   updated_at: string;
-  profiles?: {
+  profiles?: { // If you join user profile data with the rating
     username: string;
     avatar_url: string | null;
   };
