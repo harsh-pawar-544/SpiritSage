@@ -25,6 +25,9 @@ const SpiritProfilePage: React.FC = () => {
         getTastingNotesForSpirit(id) // This likely fetches based on 'tasting_notes' column
       ])
         .then(([spiritData, tastingNotesData]) => {
+          console.log("SpiritProfilePage: Raw spiritData from getBrandById:", spiritData);
+        console.log("SpiritProfilePage: image_url in raw spiritData:", spiritData?.image_url);
+          
           setSpirit(spiritData);
           // Ensure tastingNotesData is an array, map if necessary
           // Assuming tastingNotesData is already formatted correctly as { term: string; percentage: number }[]
@@ -78,7 +81,7 @@ const SpiritProfilePage: React.FC = () => {
         className="inline-flex items-center text-indigo-600 hover:text-indigo-700 mb-8 group"
       >
         <ArrowLeft className="w-5 h-5 mr-2 transition-transform group-hover:-translate-x-1" />
-        Back to Overview
+        Back to Subtypes
       </Link>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
