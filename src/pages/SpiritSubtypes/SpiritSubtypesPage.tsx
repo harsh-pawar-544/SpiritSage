@@ -1,178 +1,186 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { useSpirits } from '../../contexts/SpiritsContext';
-import { useRecommendations } from '../../contexts/RecommendationsContext';
+import { useSpirits } from '../../contexts/SpiritsContext'; // Make sure this path is correct
 import TransitionImage from '../../components/ui/TransitionImage';
-import { Brand } from '../../data/types';
+import { Brand } from '../../data/types'; // Import the Brand type
 
-const SpiritProfilePage: React.FC = () => {
-  const { id } = useParams<{ id: string }>(); // This 'id' is the brandId
-  const { getBrandById, getTastingNotesForSpirit } = useSpirits();
-  const { trackInteraction } = useRecommendations();
-  const [isLoading, setIsLoading] = useState(true);
-  const [tastingNotes, setTastingNotes] = useState<Array<{ term: string; percentage: number }>>([]);
-  const [spirit, setSpirit] = useState<Brand | null>(null);
-  
-  // No need for parentCategoryId here if we link directly to subtype details
+// New component to display related spirits/brands for a given subtype
+interface RelatedSpiritsProps {
+  subtypeId: string;
+}
+
+const RelatedSpirits: React.FC<RelatedSpiritsProps> = ({ subtypeId }) => {
+  const { getBrandsBySubtypeId } = useSpirits(); // Now using getBrandsBySubtypeId
+  const [brands, setBrands] = useState<Brand[]>([]); // State for brands
+  const [isLoadingBrands, setIsLoadingBrands] = useState(true);
 
   useEffect(() => {
-    if (id) {
-      setIsLoading(true);
+    const fetchBrands = () => { // No longer async as data is in-memory
+      try {
+        setIsLoadingBrands(true);
+        const data = getBrandsBySubtypeId(subtypeId); // Directly get from in-memory data
+        // Take a few examples, e.g., the first 3 or 4
+        setBrands(data.slice(0, 4));
+      } catch (error) {
+        console.error(`Error fetching brands for subtype ${subtypeId}:`, error);
+        setBrands([]); // Clear brands on error
+      } finally {
+        setIsLoadingBrands(false);
+      }
+    };
 
-      Promise.all([
-        getBrandById(id),
-        getTastingNotesForSpirit(id)
-      ])
-        .then(([spiritData, tastingNotesData]) => {
-          console.log("SpiritProfilePage: Raw spiritData from getBrandById:", spiritData);
-          console.log("SpiritProfilePage: image_url in raw spiritData:", spiritData?.image_url);
-          
-          setSpirit(spiritData);
-          setTastingNotes(tastingNotesData || []);
-          setIsLoading(false);
+    fetchBrands();
+  }, [subtypeId, getBrandsBySubtypeId]); // Dependencies: subtypeId and the memoized function
 
-          if (spiritData) {
-            trackInteraction(id, 'brand', 'view');
-          }
-        })
-        .catch(error => {
-          console.error('Error fetching data:', error);
-          setSpirit(null);
-          setTastingNotes([]);
-          setIsLoading(false);
-        });
-    }
-  }, [id, getBrandById, getTastingNotesForSpirit, trackInteraction]);
-
-  // --- Conditional Rendering based on Loading/Spirit existence ---
-  if (isLoading) {
+  if (isLoadingBrands) {
     return (
-      <div className="min-h-[50vh] flex items-center justify-center">
-        <p className="text-2xl text-gray-600 dark:text-gray-400">Loading spirit details...</p>
+      <div className="flex justify-center items-center py-4">
+        <p className="text-gray-500 dark:text-gray-400">Loading examples...</p>
       </div>
     );
   }
 
-  if (!spirit) {
-    // This fallback link might need adjustment depending on your overall navigation structure
-    // If a brand is not found, where should the user go?
+  if (!brands.length) {
     return (
-      <div className="min-h-[50vh] flex items-center justify-center flex-col">
-        <p className="text-2xl text-gray-600 dark:text-gray-400 mb-4">Spirit not found or an error occurred.</p>
-        <Link
-          to={`/explore`} // Maybe back to a general explore page or home
-          className="inline-flex items-center text-indigo-600 hover:text-indigo-700 group"
-        >
-          <ArrowLeft className="w-5 h-5 mr-2 transition-transform group-hover:-translate-x-1" />
-          Back to Explore
-        </Link>
+      <div className="flex justify-center items-center py-4">
+        <p className="text-gray-500 dark:text-gray-400">No examples found for this type.</p>
       </div>
     );
   }
 
-  // Use spirit.subtype_id directly for the "Back to Subtypes" link
-  // Ensure spirit.subtype_id exists before using it, fallback to '/' if needed.
-  const subtypeIdToNavigate = spirit.subtype_id;
-
-  // --- Main Content Rendering with all fields ---
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
-      <Link
-        // !!! CHANGE THE ROUTE TO `/subtype/${subtypeIdToNavigate}` !!!
-        to={`/subtype/${subtypeIdToNavigate || ''}`} 
-        className="inline-flex items-center text-indigo-600 hover:text-indigo-700 mb-8 group"
-      >
-        <ArrowLeft className="w-5 h-5 mr-2 transition-transform group-hover:-translate-x-1" />
-        Back to Subtype Details
-      </Link>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-        {/* Spirit Image Section */}
-        <div className="flex justify-center md:justify-end">
-          <div className="relative w-full max-w-xs md:max-w-md h-96">
-            <TransitionImage
-              src={spirit.image_url || 'https://via.placeholder.com/300x400?text=No+Image'}
-              alt={spirit.name}
-              className="w-full h-full object-contain rounded-lg shadow-lg"
-              width={300}
-              height={400}
-            />
-          </div>
-        </div>
-
-        {/* Spirit Details Section */}
-        <div>
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            {spirit.name}
-          </h1>
-          {spirit.description && (
-            <p className="text-gray-700 dark:text-gray-300 mb-4 text-lg">
-              {spirit.description}
-            </p>
-          )}
-
-          {spirit.abv && (
-            <p className="text-gray-600 dark:text-gray-400 mb-2">
-              <span className="font-semibold">ABV:</span> {spirit.abv}%
-            </p>
-          )}
-
-          {spirit.price_range && (
-            <p className="text-gray-600 dark:text-gray-400 mb-2">
-              <span className="font-semibold">Price Range:</span> {spirit.price_range}
-            </p>
-          )}
-
-          {/* Display Tasting Notes */}
-          {tastingNotes && tastingNotes.length > 0 && (
-            <div className="mt-6">
-              <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-3">Tasting Notes</h2>
-              <ul className="list-disc list-inside text-gray-700 dark:text-gray-300">
-                {tastingNotes.map((note, index) => (
-                  <li key={index}>{note.term} ({note.percentage.toFixed(0)}%)</li>
-                ))}
-              </ul>
+    <div className="mt-6">
+      <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Popular Examples</h4>
+      <div className="flex overflow-x-auto space-x-4 pb-4 scrollbar-hide">
+        {brands.map((brand) => ( // Mapping over brands
+          // Wrap the entire brand card content in a Link component
+          <Link
+            key={brand.id}
+            to={`/spirit/${brand.id}`} // Link to the spirit (brand) detail page
+            className="flex-none w-48 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-sm overflow-hidden flex flex-col group hover:shadow-md transition-shadow duration-200" // Added group and hover styles for Link
+          >
+            <div className="relative w-full h-32">
+              <TransitionImage
+                src={brand.image || 'https://via.placeholder.com/150'} // Use brand.image or brand.image_url
+                alt={brand.name}
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" // Added group-hover scale
+              />
             </div>
-          )}
-
-          {/* Display History */}
-          {spirit.history && (
-            <div className="mt-6">
-              <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-3">History</h2>
-              <p className="text-gray-700 dark:text-gray-300">{spirit.history}</p>
+            <div className="p-3 flex-grow flex flex-col justify-between">
+              <div>
+                <h5 className="font-medium text-gray-900 dark:text-white line-clamp-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{brand.name}</h5>
+              </div>
+              {brand.price_range && ( // Use brand.price_range for price
+                <p className="text-md font-bold text-gray-900 dark:text-white mt-2">{brand.price_range}</p>
+              )}
             </div>
-          )}
-
-          {/* Display Fun Facts */}
-          {spirit.fun_facts && spirit.fun_facts.length > 0 && (
-            <div className="mt-6">
-              <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-3">Fun Facts</h2>
-              <ul className="list-disc list-inside text-gray-700 dark:text-gray-300">
-                {spirit.fun_facts.map((fact, index) => (
-                  <li key={index}>{fact}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Display Myths */}
-          {spirit.myths && spirit.myths.length > 0 && (
-            <div className="mt-6">
-              <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-3">Myths</h2>
-              <ul className="list-disc list-inside text-gray-700 dark:text-gray-300">
-                {spirit.myths.map((myth, index) => (
-                  <li key={index}>{myth}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Add more details here as needed */}
-        </div>
+          </Link>
+        ))}
       </div>
     </div>
   );
 };
 
-export default SpiritProfilePage;
+
+const SpiritSubtypesPage: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { getSubtypesByCategoryId } = useSpirits();
+  const [subtypes, setSubtypes] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSubtypes = async () => {
+      if (!id) return;
+
+      try {
+        const data = await getSubtypesByCategoryId(id);
+        setSubtypes(data);
+      } catch (error) {
+        console.error('Error fetching subtypes:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSubtypes();
+  }, [id, getSubtypesByCategoryId]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center">
+        <p className="text-xl text-gray-600 dark:text-gray-400">Loading...</p>
+      </div>
+    );
+  }
+
+  if (!subtypes.length) {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center">
+        <p className="text-xl text-gray-600 dark:text-gray-400">No subtypes found</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center space-x-4">
+          <Link
+            to={`/alcohol-type/${id}`}
+            className="flex items-center text-indigo-600 hover:text-indigo-700 transition-colors group"
+          >
+            <ArrowLeft className="w-5 h-5 mr-1 transition-transform group-hover:-translate-x-1" />
+            Back to Categories
+          </Link>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            Types of {subtypes[0]?.category_name || 'Spirit'}
+          </h1>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {subtypes.map(subtype => (
+          <div
+            key={subtype.id}
+            className="group focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-xl overflow-hidden"
+          >
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transition-all duration-300 transform hover:shadow-xl hover:-translate-y-1">
+              {/* Subtype Card Header */}
+              <div
+                className="relative aspect-[4/3] cursor-pointer"
+                onClick={() => navigate(`/subtype/${subtype.id}`)}
+                role="button"
+                tabIndex={0}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    navigate(`/subtype/${subtype.id}`);
+                  }
+                }}
+              >
+                <TransitionImage
+                  src={subtype.image}
+                  alt={subtype.name}
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <div className="absolute bottom-4 left-4 right-4">
+                  <h3 className="text-xl font-bold text-white mb-2">{subtype.name}</h3>
+                  <p className="text-sm text-gray-200 line-clamp-2">{subtype.description}</p>
+                </div>
+              </div>
+
+              {/* Related Spirits/Brands Section */}
+              <div className="p-4"></div>
+                <RelatedSpirits subtypeId={subtype.id} />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default SpiritSubtypesPage;
