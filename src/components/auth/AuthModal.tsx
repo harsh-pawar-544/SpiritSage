@@ -57,8 +57,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMode = 's
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                // CORRECTED CLASSNAME: Added text-gray-900 dark:text-white
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
+                // UPDATED CLASSNAME: Added bg-white dark:bg-gray-800
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-800"
                 required
               />
             </div>
@@ -70,8 +70,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMode = 's
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  // CORRECTED CLASSNAME: Added text-gray-900 dark:text-white
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
+                  // UPDATED CLASSNAME: Added bg-white dark:bg-gray-800
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-800"
                   required
                 />
               </div>
