@@ -172,7 +172,7 @@ const SpiritSubtypesPage: React.FC = () => {
               </div>
 
               {/* Related Spirits/Brands Section */}
-              <div className="p-4"></div>
+              <div className="p-4"> </div>
                 <RelatedSpirits subtypeId={subtype.id} />
               </div>
             </div>
