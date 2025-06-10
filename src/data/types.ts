@@ -1,6 +1,6 @@
 // src/data/types.ts
 
-// The Brand interface seems mostly complete based on your previous SpiritProfilePage
+// The Brand interface
 export interface Brand {
   id: string;
   subtype_id: string; // Foreign key
@@ -9,13 +9,10 @@ export interface Brand {
   abv: number | null; // Assumed from PDF's "Typical ABV" for individual products
   tasting_notes: string[] | null; // Assumed from PDF's "Tasting Notes" column, if added and is array
   price_range: string | null; // Assumed from PDF's "Price Range" if exists
-  image_url: string | null; // As we discussed, add this column to 'brands' table
-  image?: string | null; // For mapping image_url to image property
+  image_url: string | null; // This is the single source of truth for the image URL
 
   // These should correspond to columns in your 'brands' table, or be derived
   // from nested joins (e.g., subtype details for category/origin)
-  // For clarity, I'm keeping them as direct properties assuming they exist or are fetched
-  // If they are part of a 'details' JSONB column, you might need to adjust mapping in SpiritsContext.
   history: string | null;
   fun_facts: string[] | null; // Assuming this is an array if multi-valued
   myths: string[] | null; // Assuming this is an array if multi-valued
@@ -32,11 +29,9 @@ export interface Subtype {
   alcohol_type_id: string; // Foreign key
   name: string;
   description: string | null;
-  image_url: string | null; // Assumes you will add this column to 'subtypes' table
-  image?: string | null; // For mapping image_url to image property
+  image_url: string | null; // This is the single source of truth for the image URL
 
   // Details fields, matching what you want to display for a subtype
-  // These should correspond to columns in your 'subtypes' table, or be derived
   region: string | null; // From PDF's Country/Region
   abv_min: number | null; // From PDF's Typical ABV range
   abv_max: number | null; // From PDF's Typical ABV range
@@ -59,8 +54,7 @@ export interface AlcoholType {
   id: string;
   name: string;
   description: string | null;
-  image_url: string | null; // Assumes you will add this column to 'alcohol_types' table
-  image?: string | null; // For mapping image_url to image property
+  image_url: string | null; // This is the single source of truth for the image URL
 
   // Details fields, matching what you want to display for a parent category
   history: string | null;
