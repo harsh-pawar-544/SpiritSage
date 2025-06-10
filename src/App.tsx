@@ -13,7 +13,7 @@ import SpiritListPage from './pages/SpiritList/SpiritListPage';
 import MyBarPage from './pages/MyBar/MyBarPage';
 import SpiritOverviewPage from './pages/SpiritOverview/SpiritOverviewPage';
 import SpiritSubtypesPage from './pages/SpiritSubtypes/SpiritSubtypesPage';
-import BrandsPage from './pages/BrandsPage';
+
 
 import AlcoholTypeDetailPage from './pages/AlcoholType/[id]';
 import SubtypeDetailPage from './pages/Subtype/[id]';
