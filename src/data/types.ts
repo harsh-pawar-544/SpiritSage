@@ -55,7 +55,7 @@ export interface AlcoholType {
   name: string;
   description: string | null;
   image_url: string | null; // This is the single source of truth for the image URL
-
+  subtype: Subtype[]
   // Details fields, matching what you want to display for a parent category
   history: string | null;
   fun_facts: string[] | null;
