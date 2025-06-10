@@ -1,21 +1,33 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useSpirits } from '../../contexts/SpiritsContext';
 import { useAuth } from '../../contexts/AuthContext';
 import TransitionImage from '../../components/ui/TransitionImage';
-import { Search, Filter, Bookmark, BookmarkCheck } from 'lucide-react';
-import * as Dialog from '@radix-ui/react-dialog';
+import FilterModal from '../../components/common/FilterModal';
+import { Search, Filter, Bookmark, BookmarkCheck, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+// === ACTUAL IDs FROM YOUR SUPABASE DATABASE ===
+const WINE_ALCOHOL_TYPE_ID = '150139eb-2374-4a05-b1fb-bf2920e9613e';
+const BEER_ALCOHOL_TYPE_ID = '95262b6f-fd4b-4802-a06d-2744931caf75';
+// ==============================================
+
 type SortOption = 'nameAsc' | 'nameDesc' | 'popularityAsc' | 'popularityDesc';
+
+interface FilterCriteria {
+  alcoholTypeIds?: string[];
+  subtypeIds?: string[];
+  priceRanges?: string[];
+  abvRange?: { min: number; max: number };
+  searchTerm?: string;
+}
 
 const SpiritListPage: React.FC = () => {
   const { 
     alcoholTypes, 
     loading, 
     error, 
-    getFilteredSpirits, 
-    getAvailableFilterOptions,
+    getFilteredSpirits,
     addSpiritToMyBar,
     isInMyBar 
   } = useSpirits();
@@ -23,144 +35,137 @@ const SpiritListPage: React.FC = () => {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOption, setSortOption] = useState<SortOption>('nameAsc');
-  const [showFilterModal, setShowFilterModal] = useState(false);
-  
-  // Filter states
-  const [selectedAlcoholTypeIds, setSelectedAlcoholTypeIds] = useState<string[]>([]);
-  const [selectedSubtypeIds, setSelectedSubtypeIds] = useState<string[]>([]);
-  const [selectedPriceRanges, setSelectedPriceRanges] = useState<string[]>([]);
-  const [selectedAbvRange, setSelectedAbvRange] = useState<{ min: number; max: number } | undefined>();
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [currentFilters, setCurrentFilters] = useState<Partial<FilterCriteria>>({});
+  const [filteredResults, setFilteredResults] = useState<any[]>([]);
 
-  const filterOptions = getAvailableFilterOptions();
+  // Filter out Wine and Beer from the main alcoholTypes for display
+  const spiritCategories = alcoholTypes.filter(
+    (type) => type.id !== WINE_ALCOHOL_TYPE_ID && type.id !== BEER_ALCOHOL_TYPE_ID
+  );
 
-  const filteredAndSortedSpirits = useMemo(() => {
+  // Apply filters and search
+  useEffect(() => {
     const filters = {
-      alcoholTypeIds: selectedAlcoholTypeIds,
-      subtypeIds: selectedSubtypeIds,
-      priceRanges: selectedPriceRanges,
-      abvRange: selectedAbvRange,
-      searchTerm: searchQuery,
+      ...currentFilters,
+      searchTerm: searchQuery
     };
 
-    // getFilteredSpirits returns an array directly, not an object with alcoholTypes
-    const filtered = getFilteredSpirits(filters);
+    if (Object.keys(currentFilters).length > 0 || searchQuery) {
+      const results = getFilteredSpirits(filters);
+      // Filter out wine and beer from results
+      const spiritResults = results.filter(item => {
+        if ('alcohol_type_id' in item) {
+          // This is a brand or subtype, check its alcohol type
+          return item.alcohol_type_id !== WINE_ALCOHOL_TYPE_ID && 
+                 item.alcohol_type_id !== BEER_ALCOHOL_TYPE_ID;
+        } else {
+          // This is an alcohol type
+          return item.id !== WINE_ALCOHOL_TYPE_ID && item.id !== BEER_ALCOHOL_TYPE_ID;
+        }
+      });
+      setFilteredResults(spiritResults);
+    } else {
+      setFilteredResults([]);
+    }
+  }, [currentFilters, searchQuery, getFilteredSpirits]);
+
+  const filteredAndSortedSpirits = useMemo(() => {
+    const displayResults = Object.keys(currentFilters).length > 0 || searchQuery;
     
-    // Filter to only show alcohol types for the main listing page
-    const alcoholTypesOnly = filtered.filter(item => 
-      alcoholTypes.some(type => type.id === item.id)
-    );
+    if (displayResults) {
+      // Sort filtered results
+      const sorted = [...filteredResults].sort((a, b) => {
+        switch (sortOption) {
+          case 'nameAsc':
+            return a.name.localeCompare(b.name);
+          case 'nameDesc':
+            return b.name.localeCompare(a.name);
+          case 'popularityAsc':
+            return (a.subtypes?.length || 0) - (b.subtypes?.length || 0);
+          case 'popularityDesc':
+            return (b.subtypes?.length || 0) - (a.subtypes?.length || 0);
+          default:
+            return 0;
+        }
+      });
+      return sorted;
+    } else {
+      // Sort spirit categories for default view
+      const sorted = [...spiritCategories].sort((a, b) => {
+        switch (sortOption) {
+          case 'nameAsc':
+            return a.name.localeCompare(b.name);
+          case 'nameDesc':
+            return b.name.localeCompare(a.name);
+          case 'popularityAsc':
+            return (a.subtypes?.length || 0) - (b.subtypes?.length || 0);
+          case 'popularityDesc':
+            return (b.subtypes?.length || 0) - (a.subtypes?.length || 0);
+          default:
+            return 0;
+        }
+      });
+      return sorted;
+    }
+  }, [filteredResults, spiritCategories, sortOption, currentFilters, searchQuery]);
 
-    // Sort the results
-    alcoholTypesOnly.sort((a, b) => {
-      switch (sortOption) {
-        case 'nameAsc':
-          return a.name.localeCompare(b.name);
-        case 'nameDesc':
-          return b.name.localeCompare(a.name);
-        case 'popularityAsc':
-          return (a.subtypes?.length || 0) - (b.subtypes?.length || 0);
-        case 'popularityDesc':
-          return (b.subtypes?.length || 0) - (a.subtypes?.length || 0);
-        default:
-          return 0;
-      }
-    });
-
-    return alcoholTypesOnly;
-  }, [alcoholTypes, searchQuery, sortOption, selectedAlcoholTypeIds, selectedSubtypeIds, selectedPriceRanges, selectedAbvRange, getFilteredSpirits]);
-
-  const toggleAlcoholTypeFilter = (typeId: string) => {
-    setSelectedAlcoholTypeIds(prev =>
-      prev.includes(typeId) ? prev.filter(id => id !== typeId) : [...prev, typeId]
-    );
+  const handleApplyFilters = (filters: Partial<FilterCriteria>) => {
+    setCurrentFilters(filters);
   };
 
-  const toggleSubtypeFilter = (subtypeId: string) => {
-    setSelectedSubtypeIds(prev =>
-      prev.includes(subtypeId) ? prev.filter(id => id !== subtypeId) : [...prev, subtypeId]
-    );
+  const handleClearAllFilters = () => {
+    setSearchQuery('');
+    setCurrentFilters({});
+    setFilteredResults([]);
   };
 
-  const togglePriceRangeFilter = (priceRange: string) => {
-    setSelectedPriceRanges(prev =>
-      prev.includes(priceRange) ? prev.filter(range => range !== priceRange) : [...prev, priceRange]
-    );
-  };
-
-  const clearAllFilters = () => {
-    setSelectedAlcoholTypeIds([]);
-    setSelectedSubtypeIds([]);
-    setSelectedPriceRanges([]);
-    setSelectedAbvRange(undefined);
-  };
-
-  const handleAddToMyBar = async (alcoholType: any) => {
+  const handleAddToMyBar = async (item: any) => {
     if (!user) {
       toast.error('Please sign in to add spirits to your bar');
       return;
     }
 
     try {
-      await addSpiritToMyBar(alcoholType.id, 'alcohol_type');
-      toast.success(`${alcoholType.name} added to your bar!`);
+      // Determine spirit type based on item properties
+      let spiritType: 'alcohol_type' | 'subtype' | 'brand';
+      if ('subtype_id' in item && item.subtype_id) {
+        spiritType = 'brand';
+      } else if ('alcohol_type_id' in item && item.alcohol_type_id) {
+        spiritType = 'subtype';
+      } else {
+        spiritType = 'alcohol_type';
+      }
+
+      await addSpiritToMyBar(item.id, spiritType);
+      toast.success(`${item.name} added to your bar!`);
     } catch (error) {
       toast.error('Failed to add to your bar');
     }
   };
 
-  const renderFilterChips = (options: Array<{id: string; name: string}>, selected: string[], onToggle: (id: string) => void) => (
-    <div className="flex flex-wrap gap-2 mb-4">
-      {options.map(option => (
-        <button
-          key={option.id}
-          onClick={() => onToggle(option.id)}
-          className={`px-3 py-1 rounded-full text-sm transition-colors ${
-            selected.includes(option.id)
-              ? 'bg-indigo-600 text-white'
-              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-          }`}
-        >
-          {option.name}
-        </button>
-      ))}
-    </div>
-  );
+  const getItemLink = (item: any) => {
+    if ('subtype_id' in item && item.subtype_id) {
+      return `/spirit/${item.id}`; // Brand
+    } else if ('alcohol_type_id' in item && item.alcohol_type_id) {
+      return `/subtype/${item.id}`; // Subtype
+    } else {
+      return `/alcohol-type/${item.id}`; // Alcohol Type
+    }
+  };
 
-  const renderPriceRangeChips = (options: string[], selected: string[], onToggle: (range: string) => void) => (
-    <div className="flex flex-wrap gap-2 mb-4">
-      {options.map(option => (
-        <button
-          key={option}
-          onClick={() => onToggle(option)}
-          className={`px-3 py-1 rounded-full text-sm transition-colors ${
-            selected.includes(option)
-              ? 'bg-indigo-600 text-white'
-              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-          }`}
-        >
-          {option}
-        </button>
-      ))}
-    </div>
-  );
+  const getItemType = (item: any) => {
+    if ('subtype_id' in item && item.subtype_id) {
+      return 'brand';
+    } else if ('alcohol_type_id' in item && item.alcohol_type_id) {
+      return 'subtype';
+    } else {
+      return 'alcohol_type';
+    }
+  };
 
-  const renderAbvRangeChips = (options: Array<{min: number; max: number; label: string}>, selected: {min: number; max: number} | undefined, onToggle: (range: {min: number; max: number}) => void) => (
-    <div className="flex flex-wrap gap-2 mb-4">
-      {options.map(option => (
-        <button
-          key={option.label}
-          onClick={() => onToggle({min: option.min, max: option.max})}
-          className={`px-3 py-1 rounded-full text-sm transition-colors ${
-            selected && selected.min === option.min && selected.max === option.max
-              ? 'bg-indigo-600 text-white'
-              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-          }`}
-        >
-          {option.label}
-        </button>
-      ))}
-    </div>
-  );
+  const hasActiveFilters = Object.keys(currentFilters).length > 0 || searchQuery;
+  const displayResults = hasActiveFilters;
 
   if (loading) {
     return (
@@ -182,6 +187,7 @@ const SpiritListPage: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 py-12">
       <h1 className="text-4xl font-bold text-center mb-12 text-gray-900 dark:text-white">Explore Spirits</h1>
 
+      {/* Search and Filter Controls */}
       <div className="mb-8 space-y-4">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
@@ -198,12 +204,26 @@ const SpiritListPage: React.FC = () => {
           </div>
 
           <button
-            onClick={() => setShowFilterModal(true)}
-            className="flex items-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            onClick={() => setIsFilterModalOpen(true)}
+            className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-colors ${
+              Object.keys(currentFilters).length > 0
+                ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+            }`}
           >
             <Filter className="h-5 w-5" />
-            Filter
+            {Object.keys(currentFilters).length > 0 ? 'Edit Filters' : 'Filter Spirits'}
           </button>
+
+          {hasActiveFilters && (
+            <button
+              onClick={handleClearAllFilters}
+              className="flex items-center gap-2 px-4 py-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+            >
+              <X className="h-5 w-5" />
+              Clear All
+            </button>
+          )}
 
           <div className="w-full sm:w-64">
             <select
@@ -218,119 +238,180 @@ const SpiritListPage: React.FC = () => {
             </select>
           </div>
         </div>
+
+        {/* Active Filters Display */}
+        {hasActiveFilters && (
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Active filters:</span>
+              {searchQuery && (
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200">
+                  Search: "{searchQuery}"
+                </span>
+              )}
+              {currentFilters.alcoholTypeIds?.map(id => {
+                const type = alcoholTypes.find(t => t.id === id);
+                return type ? (
+                  <span key={id} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                    Type: {type.name}
+                  </span>
+                ) : null;
+              })}
+              {currentFilters.priceRanges?.map(range => (
+                <span key={range} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                  Price: {range}
+                </span>
+              ))}
+              {currentFilters.abvRange && (
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                  ABV: {currentFilters.abvRange.min}-{currentFilters.abvRange.max}%
+                </span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredAndSortedSpirits.map((alcoholType) => (
-          <div key={alcoholType.id} className="group focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-xl">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transition-all duration-300 transform hover:shadow-xl hover:-translate-y-1">
-              <Link to={`/alcohol-type/${alcoholType.id}`} className="block">
-                <div className="relative aspect-[4/3]">
-                  <TransitionImage
-                    src={alcoholType.image_url || 'https://images.pexels.com/photos/602750/pexels-photo-602750.jpeg'}
-                    alt={alcoholType.name}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                  <div className="absolute bottom-4 left-4 right-4">
-                    <h3 className="text-2xl font-bold text-white mb-2">{alcoholType.name}</h3>
-                    <p className="text-gray-200 line-clamp-2">{alcoholType.description}</p>
-                    <div className="mt-2 text-sm text-gray-300">
-                      {alcoholType.subtypes?.length || 0} varieties available
+      {/* Results */}
+      {displayResults ? (
+        <>
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Search Results ({filteredAndSortedSpirits.length})
+            </h2>
+          </div>
+          {filteredAndSortedSpirits.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-xl text-gray-600 dark:text-gray-400">
+                No spirits found matching your criteria
+              </p>
+              <p className="text-gray-500 dark:text-gray-500 mt-2">
+                Try adjusting your filters or search terms
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredAndSortedSpirits.map((item) => (
+                <div key={item.id} className="group focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-xl">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transition-all duration-300 transform hover:shadow-xl hover:-translate-y-1">
+                    <Link to={getItemLink(item)} className="block">
+                      <div className="relative aspect-[4/3]">
+                        <TransitionImage
+                          src={item.image_url || item.image || 'https://images.pexels.com/photos/602750/pexels-photo-602750.jpeg'}
+                          alt={item.name}
+                          className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                        <div className="absolute bottom-4 left-4 right-4">
+                          <h3 className="text-xl font-bold text-white mb-2">{item.name}</h3>
+                          <p className="text-gray-200 line-clamp-2">{item.description}</p>
+                          <div className="mt-2 text-sm text-gray-300">
+                            {getItemType(item) === 'alcohol_type' && `${item.subtypes?.length || 0} varieties`}
+                            {getItemType(item) === 'subtype' && `${item.brands?.length || 0} brands`}
+                            {getItemType(item) === 'brand' && item.abv && `${item.abv}% ABV`}
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                    
+                    <div className="p-4">
+                      <button
+                        onClick={() => handleAddToMyBar(item)}
+                        className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                          isInMyBar(item.id, getItemType(item) as any)
+                            ? 'bg-green-600 text-white'
+                            : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                        }`}
+                        disabled={isInMyBar(item.id, getItemType(item) as any)}
+                      >
+                        {isInMyBar(item.id, getItemType(item) as any) ? (
+                          <>
+                            <BookmarkCheck className="h-4 w-4" />
+                            In My Bar
+                          </>
+                        ) : (
+                          <>
+                            <Bookmark className="h-4 w-4" />
+                            Add to My Bar
+                          </>
+                        )}
+                      </button>
                     </div>
                   </div>
                 </div>
-              </Link>
-              
-              <div className="p-4">
-                <button
-                  onClick={() => handleAddToMyBar(alcoholType)}
-                  className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                    isInMyBar(alcoholType.id, 'alcohol_type')
-                      ? 'bg-green-600 text-white'
-                      : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                  }`}
-                  disabled={isInMyBar(alcoholType.id, 'alcohol_type')}
-                >
-                  {isInMyBar(alcoholType.id, 'alcohol_type') ? (
-                    <>
-                      <BookmarkCheck className="h-4 w-4" />
-                      In My Bar
-                    </>
-                  ) : (
-                    <>
-                      <Bookmark className="h-4 w-4" />
-                      Add to My Bar
-                    </>
-                  )}
-                </button>
-              </div>
+              ))}
             </div>
+          )}
+        </>
+      ) : (
+        <>
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Spirit Categories ({spiritCategories.length})
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">
+              Apply filters or use the search bar to find specific spirits
+            </p>
           </div>
-        ))}
-      </div>
-
-      {filteredAndSortedSpirits.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-xl text-gray-600 dark:text-gray-400">
-            No spirits found matching your search criteria
-          </p>
-        </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredAndSortedSpirits.map((alcoholType) => (
+              <div key={alcoholType.id} className="group focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-xl">
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transition-all duration-300 transform hover:shadow-xl hover:-translate-y-1">
+                  <Link to={`/alcohol-type/${alcoholType.id}`} className="block">
+                    <div className="relative aspect-[4/3]">
+                      <TransitionImage
+                        src={alcoholType.image_url || 'https://images.pexels.com/photos/602750/pexels-photo-602750.jpeg'}
+                        alt={alcoholType.name}
+                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                      <div className="absolute bottom-4 left-4 right-4">
+                        <h3 className="text-2xl font-bold text-white mb-2">{alcoholType.name}</h3>
+                        <p className="text-gray-200 line-clamp-2">{alcoholType.description}</p>
+                        <div className="mt-2 text-sm text-gray-300">
+                          {alcoholType.subtypes?.length || 0} varieties available
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                  
+                  <div className="p-4">
+                    <button
+                      onClick={() => handleAddToMyBar(alcoholType)}
+                      className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                        isInMyBar(alcoholType.id, 'alcohol_type')
+                          ? 'bg-green-600 text-white'
+                          : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                      }`}
+                      disabled={isInMyBar(alcoholType.id, 'alcohol_type')}
+                    >
+                      {isInMyBar(alcoholType.id, 'alcohol_type') ? (
+                        <>
+                          <BookmarkCheck className="h-4 w-4" />
+                          In My Bar
+                        </>
+                      ) : (
+                        <>
+                          <Bookmark className="h-4 w-4" />
+                          Add to My Bar
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
       {/* Filter Modal */}
-      <Dialog.Root open={showFilterModal} onOpenChange={setShowFilterModal}>
-        <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" />
-          <Dialog.Content className="fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-[90vw] max-w-2xl max-h-[80vh] bg-white dark:bg-gray-900 rounded-xl shadow-xl z-50 p-6 overflow-y-auto">
-            <Dialog.Title className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">
-              Filter Spirits
-            </Dialog.Title>
-
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Spirit Types</h3>
-                {renderFilterChips(filterOptions.alcoholTypes, selectedAlcoholTypeIds, toggleAlcoholTypeFilter)}
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Subtypes</h3>
-                {renderFilterChips(filterOptions.subtypes, selectedSubtypeIds, toggleSubtypeFilter)}
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Price Range</h3>
-                {renderPriceRangeChips(filterOptions.priceRanges, selectedPriceRanges, togglePriceRangeFilter)}
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">ABV Range</h3>
-                {renderAbvRangeChips(filterOptions.abvRanges, selectedAbvRange, setSelectedAbvRange)}
-              </div>
-            </div>
-
-            <div className="flex gap-4 mt-8">
-              <button
-                onClick={clearAllFilters}
-                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-              >
-                Clear All
-              </button>
-              <button
-                onClick={() => setShowFilterModal(false)}
-                className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-              >
-                Apply Filters
-              </button>
-            </div>
-
-            <Dialog.Close className="absolute top-4 right-4 p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full">
-              <span className="sr-only">Close</span>
-              ×
-            </Dialog.Close>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+      <FilterModal
+        isOpen={isFilterModalOpen}
+        onClose={() => setIsFilterModalOpen(false)}
+        onApplyFilters={handleApplyFilters}
+        initialFilters={currentFilters}
+      />
     </div>
   );
 };
