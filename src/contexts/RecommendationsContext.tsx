@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { debounce } from 'lodash';
-import { useSpirits } from './SpiritsContext'; // Import SpiritsContext for fetching real data
+import { useSpirits } from '../contexts/SpiritsContext';// Import SpiritsContext for fetching real data
 import { AlcoholType, Subtype, Brand } from '../data/types'; // Import relevant types
 import { RecommendedSpiritItem } from '../components/RecommendedSpirits'; // Import the shared interface
 
