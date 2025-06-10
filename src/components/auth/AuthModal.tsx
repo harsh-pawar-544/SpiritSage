@@ -52,13 +52,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMode = 's
             <div>
               <label className="block text-sm font-medium mb-1">Email</label>
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
-  
-                required
-              />
+                input
+    type="email"
+  value={email}
+  onChange={(e) => setEmail(e.target.value)}
+  // ADD these classes to the end: text-gray-900 dark:text-white
+  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
+  required
+/>
             </div>
 
             {mode !== 'reset' && (
