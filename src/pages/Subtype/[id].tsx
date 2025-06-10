@@ -3,13 +3,14 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useSpirits } from '../../contexts/SpiritsContext';
 import TransitionImage from '../../components/ui/TransitionImage';
-import { Subtype, Brand } from '../../data/types';
+import { Subtype } from '../../data/types'; // Removed 'Brand' as it's no longer used here for exampleBrands
 
 const SubtypeDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { getSubtypeById, getBrandsBySubtypeId, loading: spiritsContextLoading, error: spiritsContextError } = useSpirits();
+  // Removed getBrandsBySubtypeId from destructuring as it's no longer needed for exampleBrands
+  const { getSubtypeById, loading: spiritsContextLoading, error: spiritsContextError } = useSpirits();
   const [subtype, setSubtype] = useState<Subtype | null>(null);
-  const [exampleBrands, setExampleBrands] = useState<Brand[]>([]);
+  // Removed: const [exampleBrands, setExampleBrands] = useState<Brand[]>([]); // This state is no longer needed
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,9 +27,9 @@ const SubtypeDetailPage: React.FC = () => {
         const subtypeData = await getSubtypeById(id);
         if (subtypeData) {
           setSubtype(subtypeData);
-          // Get only first 3 brands as examples
-          const allBrands = getBrandsBySubtypeId(subtypeData.id);
-          setExampleBrands(allBrands.slice(0, 3));
+          // Removed: Logic to fetch and set exampleBrands is no longer needed
+          // const allBrands = getBrandsBySubtypeId(subtypeData.id);
+          // setExampleBrands(allBrands.slice(0, 3));
         } else {
           setError('Subtype not found.');
         }
@@ -41,7 +42,8 @@ const SubtypeDetailPage: React.FC = () => {
     };
 
     fetchSubtypeDetails();
-  }, [id, getSubtypeById, getBrandsBySubtypeId]);
+    // Removed getBrandsBySubtypeId from dependency array
+  }, [id, getSubtypeById]);
 
   if (isLoading || spiritsContextLoading) {
     return (
@@ -134,7 +136,8 @@ const SubtypeDetailPage: React.FC = () => {
             </div>
           )}
 
-          {/* Example Brands Section */}
+          {/* REMOVED: Example Brands Section (Popular Examples) */}
+          {/*
           {exampleBrands.length > 0 && (
             <div className="mb-6">
               <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-3">Popular Examples</h2>
@@ -180,6 +183,7 @@ const SubtypeDetailPage: React.FC = () => {
               </div>
             </div>
           )}
+          */}
 
           {subtype.history && (
             <div className="mb-6">
