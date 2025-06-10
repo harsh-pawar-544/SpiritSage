@@ -1,5 +1,3 @@
-// Inside src/pages/Spirit/[id].tsx (SpiritProfilePage.tsx)
-
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
@@ -71,22 +69,11 @@ const SpiritProfilePage: React.FC = () => {
   // --- Main Content Rendering with all fields ---
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      {/* Back to Subtype Link */}
-      {spirit.subtype_id && spirit.subtype_name && (
-        <Link
-          to={`/subtype/${spirit.subtype_id}`} // CORRECTED PATH: Use /subtype/:id
-          className="inline-flex items-center text-indigo-600 hover:text-indigo-700 mb-4 group"
-        >
-          <ArrowLeft className="w-5 h-5 mr-2 transition-transform group-hover:-translate-x-1" />
-          Back to {spirit.subtype_name} Subtype
-        </Link>
-      )}
-
-      {/* Back to Alcohol Type (Category) Link */}
+      {/* Only Back to Alcohol Type (Category) Link */}
       {spirit.alcohol_type_id && spirit.alcohol_type_name && (
         <Link
           to={`/alcohol-type/${spirit.alcohol_type_id}`} // CORRECTED PATH: Use /alcohol-type/:id
-          className="inline-flex items-center text-indigo-600 hover:text-indigo-700 mb-8 ml-4 group" // Added ml-4 for spacing
+          className="inline-flex items-center text-indigo-600 hover:text-indigo-700 mb-8 group" // Removed ml-4, changed mb-4 to mb-8
         >
           <ArrowLeft className="w-5 h-5 mr-2 transition-transform group-hover:-translate-x-1" />
           Back to {spirit.alcohol_type_name} Category
@@ -130,7 +117,7 @@ const SpiritProfilePage: React.FC = () => {
             </p>
           )}
 
-          {/* Display parent categories */}
+          {/* Display parent categories (inline links) */}
           <div className="mt-4">
             {spirit.subtype_name && (
               <p className="text-gray-600 dark:text-gray-400 mb-2">
