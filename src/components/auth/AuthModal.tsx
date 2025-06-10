@@ -34,6 +34,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMode = 's
       }
     } catch (error) {
       console.error('Auth error:', error);
+      // You might want to display a toast here for the user
+      // toast.error('Authentication failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }
@@ -52,14 +54,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMode = 's
             <div>
               <label className="block text-sm font-medium mb-1">Email</label>
               <input
-                input
-    type="email"
-  value={email}
-  onChange={(e) => setEmail(e.target.value)}
-  // ADD these classes to the end: text-gray-900 dark:text-white
-  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
-  required
-/>
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                // CORRECTED CLASSNAME: Added text-gray-900 dark:text-white
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
+                required
+              />
             </div>
 
             {mode !== 'reset' && (
@@ -69,7 +70,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMode = 's
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg"
+                  // CORRECTED CLASSNAME: Added text-gray-900 dark:text-white
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
                   required
                 />
               </div>
