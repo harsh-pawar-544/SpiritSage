@@ -85,7 +85,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-indigo-600 dark:text-white">Filter Spirits</h2>
+            <h2 className="text-2xl font-bold text-indigo-600">Filter Spirits</h2>
             <button
               onClick={onClose}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
