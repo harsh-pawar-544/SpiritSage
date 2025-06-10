@@ -1,19 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { useSpirits } from '../../contexts/SpiritsContext';
+import { useSpirits } from '../../contexts/SpiritsContext'; // Make sure this path is correct
 import TransitionImage from '../../components/ui/TransitionImage';
-
-// Define a simple type for a Spirit/Product example
-interface SpiritExample {
-  id: string;
-  name: string;
-  image_url: string; // Assuming your spirits have an image URL
-  ratings?: number;
-  average_rating?: number;
-  price?: string; // Or number, depending on your data
-  save_percentage?: number;
-}
+import { Brand } from '../../data/types'; // Import the Brand type
 
 // New component to display related spirits/brands for a given subtype
 interface RelatedSpiritsProps {
@@ -21,31 +11,29 @@ interface RelatedSpiritsProps {
 }
 
 const RelatedSpirits: React.FC<RelatedSpiritsProps> = ({ subtypeId }) => {
-  const { getSpiritsBySubtypeId } = useSpirits(); // We'll assume this function exists in your context
-  const [spirits, setSpirits] = useState<SpiritExample[]>([]);
-  const [isLoadingSpirits, setIsLoadingSpirits] = useState(true);
+  const { getBrandsBySubtypeId } = useSpirits(); // Now using getBrandsBySubtypeId
+  const [brands, setBrands] = useState<Brand[]>([]); // State for brands
+  const [isLoadingBrands, setIsLoadingBrands] = useState(true);
 
   useEffect(() => {
-    const fetchSpirits = async () => {
+    const fetchBrands = () => { // No longer async as data is in-memory
       try {
-        setIsLoadingSpirits(true);
-        // Assuming getSpiritsBySubtypeId fetches spirits
-        // We might need to implement this in SpiritsContext if it's not there
-        const data = await getSpiritsBySubtypeId(subtypeId);
+        setIsLoadingBrands(true);
+        const data = getBrandsBySubtypeId(subtypeId); // Directly get from in-memory data
         // Take a few examples, e.g., the first 3 or 4
-        setSpirits(data.slice(0, 4));
+        setBrands(data.slice(0, 4));
       } catch (error) {
-        console.error(`Error fetching spirits for subtype ${subtypeId}:`, error);
-        setSpirits([]); // Clear spirits on error
+        console.error(`Error fetching brands for subtype ${subtypeId}:`, error);
+        setBrands([]); // Clear brands on error
       } finally {
-        setIsLoadingSpirits(false);
+        setIsLoadingBrands(false);
       }
     };
 
-    fetchSpirits();
-  }, [subtypeId, getSpiritsBySubtypeId]);
+    fetchBrands();
+  }, [subtypeId, getBrandsBySubtypeId]); // Dependencies: subtypeId and the memoized function
 
-  if (isLoadingSpirits) {
+  if (isLoadingBrands) {
     return (
       <div className="flex justify-center items-center py-4">
         <p className="text-gray-500 dark:text-gray-400">Loading examples...</p>
@@ -53,7 +41,7 @@ const RelatedSpirits: React.FC<RelatedSpiritsProps> = ({ subtypeId }) => {
     );
   }
 
-  if (!spirits.length) {
+  if (!brands.length) {
     return (
       <div className="flex justify-center items-center py-4">
         <p className="text-gray-500 dark:text-gray-400">No examples found for this type.</p>
@@ -64,32 +52,34 @@ const RelatedSpirits: React.FC<RelatedSpiritsProps> = ({ subtypeId }) => {
   return (
     <div className="mt-6">
       <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Popular Examples</h4>
-      <div className="flex overflow-x-auto space-x-4 pb-4 scrollbar-hide"> {/* Added scrollbar-hide for cleaner look */}
-        {spirits.map((spirit) => (
-          <div key={spirit.id} className="flex-none w-48 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-sm overflow-hidden flex flex-col">
+      <div className="flex overflow-x-auto space-x-4 pb-4 scrollbar-hide">
+        {brands.map((brand) => ( // Mapping over brands
+          <div key={brand.id} className="flex-none w-48 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-sm overflow-hidden flex flex-col">
             <div className="relative w-full h-32">
               <TransitionImage
-                src={spirit.image_url || 'https://via.placeholder.com/150'} // Fallback image
-                alt={spirit.name}
+                src={brand.image || 'https://via.placeholder.com/150'} // Use brand.image or brand.image_url
+                alt={brand.name}
                 className="w-full h-full object-cover"
               />
-              {spirit.save_percentage && (
+              {/* If your brand data has a save_percentage, display it */}
+              {/* {brand.save_percentage && (
                 <span className="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                  Save {spirit.save_percentage}%
+                  Save {brand.save_percentage}%
                 </span>
-              )}
+              )} */}
             </div>
             <div className="p-3 flex-grow flex flex-col justify-between">
               <div>
-                <h5 className="font-medium text-gray-900 dark:text-white line-clamp-2">{spirit.name}</h5>
-                {spirit.average_rating && (
+                <h5 className="font-medium text-gray-900 dark:text-white line-clamp-2">{brand.name}</h5>
+                {/* If your brand data has average_rating and ratings, display them */}
+                {/* {brand.average_rating && (
                   <div className="flex items-center text-sm text-gray-600 dark:text-gray-300 mt-1">
-                    <span className="text-yellow-500 mr-1">★</span>{spirit.average_rating} ({spirit.ratings} ratings)
+                    <span className="text-yellow-500 mr-1">★</span>{brand.average_rating} ({brand.ratings} ratings)
                   </div>
-                )}
+                )} */}
               </div>
-              {spirit.price && (
-                <p className="text-md font-bold text-gray-900 dark:text-white mt-2">{spirit.price}</p>
+              {brand.price_range && ( // Use brand.price_range for price
+                <p className="text-md font-bold text-gray-900 dark:text-white mt-2">{brand.price_range}</p>
               )}
             </div>
           </div>
@@ -103,7 +93,7 @@ const RelatedSpirits: React.FC<RelatedSpiritsProps> = ({ subtypeId }) => {
 const SpiritSubtypesPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getSubtypesByCategoryId } = useSpirits(); // Renamed from getCategoriesById for clarity
+  const { getSubtypesByCategoryId } = useSpirits();
   const [subtypes, setSubtypes] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -145,7 +135,7 @@ const SpiritSubtypesPage: React.FC = () => {
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center space-x-4">
           <Link
-            to={`/alcohol-type/${id}`} // Assuming this goes back to the main category overview
+            to={`/alcohol-type/${id}`}
             className="flex items-center text-indigo-600 hover:text-indigo-700 transition-colors group"
           >
             <ArrowLeft className="w-5 h-5 mr-1 transition-transform group-hover:-translate-x-1" />
@@ -161,12 +151,12 @@ const SpiritSubtypesPage: React.FC = () => {
         {subtypes.map(subtype => (
           <div
             key={subtype.id}
-            className="group focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-xl overflow-hidden" // Removed cursor-pointer from outer div for now
+            className="group focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-xl overflow-hidden"
           >
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transition-all duration-300 transform hover:shadow-xl hover:-translate-y-1">
               {/* Subtype Card Header */}
               <div
-                className="relative aspect-[4/3] cursor-pointer" // Added cursor-pointer to the image/header section
+                className="relative aspect-[4/3] cursor-pointer"
                 onClick={() => navigate(`/subtype/${subtype.id}`)}
                 role="button"
                 tabIndex={0}
@@ -189,7 +179,7 @@ const SpiritSubtypesPage: React.FC = () => {
               </div>
 
               {/* Related Spirits/Brands Section */}
-              <div className="p-4"> {/* Added padding for the content within the card */}
+              <div className="p-4">
                 <RelatedSpirits subtypeId={subtype.id} />
               </div>
             </div>
