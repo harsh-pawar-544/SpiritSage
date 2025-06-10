@@ -203,7 +203,7 @@ export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = 
         fetchedDetails.push({
           id: spirit.id,
           name: spirit.name,
-          image: (spirit as any).image || 'https://via.placeholder.com/150.png?text=Spirit',
+          image_url: (spirit as any).image || 'https://via.placeholder.com/150.png?text=Spirit',
           type: type,
         });
       } else {
