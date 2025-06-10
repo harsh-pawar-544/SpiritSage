@@ -55,13 +55,17 @@ const HeaderNavigation: React.FC = () => {
               <GlassWater className="w-8 h-8" />
               <span className="text-xl font-semibold">SpiritSage</span>
               
-              {/* ADD THIS IMG TAG FOR "POWERED BY BOLT AI" */}
+              {/* UPDATED: Use different logo for light and dark modes */}
               <img  
-                src="/logos/logotext_poweredby.png" // MAKE SURE THIS PATH IS CORRECT
+                src="/logos/logotext_poweredby.png"
                 alt="Powered by Bolt AI"
-                className="h-4 sm:h-5 ml-2 mt-1" // Add invert for light theme, dark:invert-0 for dark theme
+                className="h-4 sm:h-5 ml-2 mt-1 dark:block hidden"
               />
-              {/* END ADDITION */}
+              <img  
+                src="/logos/logotext_poweredby.png"
+                alt="Powered by Bolt AI"
+                className="h-4 sm:h-5 ml-2 mt-1 block dark:hidden brightness-0"
+              />
 
             </Link>
 
