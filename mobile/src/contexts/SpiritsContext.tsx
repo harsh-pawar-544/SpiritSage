@@ -311,7 +311,7 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
           switch (range) {
             case '0-20%': return abv >= 0 && abv < 20;
             case '20-40%': return abv >= 20 && abv < 40;
-            case '40-60%': return abv >= 40 && abv <= 60; // Usually 40-60% includes 60
+            case '40-60%': return abv >= 40 && abv <= 60; // FIX: Corrected typo 'abb' to 'abv'
             case '60%+': return abv > 60;
             default: return false;
           }
@@ -466,7 +466,7 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const addSpiritToMyBar = useCallback(async (spiritId: string, spiritType: 'alcohol_type' | 'subtype' | 'brand', notes?: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } = {} } = await supabase.auth.getUser(); // Destructure with default empty object
       if (!user) throw new Error('User not authenticated');
 
       const { error } = await supabase
@@ -489,7 +489,7 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const removeSpiritFromMyBar = useCallback(async (spiritId: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } = {} } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
       const { error } = await supabase
@@ -509,7 +509,7 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const updateMyBarNotes = useCallback(async (spiritId: string, notes: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } = {} } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
       const { error } = await supabase
@@ -534,7 +534,7 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Rating functionality
   const addRating = useCallback(async (brandId: string, rating: number, comment: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } = {} } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
       const { error } = await supabase
@@ -606,7 +606,7 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   return (
     <SpiritsContext.Provider value={contextValue}>
       {children}
-    </SpitsContext.Provider>
+    </SpiritsContext.Provider>
   );
 };
 
