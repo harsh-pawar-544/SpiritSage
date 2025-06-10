@@ -47,12 +47,22 @@ const HeaderNavigation: React.FC = () => {
       <header className="fixed top-0 left-0 right-0 bg-white dark:bg-gray-900 shadow-lg z-50">
         <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
+            {/* SpiritSage branding and the new Bolt AI logo */}
             <Link 
               to="/" 
               className="flex items-center space-x-2 text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
             >
               <GlassWater className="w-8 h-8" />
               <span className="text-xl font-semibold">SpiritSage</span>
+              
+              {/* ADD THIS IMG TAG FOR "POWERED BY BOLT AI" */}
+              <img
+                src="/logos/logotext_poweredby_.png" // MAKE SURE THIS PATH IS CORRECT
+                alt="Powered by Bolt AI"
+                className="h-4 sm:h-5 ml-2 mt-1 opacity-70" // Adjust h- and ml- as needed for visual balance
+              />
+              {/* END ADDITION */}
+
             </Link>
 
             <div className="hidden md:flex items-center space-x-8">
