@@ -1,71 +1,43 @@
 import { ReactNode } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { GlassWater } from 'lucide-react';
-// import { useUserPreferences } from '../contexts/UserPreferencesContext'; // Not used in this snippet, can remove if not needed elsewhere
+// import { Link, useLocation } from 'react-router-dom'; // No longer directly used here, as navigation is in HeaderNavigation
+import HeaderNavigation from './HeaderNavigation'; // Assuming this component handles your main navigation
 
-export default function Layout({ children }: { children: ReactNode }) {
-  const location = useLocation();
-  // const { theme } = useUserPreferences(); // If you want to dynamically switch logo based on theme
+interface LayoutProps {
+  children: ReactNode;
+}
 
-  const navigation = [
-    { name: 'Explore', path: '/explore' }, // Changed Home to Explore as per common usage
-    { name: 'My Bar', path: '/my-bar' }, // Added My Bar to navigation
-    { name: 'About', path: '/about' },
-    { name: 'Contact', path: '/contact' },
-    { name: 'Settings', path: '/settings' }
-  ];
-
+const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
-    <div className="min-h-screen bg-background-light dark:bg-background-dark transition-colors duration-200 flex flex-col">
-      <header className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
-            <div className="flex items-center space-x-8">
-              <Link to="/" className="flex items-center space-x-2">
-                <GlassWater className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
-                <span className="text-xl font-semibold text-gray-900 dark:text-white">SpiritSage</span>
-              </Link>
-              
-              <nav className="hidden md:flex space-x-6">
-                {navigation.map((item) => (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    className={`${
-                      location.pathname === item.path
-                        ? 'text-indigo-600 dark:text-indigo-400'
-                        : 'text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400'
-                    } transition-colors`}
-                  >
-                    {item.name}
-                  </Link>
-                ))}
-              </nav>
-            </div>
-            {/* You might have user login/profile elements here */}
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen flex flex-col bg-white dark:bg-gray-900 transition-colors duration-200">
+      {/* Header handled by HeaderNavigation component */}
+      <HeaderNavigation />
 
-      <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Main content area */}
+      {/* The mt-20 provides space for the fixed header, adjust if your HeaderNavigation is not fixed height */}
+      <main className="flex-1 container mx-auto px-4 py-8 mt-20 text-gray-900 dark:text-white">
         {children}
       </main>
 
-      {/* Footer Section - Using White Circle Badge for presumed dark footer background */}
-      <footer className="bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300 py-6">
+      {/* Footer Section - Added for Bolt AI Logos */}
+      <footer className="bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300 py-6 mt-auto">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <p className="mb-4">© {new Date().getFullYear()} SpiritSage. All rights reserved.</p>
           <div className="flex justify-center items-center space-x-4">
-            {/* Use White Circle on dark backgrounds (like the dark mode footer) */}
+            {/* Using the White Circle Badge for a presumed dark footer background in dark mode */}
             <img
-              src="/logos/bolt-white-circle.png" // Ensure this path is correct based on your public/logos folder
+              src="/logos/bolt-white-circle.png" // Ensure this path is correct: public/logos/bolt-white-circle.png
               alt="Powered by Bolt AI"
-              className="h-9 w-auto rounded-full" // Added rounded-full for circular badge
+              className="h-9 w-auto rounded-full" // Adjust sizing as needed
             />
-            {/* If you wanted a text-only option for dark backgrounds: */}
+            {/* You can add other badge variations here if you want to display all three, e.g.: */}
             {/* <img
+              src="/logos/bolt-black-circle.png"
+              alt="Bolt AI Badge"
+              className="h-9 w-auto rounded-full"
+            />
+            <img
               src="/logos/bolt-text-only.png"
-              alt="Powered by Bolt AI"
+              alt="Bolt AI"
               className="h-6 w-auto"
             /> */}
           </div>
@@ -74,4 +46,6 @@ export default function Layout({ children }: { children: ReactNode }) {
       </footer>
     </div>
   );
-}
+};
+
+export default Layout;
