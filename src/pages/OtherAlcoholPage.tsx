@@ -1,8 +1,8 @@
 // src/pages/OtherAlcoholPage.tsx
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useSpirits } from '../contexts/SpiritsContext';
-import TransitionImage from '../components/ui/TransitionImage';
+import { useSpirits } from '../contexts/SpiritsContext'; // Adjust path if necessary
+import TransitionImage from '../components/ui/TransitionImage'; // Adjust path if necessary
 import { ArrowLeft } from 'lucide-react';
 
 // === ACTUAL IDs FROM YOUR SUPABASE DATABASE ===
@@ -37,7 +37,7 @@ const OtherAlcoholPage: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <Link
-        to="/explore"
+        to="/explore" // Link back to your main SpiritListPage
         className="inline-flex items-center text-indigo-600 hover:text-indigo-700 mb-8 group"
       >
         <ArrowLeft className="w-5 h-5 mr-2 transition-transform group-hover:-translate-x-1" />
