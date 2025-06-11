@@ -12,6 +12,7 @@ type SortOption = 'nameAsc' | 'nameDesc' | 'popularityAsc' | 'popularityDesc';
 const SpiritListPage: React.FC = () => {
   const { 
     alcoholTypes, 
+    subtypes,
     loading, 
     error, 
     getFilteredSpirits, 
@@ -42,13 +43,20 @@ const SpiritListPage: React.FC = () => {
       searchTerm: searchQuery,
     };
 
-    // getFilteredSpirits returns an array directly, not an object with alcoholTypes
     const filtered = getFilteredSpirits(filters);
     
     // Filter to only show alcohol types for the main listing page
-    const alcoholTypesOnly = filtered.filter(item => 
-      alcoholTypes.some(type => type.id === item.id)
-    );
+    const alcoholTypesOnly = alcoholTypes.filter(type => {
+      if (selectedAlcoholTypeIds.length > 0 && !selectedAlcoholTypeIds.includes(type.id)) {
+        return false;
+      }
+      if (searchQuery) {
+        const searchTerm = searchQuery.toLowerCase();
+        return type.name.toLowerCase().includes(searchTerm) ||
+               type.description.toLowerCase().includes(searchTerm);
+      }
+      return true;
+    });
 
     // Sort the results
     alcoholTypesOnly.sort((a, b) => {
@@ -58,16 +66,20 @@ const SpiritListPage: React.FC = () => {
         case 'nameDesc':
           return b.name.localeCompare(a.name);
         case 'popularityAsc':
-          return (a.subtypes?.length || 0) - (b.subtypes?.length || 0);
+          const aSubtypeCount = subtypes.filter(s => s.alcohol_type_id === a.id).length;
+          const bSubtypeCount = subtypes.filter(s => s.alcohol_type_id === b.id).length;
+          return aSubtypeCount - bSubtypeCount;
         case 'popularityDesc':
-          return (b.subtypes?.length || 0) - (a.subtypes?.length || 0);
+          const aSubtypeCountDesc = subtypes.filter(s => s.alcohol_type_id === a.id).length;
+          const bSubtypeCountDesc = subtypes.filter(s => s.alcohol_type_id === b.id).length;
+          return bSubtypeCountDesc - aSubtypeCountDesc;
         default:
           return 0;
       }
     });
 
     return alcoholTypesOnly;
-  }, [alcoholTypes, searchQuery, sortOption, selectedAlcoholTypeIds, selectedSubtypeIds, selectedPriceRanges, selectedAbvRange, getFilteredSpirits]);
+  }, [alcoholTypes, subtypes, searchQuery, sortOption, selectedAlcoholTypeIds, selectedSubtypeIds, selectedPriceRanges, selectedAbvRange, getFilteredSpirits]);
 
   const toggleAlcoholTypeFilter = (typeId: string) => {
     setSelectedAlcoholTypeIds(prev =>
@@ -221,53 +233,57 @@ const SpiritListPage: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredAndSortedSpirits.map((alcoholType) => (
-          <div key={alcoholType.id} className="group focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-xl">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transition-all duration-300 transform hover:shadow-xl hover:-translate-y-1">
-              <Link to={`/alcohol-type/${alcoholType.id}`} className="block">
-                <div className="relative aspect-[4/3]">
-                  <TransitionImage
-                    src={alcoholType.image_url || 'https://images.pexels.com/photos/602750/pexels-photo-602750.jpeg'}
-                    alt={alcoholType.name}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                  <div className="absolute bottom-4 left-4 right-4">
-                    <h3 className="text-2xl font-bold text-white mb-2">{alcoholType.name}</h3>
-                    <p className="text-gray-200 line-clamp-2">{alcoholType.description}</p>
-                    <div className="mt-2 text-sm text-gray-300">
-                      {alcoholType.subtypes?.length || 0} varieties available
+        {filteredAndSortedSpirits.map((alcoholType) => {
+          const subtypeCount = subtypes.filter(s => s.alcohol_type_id === alcoholType.id).length;
+          
+          return (
+            <div key={alcoholType.id} className="group focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-xl">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transition-all duration-300 transform hover:shadow-xl hover:-translate-y-1">
+                <Link to={`/alcohol-type/${alcoholType.id}`} className="block">
+                  <div className="relative aspect-[4/3]">
+                    <TransitionImage
+                      src={alcoholType.image_url || 'https://images.pexels.com/photos/602750/pexels-photo-602750.jpeg'}
+                      alt={alcoholType.name}
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                    <div className="absolute bottom-4 left-4 right-4">
+                      <h3 className="text-2xl font-bold text-white mb-2">{alcoholType.name}</h3>
+                      <p className="text-gray-200 line-clamp-2">{alcoholType.description}</p>
+                      <div className="mt-2 text-sm text-gray-300">
+                        {subtypeCount} varieties available
+                      </div>
                     </div>
                   </div>
+                </Link>
+                
+                <div className="p-4">
+                  <button
+                    onClick={() => handleAddToMyBar(alcoholType)}
+                    className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                      isInMyBar(alcoholType.id, 'alcohol_type')
+                        ? 'bg-green-600 text-white'
+                        : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                    }`}
+                    disabled={isInMyBar(alcoholType.id, 'alcohol_type')}
+                  >
+                    {isInMyBar(alcoholType.id, 'alcohol_type') ? (
+                      <>
+                        <BookmarkCheck className="h-4 w-4" />
+                        In My Bar
+                      </>
+                    ) : (
+                      <>
+                        <Bookmark className="h-4 w-4" />
+                        Add to My Bar
+                      </>
+                    )}
+                  </button>
                 </div>
-              </Link>
-              
-              <div className="p-4">
-                <button
-                  onClick={() => handleAddToMyBar(alcoholType)}
-                  className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                    isInMyBar(alcoholType.id, 'alcohol_type')
-                      ? 'bg-green-600 text-white'
-                      : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                  }`}
-                  disabled={isInMyBar(alcoholType.id, 'alcohol_type')}
-                >
-                  {isInMyBar(alcoholType.id, 'alcohol_type') ? (
-                    <>
-                      <BookmarkCheck className="h-4 w-4" />
-                      In My Bar
-                    </>
-                  ) : (
-                    <>
-                      <Bookmark className="h-4 w-4" />
-                      Add to My Bar
-                    </>
-                  )}
-                </button>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {filteredAndSortedSpirits.length === 0 && (
@@ -290,22 +306,22 @@ const SpiritListPage: React.FC = () => {
             <div className="space-y-6">
               <div>
                 <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Spirit Types</h3>
-                {renderFilterChips(filterOptions.alcoholTypes, selectedAlcoholTypeIds, toggleAlcoholTypeFilter)}
+                {renderFilterChips(filterOptions.alcoholTypes || [], selectedAlcoholTypeIds, toggleAlcoholTypeFilter)}
               </div>
 
               <div>
                 <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Subtypes</h3>
-                {renderFilterChips(filterOptions.subtypes, selectedSubtypeIds, toggleSubtypeFilter)}
+                {renderFilterChips(filterOptions.subtypes || [], selectedSubtypeIds, toggleSubtypeFilter)}
               </div>
 
               <div>
                 <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Price Range</h3>
-                {renderPriceRangeChips(filterOptions.priceRanges, selectedPriceRanges, togglePriceRangeFilter)}
+                {renderPriceRangeChips(filterOptions.priceRanges || [], selectedPriceRanges, togglePriceRangeFilter)}
               </div>
 
               <div>
                 <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">ABV Range</h3>
-                {renderAbvRangeChips(filterOptions.abvRanges, selectedAbvRange, setSelectedAbvRange)}
+                {renderAbvRangeChips(filterOptions.abvRanges || [], selectedAbvRange, setSelectedAbvRange)}
               </div>
             </div>
 

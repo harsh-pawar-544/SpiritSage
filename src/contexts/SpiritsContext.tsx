@@ -9,7 +9,9 @@ interface Spirit {
   subtype?: string;
   brand?: string;
   description: string;
-  abv?: number;
+  abv?: string;
+  alcohol_type_id?: string;
+  subtype_id?: string;
   tasting_notes?: string[];
   price_range?: string;
   image_url?: string;
@@ -19,10 +21,11 @@ interface Spirit {
 }
 
 interface FilterOptions {
-  types: string[];
-  subtypes: string[];
-  brands: string[];
+  alcoholTypes: Array<{id: string; name: string}>;
+  subtypes: Array<{id: string; name: string}>;
+  brands: Array<{id: string; name: string}>;
   priceRanges: string[];
+  abvRanges: Array<{min: number; max: number; label: string}>;
 }
 
 interface SpiritsContextType {
@@ -223,7 +226,8 @@ export const SpiritsProvider: React.FC<{ children: ReactNode }> = ({ children })
           history: type.history,
           fun_facts: type.fun_facts,
           myths: type.myths,
-          image_url: type.image_url
+          image_url: type.image_url,
+          alcohol_type_id: type.id
         })),
         ...subtypesData.map((subtype: any) => ({
           id: `subtype_${subtype.id}`,
@@ -236,7 +240,9 @@ export const SpiritsProvider: React.FC<{ children: ReactNode }> = ({ children })
           history: subtype.history,
           fun_facts: subtype.fun_facts,
           myths: subtype.myths,
-          image_url: subtype.image_url
+          image_url: subtype.image_url,
+          alcohol_type_id: subtype.alcohol_type_id,
+          subtype_id: subtype.id
         })),
         ...brandsData.map((brand: any) => ({
           id: `brand_${brand.id}`,
@@ -251,7 +257,9 @@ export const SpiritsProvider: React.FC<{ children: ReactNode }> = ({ children })
           history: brand.history,
           fun_facts: brand.fun_facts,
           myths: brand.myths,
-          image_url: brand.image_url
+          image_url: brand.image_url,
+          alcohol_type_id: brand.subtypes?.alcohol_types?.id,
+          subtype_id: brand.subtype_id
         }))
       ];
 
@@ -284,16 +292,21 @@ export const SpiritsProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   // Filter and utility functions
   const getAvailableFilterOptions = (): FilterOptions => {
-    const types = [...new Set(spirits.map(spirit => spirit.type))];
-    const subtypes = [...new Set(spirits.map(spirit => spirit.subtype).filter(Boolean))];
-    const brands = [...new Set(spirits.map(spirit => spirit.brand).filter(Boolean))];
-    const priceRanges = [...new Set(spirits.map(spirit => spirit.price_range).filter(Boolean))];
+    const uniquePriceRanges = [...new Set(spirits.map(spirit => spirit.price_range).filter(Boolean))];
+    
+    const abvRanges = [
+      { min: 0, max: 20, label: '0-20%' },
+      { min: 20, max: 40, label: '20-40%' },
+      { min: 40, max: 60, label: '40-60%' },
+      { min: 60, max: 100, label: '60%+' }
+    ];
 
     return {
-      types,
-      subtypes,
-      brands,
-      priceRanges
+      alcoholTypes: alcoholTypes.map(type => ({ id: type.id, name: type.name })),
+      subtypes: subtypes.map(subtype => ({ id: subtype.id, name: subtype.name })),
+      brands: brands.map(brand => ({ id: brand.id, name: brand.name })),
+      priceRanges: uniquePriceRanges,
+      abvRanges
     };
   };
 
@@ -301,15 +314,35 @@ export const SpiritsProvider: React.FC<{ children: ReactNode }> = ({ children })
     if (!filters) return spirits;
 
     return spirits.filter(spirit => {
-      if (filters.type && spirit.type !== filters.type) return false;
-      if (filters.subtype && spirit.subtype !== filters.subtype) return false;
-      if (filters.brand && spirit.brand !== filters.brand) return false;
-      if (filters.priceRange && spirit.price_range !== filters.priceRange) return false;
-      if (filters.search) {
-        const searchTerm = filters.search.toLowerCase();
+      // Filter by alcohol type IDs
+      if (filters.alcoholTypeIds && filters.alcoholTypeIds.length > 0) {
+        if (!filters.alcoholTypeIds.includes(spirit.alcohol_type_id)) return false;
+      }
+
+      // Filter by subtype IDs
+      if (filters.subtypeIds && filters.subtypeIds.length > 0) {
+        if (!filters.subtypeIds.includes(spirit.subtype_id)) return false;
+      }
+
+      // Filter by price ranges
+      if (filters.priceRanges && filters.priceRanges.length > 0) {
+        if (!spirit.price_range || !filters.priceRanges.includes(spirit.price_range)) return false;
+      }
+
+      // Filter by ABV range
+      if (filters.abvRange) {
+        if (!spirit.abv) return false;
+        const abvValue = parseFloat(spirit.abv.replace('%', '').split('-')[0]);
+        if (abvValue < filters.abvRange.min || abvValue > filters.abvRange.max) return false;
+      }
+
+      // Filter by search term
+      if (filters.searchTerm) {
+        const searchTerm = filters.searchTerm.toLowerCase();
         return spirit.name.toLowerCase().includes(searchTerm) ||
                spirit.description.toLowerCase().includes(searchTerm);
       }
+
       return true;
     });
   };
