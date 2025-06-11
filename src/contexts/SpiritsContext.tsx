@@ -407,16 +407,21 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
 
     try {
-      // Check if spirit already exists in user's bar
-      const { data: existingSpirit } = await supabase
+      // Check if spirit already exists in user's bar using limit(1) instead of single()
+      const { data: existingSpirits, error: checkError } = await supabase
         .from('user_spirits')
         .select('id')
         .eq('user_id', user.id)
         .eq('spirit_id', spiritId)
         .eq('spirit_type', spiritType)
-        .single();
+        .limit(1);
 
-      if (existingSpirit) {
+      if (checkError) {
+        console.error('Error checking existing spirit:', checkError);
+        throw checkError;
+      }
+
+      if (existingSpirits && existingSpirits.length > 0) {
         throw new Error('Spirit already in your bar');
       }
 
