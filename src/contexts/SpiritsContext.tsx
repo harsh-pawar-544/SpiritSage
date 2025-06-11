@@ -528,25 +528,31 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     [loadMyBarSpirits]
   );
 
-  const removeSpiritFromMyBar = useCallback(
-    async (spiritId: string, spiritType: 'alcohol_type' | 'brand' | 'subtype'): Promise<void> => {
-      try {
-        const { data: { user } = {} } = await supabase.auth.getUser();
-        if (!user) throw new Error('User not authenticated');
+  const removeSpiritFromMyBar = useCallback(async (userSpiritRecordId: string) => {
+    try {
+      const { data: { user } = {} } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
 
-        const { error: deleteError } = await supabase
-          .from('user_spirits')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('spirit_id', spiritId)
-          .eq('spirit_type', spiritType);
+      // The correct delete query: targets the specific user_spirits record by its 'id' (primary key)
+      // and also includes 'user_id' for added security and RLS validation.
+      const { error } = await supabase
+        .from('user_spirits')
+        .delete()
+        .eq('id', userSpiritRecordId) // <-- CRITICAL: Uses the primary key 'id' of the user_spirits record
+        .eq('user_id', user.id);     // <-- Ensures the logged-in user owns this record
 
-        if (deleteError) {
-          console.error('Error removing spirit from My Bar:', deleteError);
-          throw new Error(`Failed to remove spirit from My Bar: ${deleteError.message}`);
-        }
+      if (error) {
+        console.error('Supabase delete error details:', error); // Log the full Supabase error object
+        throw new Error(`Failed to remove spirit: ${error.message}`); // Throw a more informative error
+      }
 
-        await loadMyBarSpirits();
+      console.log('Spirit successfully removed from My Bar!'); // Log success
+      await loadMyBarSpirits(); // Reload the bar to reflect the change
+    } catch (error: any) { // Catch as any to ensure .message is accessible
+      console.error('Error removing spirit from My Bar catch block:', error.message || error);
+      throw error; // Re-throw to propagate the error up to the UI
+    }
+  }, [loadMyBarSpirits]); // Dependencies for useCallback
       } catch (err: any) {
         console.error('Error removing spirit from My Bar:', err);
         throw err;
