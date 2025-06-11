@@ -43,7 +43,8 @@ export default function MyBarScreen() {
     }
   }, [searchQuery, myBarSpirits]);
 
-  const handleRemoveSpirit = (spiritId: string, spiritName: string) => {
+  // --- CORRECTED handleRemoveSpirit FUNCTION ---
+  const handleRemoveSpirit = (userSpiritRecordId: string, spiritName: string) => { // Renamed parameter for clarity
     Alert.alert(
       'Remove from My Bar',
       `Are you sure you want to remove ${spiritName} from your bar?`,
@@ -54,34 +55,42 @@ export default function MyBarScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await removeSpiritFromMyBar(spiritId);
-            } catch (error) {
-              Alert.alert('Error', 'Failed to remove spirit from your bar.');
+              // Pass the userSpiritRecordId (which is item.id from renderSpiritCard)
+              await removeSpiritFromMyBar(userSpiritRecordId); 
+            } catch (error: any) { // Catch as any to access error.message
+              console.error('Error removing spirit from UI:', error); // Log the actual error
+              Alert.alert('Error', error.message || 'Failed to remove spirit from your bar.'); // Display specific error message
             }
           }
         }
       ]
     );
   };
+  // --- END CORRECTED handleRemoveSpirit FUNCTION ---
 
+  // --- CORRECTED handleSaveNotes and handleEditNotes to use userSpiritRecordId ---
   const handleEditNotes = (spirit: any) => {
-    setEditingNotes(spirit.spirit_id);
+    // We now use the unique 'id' of the user_spirits record for editing notes as well
+    setEditingNotes(spirit.id); // Use spirit.id here
     setNotesText(spirit.notes || '');
     setShowNotesModal(true);
   };
 
   const handleSaveNotes = async () => {
-    if (editingNotes) {
+    if (editingNotes) { // editingNotes now holds the user_spirits record ID
       try {
-        await updateMyBarNotes(editingNotes, notesText);
+        // Pass the user_spirits record ID to updateMyBarNotes
+        await updateMyBarNotes(editingNotes, notesText); // Update this line to pass the correct ID
         setShowNotesModal(false);
         setEditingNotes(null);
         setNotesText('');
-      } catch (error) {
-        Alert.alert('Error', 'Failed to update notes.');
+      } catch (error: any) { // Catch as any to access error.message
+        console.error('Error updating My Bar notes from UI:', error); // Log the actual error
+        Alert.alert('Error', error.message || 'Failed to update notes.'); // Display specific error message
       }
     }
   };
+  // --- END CORRECTED handleSaveNotes and handleEditNotes ---
 
   const navigateToSpirit = (spirit: any) => {
     switch (spirit.spirit_type) {
@@ -133,13 +142,15 @@ export default function MyBarScreen() {
         <View style={styles.cardActions}>
           <TouchableOpacity
             style={styles.actionButton}
-            onPress={() => handleEditNotes(item)}
+            onPress={() => handleEditNotes(item)} // Pass the whole item, or item.id
           >
             <Ionicons name="create-outline" size={20} color="#6366f1" />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionButton}
-            onPress={() => handleRemoveSpirit(item.spirit_id, spiritData.name)}
+            // --- CRITICAL CHANGE HERE ---
+            onPress={() => handleRemoveSpirit(item.id, spiritData.name)} // Pass item.id (the user_spirits record ID)
+            // --- END CRITICAL CHANGE ---
           >
             <Ionicons name="trash-outline" size={20} color="#ef4444" />
           </TouchableOpacity>
