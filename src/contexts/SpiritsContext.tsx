@@ -120,6 +120,72 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [alcoholTypes, allSubtypes, allBrands]); // Dependencies needed here for enrichment
 
+  // My Bar functionality
+  async function addSpiritToMyBar(spiritId: string, spiritType: 'alcohol_type' | 'subtype' | 'brand', notes?: string): Promise<void> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { error } = await supabase
+        .from('user_spirits')
+        .insert({
+          user_id: user.id,
+          spirit_id: spiritId,
+          spirit_type: spiritType,
+          notes: notes || null
+        });
+
+      if (error) throw error;
+
+      // Reload the user's bar to reflect the change
+      await loadMyBarSpirits();
+    } catch (error: any) {
+      console.error('Error adding spirit to My Bar:', error.message || error);
+      throw error;
+    }
+  }
+
+  async function removeSpiritFromMyBar(userSpiritRecordId: string): Promise<void> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { error } = await supabase
+        .from('user_spirits')
+        .delete()
+        .eq('id', userSpiritRecordId)
+        .eq('user_id', user.id); // Additional security check
+
+      if (error) throw error;
+
+      // Reload the user's bar to reflect the change
+      await loadMyBarSpirits();
+    } catch (error: any) {
+      console.error('Error removing spirit from My Bar:', error.message || error);
+      throw error;
+    }
+  }
+
+  async function updateMyBarNotes(userSpiritRecordId: string, notes: string): Promise<void> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { error } = await supabase
+        .from('user_spirits')
+        .update({ notes })
+        .eq('id', userSpiritRecordId)
+        .eq('user_id', user.id); // Additional security check
+
+      if (error) throw error;
+
+      // Reload the user's bar to reflect the change
+      await loadMyBarSpirits();
+    } catch (error: any) {
+      console.error('Error updating My Bar notes:', error.message || error);
+      throw error;
+    }
+  }
 
   // Initial fetch of all nested data
   useEffect(() => {
