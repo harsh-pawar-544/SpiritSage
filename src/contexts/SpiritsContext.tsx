@@ -547,7 +547,7 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
 
       console.log('Spirit successfully removed from My Bar!'); // Log success
-      await loadMyBarSpirits(); // Reload the bar to reflect the change
+      await loadMyBarSpirits(); // Rezload the bar to reflect the change
     } catch (error: any) { // Catch as any to ensure .message is accessible
       console.error('Error removing spirit from My Bar catch block:', error.message || error);
       throw error; // Re-throw to propagate the error up to the UI
