@@ -1,200 +1,189 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+// src/contexts/SpiritsContext.tsx
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import {
   type AlcoholType,
   type Subtype,
   type Brand,
   type Rating,
-} from '../data/types'; // Ensure your types include alcohol_type_id, alcohol_type_name, subtype_id, subtype_name on Brand/Subtype where applicable
+} from '../data/types'; // Ensure this path is correct
 
 interface FilterOptions {
-  alcoholTypes: Array<{ id: string; name: string }>;
-  subtypes: Array<{ id: string; name: string }>;
+  alcoholTypeNames: string[];
+  flavorProfiles: string[];
   priceRanges: string[];
-  abvRanges: Array<{ min: number; max: number; label: string }>;
-}
-
-interface FilterCriteria {
-  alcoholTypeIds?: string[];
-  subtypeIds?: string[];
-  priceRanges?: string[];
-  abvRange?: { min: number; max: number };
-  searchTerm?: string;
+  abvRanges: string[];
+  ageStatements: string[];
+  distilleries: string[];
 }
 
 interface MyBarSpirit {
-  id: string;
-  spirit_id: string;
-  spirit_type: 'alcohol_type' | 'brand' | 'subtype';
-  notes?: string;
+  id: string; // This is the primary key from the user_spirits table
+  user_id: string;
+  spirit_id: string; // This is the ID of the actual alcohol product (AlcoholType, Subtype, or Brand)
+  spirit_type: 'alcohol_type' | 'subtype' | 'brand';
   added_at: string;
-  spirit_data?: AlcoholType | Subtype | Brand;
+  notes?: string;
+  spirit_data?: AlcoholType | Subtype | Brand; // The actual spirit data, more specific type
 }
 
 interface SpiritsContextType {
   alcoholTypes: AlcoholType[];
-  brands: Brand[]; // Added for ExplorePage and general use
+  allSubtypes: Subtype[];
+  allBrands: Brand[];
+  myBarSpirits: MyBarSpirit[];
   loading: boolean;
   error: string | null;
-  myBarSpirits: MyBarSpirit[];
+
+  // Existing methods
   getCategoryById: (id: string) => AlcoholType | undefined;
   getAlcoholTypeById: (id: string) => Promise<AlcoholType | undefined>;
   getSubtypesByCategoryId: (categoryId: string) => Subtype[];
   getSubtypeById: (id: string) => Promise<Subtype | undefined>;
   getBrandsBySubtypeId: (subtypeId: string) => Brand[];
   getBrandById: (brandId: string) => Promise<Brand | undefined>;
-  getFilteredSpirits: (filters: FilterCriteria) => Array<AlcoholType | Subtype | Brand>;
+
+  // New filtering methods
+  getFilteredSpirits: (filters: Partial<FilterOptions>, searchQuery?: string) => {
+    alcoholTypes: AlcoholType[];
+    subtypes: Subtype[];
+    brands: Brand[];
+  };
+  getAvailableFilterOptions: () => FilterOptions;
+
+  // My Bar functionality
+  addSpiritToMyBar: (spiritId: string, spiritType: 'alcohol_type' | 'subtype' | 'brand', notes?: string) => Promise<void>;
+  removeSpiritFromMyBar: (userSpiritRecordId: string) => Promise<void>; // Updated parameter type
+  updateMyBarNotes: (userSpiritRecordId: string, notes: string) => Promise<void>; // Updated parameter type
+  isInMyBar: (spiritId: string) => boolean;
+  loadMyBarSpirits: () => Promise<void>;
+
+  // Rating functionality
   addRating: (brandId: string, rating: number, comment: string) => Promise<void>;
   getRatingsForBrand: (brandId: string) => Promise<Rating[]>;
   getTastingNotesForSpirit: (spiritId: string) => Promise<Array<{ term: string; percentage: number }>>;
-  getAvailableFilterOptions: () => FilterOptions;
-  addSpiritToMyBar: (spiritId: string, spiritType: 'alcohol_type' | 'brand' | 'subtype', notes?: string) => Promise<void>;
-  removeSpiritFromMyBar: (spiritId: string, spiritType: 'alcohol_type' | 'brand' | 'subtype') => Promise<void>;
-  updateMyBarNotes: (spiritId: string, spiritType: 'alcohol_type' | 'brand' | 'subtype', notes: string) => Promise<void>;
-  isInMyBar: (spiritId: string, spiritType: 'alcohol_type' | 'brand' | 'subtype') => boolean;
-  loadMyBarSpirits: () => Promise<void>;
 }
 
 const SpiritsContext = createContext<SpiritsContextType | undefined>(undefined);
 
 export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [alcoholTypes, setAlcoholTypes] = useState<AlcoholType[]>([]);
+  const [allSubtypes, setAllSubtypes] = useState<Subtype[]>([]);
+  const [allBrands, setAllBrands] = useState<Brand[]>([]);
   const [myBarSpirits, setMyBarSpirits] = useState<MyBarSpirit[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Memoized 'brands' array for easier access, used by ExplorePage
-  const brands = useMemo(() => {
-    const allBrands: Brand[] = [];
-    alcoholTypes.forEach(alcoholType => {
-      alcoholType.subtypes?.forEach(subtype => {
-        subtype.brands?.forEach(brand => {
-          allBrands.push({
-            ...brand,
-            alcohol_type_id: alcoholType.id,
-            alcohol_type_name: alcoholType.name,
-            subtype_id: subtype.id,
-            subtype_name: subtype.name,
-          });
-        });
-      });
-    });
-    return allBrands;
-  }, [alcoholTypes]);
-
-
-  // Helper function to find spirit data in the already loaded alcoholTypes state
-  const findSpiritDataInState = useCallback((spiritId: string, spiritType: MyBarSpirit['spirit_type']): AlcoholType | Subtype | Brand | undefined => {
-    switch (spiritType) {
-      case 'alcohol_type':
-        return alcoholTypes.find(at => at.id === spiritId);
-      case 'subtype':
-        for (const at of alcoholTypes) {
-          const subtype = at.subtypes?.find(s => s.id === spiritId);
-          if (subtype) return subtype;
-        }
-        return undefined;
-      case 'brand':
-        for (const at of alcoholTypes) {
-          for (const s of (at.subtypes || [])) {
-            const brand = s.brands?.find(b => b.id === spiritId);
-            if (brand) return brand;
-          }
-        }
-        return undefined;
-      default:
-        return undefined;
-    }
-  }, [alcoholTypes]);
-
-  const loadMyBarSpirits = useCallback(async (): Promise<void> => {
-    console.log('loadMyBarSpirits called');
+  // loadMyBarSpirits needs to be defined before useEffect if it's called inside useEffect
+  // and is part of the context's dependencies.
+  // We'll define it here first without its dependencies so it can be used,
+  // then wrap it in useCallback later.
+  const loadMyBarSpirits = useCallback(async () => {
     try {
-      const { data: { user } = {} } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         setMyBarSpirits([]);
         return;
       }
 
-      console.log('Loading My Bar spirits for user:', user.id);
-      const { data, error: fetchError } = await supabase
+      // Ensure 'id' (the primary key) is selected here
+      const { data, error } = await supabase
         .from('user_spirits')
-        .select('*')
+        .select('id, user_id, spirit_id, spirit_type, added_at, notes') // Explicitly select columns including 'id'
         .eq('user_id', user.id);
 
-      if (fetchError) {
-        console.error('Error loading My Bar spirits:', fetchError);
-        throw new Error(`Failed to load My Bar spirits: ${fetchError.message}`);
-      }
+      if (error) throw error;
 
-      // OPTIMIZATION: Instead of new Supabase calls, look up data from `alcoholTypes` state
-      const spiritsWithData = (data || []).map((spirit) => {
-        const spirit_data = findSpiritDataInState(spirit.spirit_id, spirit.spirit_type);
-        return { ...spirit, spirit_data };
-      });
+      // Enrich with spirit data
+      const enrichedSpirits = await Promise.all(
+        (data || []).map(async (spirit) => {
+          let spiritData: AlcoholType | Subtype | Brand | null = null;
+          switch (spirit.spirit_type) {
+            case 'alcohol_type':
+              spiritData = alcoholTypes.find(at => at.id === spirit.spirit_id) || null;
+              break;
+            case 'subtype':
+              spiritData = allSubtypes.find(st => st.id === spirit.spirit_id) || null;
+              break;
+            case 'brand':
+              spiritData = allBrands.find(b => b.id === spirit.spirit_id) || null;
+              break;
+          }
+          return { ...spirit, spirit_data: spiritData };
+        })
+      );
 
-      setMyBarSpirits(spiritsWithData as MyBarSpirit[]);
+      setMyBarSpirits(enrichedSpirits);
     } catch (err: any) {
-      console.error('Error loading My Bar spirits:', err);
-      setMyBarSpirits([]);
+      console.error('Error loading My Bar spirits:', err.message || err);
+      // It's often better not to set global error state here if it's a transient load error
     }
-  }, [findSpiritDataInState]);
+  }, [alcoholTypes, allSubtypes, allBrands]); // Dependencies needed here for enrichment
 
-  // Initial fetch of all nested data (for lists and in-memory lookups)
+
+  // Initial fetch of all nested data
   useEffect(() => {
-    const fetchAlcoholData = async () => {
-      console.log('fetchAlcoholData useEffect called');
+    const fetchAllSpiritsData = async () => {
       try {
         setLoading(true);
-        setError(null);
 
-        console.log('Fetching alcohol types...');
-        const { data: typesData, error: typesError } = await supabase
-          .from('alcohol_types')
-          .select('*, subtypes(*, brands(*))'); // Fetch nested data in one go
+        const [typesData, subtypesData, brandsData] = await Promise.all([
+          supabase.from('alcohol_types').select('*, history, fun_facts, myths, image_url'),
+          supabase.from('subtypes').select('*, alcohol_types(name), history, fun_facts, myths, image_url, abv_min, abv_max, region, flavor_profile, characteristics, production_method'),
+          supabase.from('brands').select('*, subtypes(name, alcohol_types(name)), history, fun_facts, myths, image_url, abv, tasting_notes, price_range')
+        ]);
 
-        if (typesError) {
-          console.error('Error fetching alcohol types:', typesError);
-          throw new Error(`Failed to fetch alcohol types: ${typesError.message}`);
-        }
+        if (typesData.error) throw typesData.error;
+        if (subtypesData.error) throw subtypesData.error;
+        if (brandsData.error) throw brandsData.error;
 
-        const processedAlcoholTypes = (typesData || []).map(type => ({
+        const processedAlcoholTypes = typesData.data.map(type => ({
           ...type,
           image: type.image_url,
-          subtypes: (type.subtypes || []).map((sub: any) => ({ // Ensure 'sub' is typed correctly if needed
-            ...sub,
-            image: sub.image_url,
-            brands: (sub.brands || []).map((brand: any) => ({ // Ensure 'brand' is typed correctly if needed
-              ...brand,
-              image: brand.image_url,
-              // Add direct parent IDs and names here for consistency
-              alcohol_type_id: type.id,
-              alcohol_type_name: type.name,
-              subtype_id: sub.id,
-              subtype_name: sub.name,
+          subtypes: subtypesData.data
+            .filter(sub => sub.alcohol_type_id === type.id)
+            .map(sub => ({
+              ...sub,
+              image: sub.image_url,
+              brands: brandsData.data.filter(brand => brand.subtype_id === sub.id)
+                .map(brand => ({ ...brand, image: brand.image_url }))
             }))
-          }))
+        }));
+
+        const processedSubtypes = subtypesData.data.map(sub => ({
+          ...sub,
+          image: sub.image_url,
+          brands: brandsData.data.filter(brand => brand.subtype_id === sub.id)
+            .map(brand => ({ ...brand, image: brand.image_url }))
+        }));
+
+        const processedBrands = brandsData.data.map(brand => ({
+          ...brand,
+          image: brand.image_url
         }));
 
         setAlcoholTypes(processedAlcoholTypes);
-        console.log('Data loaded successfully and setAlcoholTypes called.');
+        setAllSubtypes(processedSubtypes);
+        setAllBrands(processedBrands);
 
-        await loadMyBarSpirits();
-        console.log('loadMyBarSpirits completed after initial data fetch.');
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await loadMyBarSpirits(); // Call the defined loadMyBarSpirits
+        }
 
       } catch (err: any) {
-        console.error('Error in fetchAlcoholData:', err);
+        console.error('Error fetching spirits data:', err.message);
         setError(err.message || 'Failed to fetch spirits data.');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchAlcoholData();
-  }, []);
+    fetchAllSpiritsData();
+  }, [loadMyBarSpirits]); // Add loadMyBarSpirits to dependency array, which is now stable
 
-  // --- Memoized Functions ---
 
+  // Existing methods
   const getCategoryById = useCallback(
     (id: string): AlcoholType | undefined => {
       const found = alcoholTypes.find(cat => cat.id === id);
@@ -206,26 +195,20 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const getAlcoholTypeById = useCallback(
     async (id: string): Promise<AlcoholType | undefined> => {
       try {
-        console.log(`Fetching alcohol type by ID: ${id}`);
-        const { data, error: fetchError } = await supabase
+        const { data, error } = await supabase
           .from('alcohol_types')
-          .select('*') // Just fetch the type itself
+          .select('*, history, fun_facts, myths, image_url')
           .eq('id', id)
           .single();
 
-        if (fetchError) {
-          if (fetchError.code === 'PGRST116') {
-            console.log(`Alcohol type with ID ${id} not found`);
-            return undefined;
-          }
-          console.error(`Error fetching alcohol type by ID ${id}:`, fetchError);
-          throw new Error(`Failed to fetch alcohol type: ${fetchError.message}`);
+        if (error && error.code !== 'PGRST116') {
+          console.error(`Error fetching alcohol type by ID ${id}:`, error.message);
+          return undefined;
         }
-
         return data ? { ...data, image: data.image_url } as AlcoholType : undefined;
-      } catch (err: any) {
+      } catch (err) {
         console.error(`Exception fetching alcohol type by ID ${id}:`, err);
-        throw err;
+        return undefined;
       }
     },
     []
@@ -233,46 +216,28 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const getSubtypesByCategoryId = useCallback(
     (categoryId: string): Subtype[] => {
-      const category = alcoholTypes.find(cat => cat.id === categoryId);
-      return category ? (category.subtypes || []).map(sub => ({ ...sub, image: sub.image_url })) : [];
+      return allSubtypes.filter(sub => sub.alcohol_type_id === categoryId);
     },
-    [alcoholTypes]
+    [allSubtypes]
   );
 
   const getSubtypeById = useCallback(
     async (id: string): Promise<Subtype | undefined> => {
       try {
-        console.log(`Fetching subtype by ID: ${id}`);
-        const { data, error: fetchError } = await supabase
+        const { data, error } = await supabase
           .from('subtypes')
-          // Fetch alcohol_type details in the same query
-          .select('*, alcohol_types(id, name)')
+          .select('*, alcohol_types(name), history, fun_facts, myths, image_url, abv_min, abv_max, region, flavor_profile, characteristics, production_method')
           .eq('id', id)
           .single();
 
-        if (fetchError) {
-          if (fetchError.code === 'PGRST116') {
-            console.log(`Subtype with ID ${id} not found`);
-            return undefined;
-          }
-          console.error(`Error fetching subtype by ID ${id}:`, fetchError);
-          throw new Error(`Failed to fetch subtype: ${fetchError.message}`);
+        if (error && error.code !== 'PGRST116') {
+          console.error(`Error fetching subtype by ID ${id}:`, error.message);
+          return undefined;
         }
-
-        if (!data) return undefined;
-
-        const subtypeWithParent: Subtype = {
-          ...data,
-          image: data.image_url,
-          // Map the nested alcohol_types data to direct properties on the Subtype object
-          alcohol_type_id: data.alcohol_types?.id || null,
-          alcohol_type_name: data.alcohol_types?.name || null,
-        };
-
-        return subtypeWithParent;
-      } catch (err: any) {
+        return data ? { ...data, image: data.image_url } as Subtype : undefined;
+      } catch (err) {
         console.error(`Exception fetching subtype by ID ${id}:`, err);
-        throw err;
+        return undefined;
       }
     },
     []
@@ -280,329 +245,268 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const getBrandsBySubtypeId = useCallback(
     (subtypeId: string): Brand[] => {
-      let brands: Brand[] = [];
-      alcoholTypes.forEach(category => {
-        const subtype = (category.subtypes || []).find(sub => sub.id === subtypeId);
-        if (subtype) {
-          brands = (subtype.brands || []).map(brand => ({ ...brand, image: brand.image_url }));
-        }
-      });
-      return brands;
+      return allBrands.filter(brand => brand.subtype_id === subtypeId);
     },
-    [alcoholTypes]
+    [allBrands]
   );
 
-  const getBrandById = useCallback(async (brandId: string): Promise<Brand | undefined> => {
-    try {
-      console.log(`Fetching brand by ID: ${brandId}`);
-      const { data, error: fetchError } = await supabase
-        .from('brands')
-        // CRITICAL CHANGE: Use foreign table relationships to get parent IDs and names
-        .select('*, subtypes(id, name, alcohol_type_id, alcohol_types(id, name))')
-        .eq('id', brandId)
-        .single();
+  const getBrandById = useCallback(
+    async (brandId: string): Promise<Brand | undefined> => {
+      try {
+        const { data, error } = await supabase
+          .from('brands')
+          .select('*, subtypes(name, alcohol_types(name)), history, fun_facts, myths, image_url, abv, tasting_notes, price_range')
+          .eq('id', brandId)
+          .single();
 
-      if (fetchError) {
-        if (fetchError.code === 'PGRST116') {
-          console.log(`Brand with ID ${brandId} not found`);
+        if (error && error.code !== 'PGRST116') {
+          console.error(`Error fetching brand by ID ${brandId}:`, error.message);
           return undefined;
         }
-        console.error(`Error fetching brand by ID ${brandId}:`, fetchError);
-        throw new Error(`Failed to fetch brand: ${fetchError.message}`);
+        return data ? { ...data, image: data.image_url } as Brand : undefined;
+      } catch (err) {
+        console.error(`Exception fetching brand by ID ${brandId}:`, err);
+        return undefined;
       }
+    },
+    []
+  );
 
-      if (!data) return undefined;
+  // New filtering methods
+  const getFilteredSpirits = useCallback((filters: Partial<FilterOptions>, searchQuery?: string) => {
+    let filteredAlcoholTypes = [...alcoholTypes];
+    let filteredSubtypes = [...allSubtypes];
+    let filteredBrands = [...allBrands];
 
-      const brandData: Brand = {
-        ...data,
-        image: data.image_url,
-        // Map the nested data to direct properties as SpiritDetailModal expects
-        alcohol_type_id: data.subtypes?.alcohol_types?.id || null,
-        alcohol_type_name: data.subtypes?.alcohol_types?.name || null,
-        subtype_id: data.subtypes?.id || null,
-        subtype_name: data.subtypes?.name || null,
+    // Apply search query
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filteredAlcoholTypes = filteredAlcoholTypes.filter(type =>
+        type.name.toLowerCase().includes(query) ||
+        (type.description && type.description.toLowerCase().includes(query))
+      );
+      filteredSubtypes = filteredSubtypes.filter(sub =>
+        sub.name.toLowerCase().includes(query) ||
+        (sub.description && sub.description.toLowerCase().includes(query))
+      );
+      filteredBrands = filteredBrands.filter(brand =>
+        brand.name.toLowerCase().includes(query) ||
+        (brand.description && brand.description.toLowerCase().includes(query))
+      );
+    }
+
+    // Apply alcohol type names filter
+    if (filters.alcoholTypeNames && filters.alcoholTypeNames.length > 0) {
+      filteredAlcoholTypes = filteredAlcoholTypes.filter(type =>
+        filters.alcoholTypeNames!.includes(type.name)
+      );
+
+      const matchingAlcoholTypeIds = new Set(filteredAlcoholTypes.map(type => type.id));
+      filteredSubtypes = filteredSubtypes.filter(sub =>
+        matchingAlcoholTypeIds.has(sub.alcohol_type_id)
+      );
+      filteredBrands = filteredBrands.filter(brand => {
+        const brandSubtype = allSubtypes.find(sub => sub.id === brand.subtype_id);
+        return brandSubtype && matchingAlcoholTypeIds.has(brandSubtype.alcohol_type_id);
+      });
+    }
+
+    // Apply flavor profile filter
+    if (filters.flavorProfiles && filters.flavorProfiles.length > 0) {
+      filteredSubtypes = filteredSubtypes.filter(sub =>
+        sub.flavor_profile && sub.flavor_profile.some(fp =>
+          filters.flavorProfiles!.includes(fp)
+        )
+      );
+      filteredBrands = filteredBrands.filter(brand =>
+        brand.tasting_notes && brand.tasting_notes.some((note: string) =>
+          filters.flavorProfiles!.includes(note)
+        )
+      );
+      const matchingSubtypeIds = new Set(filteredSubtypes.map(sub => sub.id));
+      const matchingAlcoholTypeIdsFromSubtypes = new Set(
+        filteredSubtypes.map(sub => sub.alcohol_type_id)
+      );
+      filteredAlcoholTypes = filteredAlcoholTypes.filter(type =>
+        matchingAlcoholTypeIdsFromSubtypes.has(type.id) ||
+        allSubtypes.some(sub =>
+          sub.alcohol_type_id === type.id &&
+          allBrands.some(brand =>
+            brand.subtype_id === sub.id &&
+            brand.tasting_notes &&
+            brand.tasting_notes.some((note: string) =>
+              filters.flavorProfiles!.includes(note)
+            )
+          )
+        )
+      );
+    }
+
+    // Apply ABV range filter
+    if (filters.abvRanges && filters.abvRanges.length > 0) {
+      const abvFilter = (abv: number | null | undefined, filterRanges: string[]) => {
+        if (abv === null || abv === undefined) return false;
+        return filterRanges.some(range => {
+          switch (range) {
+            case '0-20%': return abv >= 0 && abv < 20;
+            case '20-40%': return abv >= 20 && abv < 40;
+            case '40-60%': return abv >= 40 && abv <= 60;
+            case '60%+': return abv > 60;
+            default: return false;
+          }
+        });
       };
 
-      return brandData;
+      filteredSubtypes = filteredSubtypes.filter(sub =>
+        abvFilter(sub.abv_min, filters.abvRanges!) || abvFilter(sub.abv_max, filters.abvRanges!)
+      );
+      filteredBrands = filteredBrands.filter(brand => abvFilter(brand.abv, filters.abvRanges!));
 
-    } catch (err: any) {
-      console.error(`Exception fetching brand by ID ${brandId}:`, err);
-      throw err;
+      const matchingSubtypeIdsForAbv = new Set(filteredSubtypes.map(sub => sub.id));
+      const matchingBrandsForAbv = new Set(filteredBrands.map(brand => brand.id));
+
+      const alcoholTypesWithMatchingSubtypes = new Set(
+          filteredSubtypes.filter(sub => matchingSubtypeIdsForAbv.has(sub.id)).map(sub => sub.alcohol_type_id)
+      );
+
+      const alcoholTypesWithMatchingBrands = new Set(
+          filteredBrands.filter(brand => matchingBrandsForAbv.has(brand.id))
+              .map(brand => allSubtypes.find(sub => sub.id === brand.subtype_id)?.alcohol_type_id)
+              .filter(Boolean) as string[]
+      );
+
+      filteredAlcoholTypes = filteredAlcoholTypes.filter(type =>
+          alcoholTypesWithMatchingSubtypes.has(type.id) || alcoholTypesWithMatchingBrands.has(type.id)
+      );
     }
-  },
-  []);
 
-  const getFilteredSpirits = useCallback(
-    (filters: FilterCriteria): Array<AlcoholType | Subtype | Brand> => {
-      const results: Array<AlcoholType | Subtype | Brand> = [];
+    // Apply price range filter
+    if (filters.priceRanges && filters.priceRanges.length > 0) {
+      filteredBrands = filteredBrands.filter(brand =>
+        brand.price_range && filters.priceRanges!.includes(brand.price_range)
+      );
+      const matchingSubtypeIds = new Set(filteredBrands.map(brand => brand.subtype_id));
+      filteredSubtypes = filteredSubtypes.filter(sub =>
+        matchingSubtypeIds.has(sub.id)
+      );
+      const matchingAlcoholTypeIds = new Set(filteredSubtypes.map(sub => sub.alcohol_type_id));
+      filteredAlcoholTypes = filteredAlcoholTypes.filter(type =>
+        matchingAlcoholTypeIds.has(type.id)
+      );
+    }
 
-      alcoholTypes.forEach(alcoholType => {
-        let alcoholTypeMatches = true;
+    // Add other filters if you implement them (ageStatements, distilleries)
+    if (filters.ageStatements && filters.ageStatements.length > 0) {
+        // Implement logic to parse age from brand names/descriptions or a dedicated field
+    }
+    if (filters.distilleries && filters.distilleries.length > 0) {
+        // Implement logic to filter by distillery, likely a field on Brand
+    }
 
-        if (filters.alcoholTypeIds && filters.alcoholTypeIds.length > 0) {
-          alcoholTypeMatches = filters.alcoholTypeIds.includes(alcoholType.id);
-        }
+    return {
+      alcoholTypes: filteredAlcoholTypes,
+      subtypes: filteredSubtypes,
+      brands: filteredBrands
+    };
+  }, [alcoholTypes, allSubtypes, allBrands]);
 
-        if (filters.searchTerm && alcoholTypeMatches) {
-          alcoholTypeMatches = alcoholType.name.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-            (alcoholType.description && alcoholType.description.toLowerCase().includes(filters.searchTerm.toLowerCase()));
-        }
+  const getAvailableFilterOptions = useCallback((): FilterOptions => {
+    const alcoholTypeNames = [...new Set(alcoholTypes.map(type => type.name))];
+    
+    const flavorProfiles = [...new Set(allSubtypes.flatMap(sub => sub.flavor_profile || []))];
+    
+    const priceRanges = [...new Set(allBrands.map(brand => brand.price_range).filter(Boolean))].sort((a, b) => {
+        const parsePrice = (range: string) => parseFloat(range.replace('$', '').split('-')[0]);
+        return parsePrice(a) - parsePrice(b);
+    });
+    
+    const abvRanges = ['0-20%', '20-40%', '40-60%', '60%+'];
 
-        if (alcoholTypeMatches) {
-          results.push({ ...alcoholType, image: alcoholType.image_url }); // Add image to result
-        }
+    const ageStatements = [...new Set(
+      allBrands.flatMap(brand => {
+        const ageMatches = brand.name.match(/(\d+)\s*(year|yr|YO|yrs)/gi) || [];
+        return ageMatches.map(match => match.replace(/\s+/g, ' ').trim());
+      })
+    )].sort();
 
-        (alcoholType.subtypes || []).forEach(subtype => {
-          let subtypeMatches = true;
+    const distilleries = [...new Set(
+      allBrands.map(brand => {
+        // Placeholder for distillery extraction
+        const words = brand.name.split(' ');
+        return words[0];
+      }).filter(Boolean)
+    )].sort();
 
-          if (filters.subtypeIds && filters.subtypeIds.length > 0) {
-            subtypeMatches = filters.subtypeIds.includes(subtype.id);
-          }
+    return {
+      alcoholTypeNames: alcoholTypeNames.sort(),
+      flavorProfiles: flavorProfiles.sort(),
+      priceRanges,
+      abvRanges,
+      ageStatements,
+      distilleries
+    };
+  }, [alcoholTypes, allSubtypes, allBrands]);
 
-          if (filters.alcoholTypeIds && filters.alcoholTypeIds.length > 0) {
-            subtypeMatches = subtypeMatches && filters.alcoholTypeIds.includes(alcoholType.id);
-          }
 
-          if (filters.searchTerm && subtypeMatches) {
-            subtypeMatches = subtype.name.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-              (subtype.description && subtype.description.toLowerCase().includes(filters.searchTerm.toLowerCase()));
-          }
+  const isInMyBar = useCallback((spiritId: string): boolean => {
+    // This checks if a *product ID* (spirit_id) is present in the user's bar
+    return myBarSpirits.some(spirit => spirit.spirit_id === spiritId);
+  }, [myBarSpirits]);
 
-          if (subtypeMatches) {
-            results.push({ ...subtype, image: subtype.image_url }); // Add image to result
-          }
+  // Rating functionality
+  const addRating = useCallback(async (brandId: string, rating: number, comment: string) => {
+    try {
+      const { data: { user } = {} } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
 
-          (subtype.brands || []).forEach(brand => {
-            let brandMatches = true;
-
-            if (filters.alcoholTypeIds && filters.alcoholTypeIds.length > 0) {
-              brandMatches = filters.alcoholTypeIds.includes(alcoholType.id);
-            }
-
-            if (filters.subtypeIds && filters.subtypeIds.length > 0) {
-              brandMatches = brandMatches && filters.subtypeIds.includes(subtype.id);
-            }
-
-            if (filters.priceRanges && filters.priceRanges.length > 0 && brand.price_range) {
-              brandMatches = brandMatches && filters.priceRanges.includes(brand.price_range);
-            }
-
-            if (filters.abvRange && brand.abv) {
-              const abv = parseFloat(brand.abv.toString());
-              brandMatches = brandMatches && abv >= filters.abvRange.min && abv <= filters.abvRange.max;
-            }
-
-            if (filters.searchTerm && brandMatches) {
-              brandMatches = brand.name.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-                (brand.description && brand.description.toLowerCase().includes(filters.searchTerm.toLowerCase()));
-            }
-
-            if (brandMatches) {
-              results.push({ ...brand, image: brand.image_url }); // Add image to result
-            }
-          });
+      const { error } = await supabase
+        .from('ratings')
+        .insert({
+          spirit_id: brandId,
+          user_id: user.id,
+          rating,
+          comment
         });
-      });
 
-      return results;
-    },
-    [alcoholTypes]
-  );
+      if (error) throw error;
+    } catch (error: any) {
+      console.error('Error adding rating:', error.message || error);
+      throw error;
+    }
+  }, []);
+
+  const getRatingsForBrand = useCallback(async (brandId: string): Promise<Rating[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('ratings')
+        .select('*')
+        .eq('spirit_id', brandId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error: any) {
+      console.error('Error fetching ratings:', error.message || error);
+      return [];
+    }
+  }, []);
 
   const getTastingNotesForSpirit = useCallback(
     async (spiritId: string): Promise<Array<{ term: string; percentage: number }>> => {
-      console.log(`Fetching tasting notes for spirit: ${spiritId}`);
-      // Implement actual fetching logic here if needed
+      // This would typically aggregate tasting notes from ratings
+      // For now, return empty array
       return [];
     },
     []
   );
 
-  const getAvailableFilterOptions = useCallback((): FilterOptions => {
-    const uniquePriceRanges = new Set<string>();
-    const allSubtypes: Array<{ id: string; name: string }> = [];
-
-    alcoholTypes.forEach(type => {
-      allSubtypes.push({ id: type.id, name: type.name }); // Add alcohol types to subtypes for filtering consistency
-      (type.subtypes || []).forEach(subtype => {
-        allSubtypes.push({ id: subtype.id, name: subtype.name });
-
-        (subtype.brands || []).forEach(brand => {
-          if (brand.price_range) {
-            uniquePriceRanges.add(brand.price_range);
-          }
-        });
-      });
-    });
-
-    return {
-      alcoholTypes: alcoholTypes.map(type => ({ id: type.id, name: type.name })),
-      subtypes: allSubtypes,
-      priceRanges: Array.from(uniquePriceRanges).sort(),
-      abvRanges: [
-        { min: 0, max: 20, label: '0-20%' },
-        { min: 20, max: 40, label: '20-40%' },
-        { min: 40, max: 60, label: '40-60%' },
-        { min: 60, max: 100, label: '60%+' }
-      ]
-    };
-  }, [alcoholTypes]);
-
-  const addRating = useCallback(
-    async (brandId: string, rating: number, comment: string): Promise<void> => {
-      try {
-        const { data: { user } = {} } = await supabase.auth.getUser();
-        if (!user) throw new Error('User not authenticated');
-
-        const { error: insertError } = await supabase
-          .from('ratings')
-          .insert({
-            spirit_id: brandId,
-            user_id: user.id,
-            rating,
-            comment
-          });
-
-        if (insertError) {
-          console.error('Error adding rating:', insertError);
-          throw new Error(`Failed to add rating: ${insertError.message}`);
-        }
-      } catch (err: any) {
-        console.error('Error adding rating:', err);
-        throw err;
-      }
-    },
-    []
-  );
-
-  const getRatingsForBrand = useCallback(
-    async (brandId: string): Promise<Rating[]> => {
-      try {
-        console.log(`Fetching ratings for brand: ${brandId}`);
-        const { data, error: fetchError } = await supabase
-          .from('ratings')
-          .select('*')
-          .eq('spirit_id', brandId)
-          .order('created_at', { ascending: false });
-
-        if (fetchError) {
-          console.error('Error fetching ratings:', fetchError);
-          throw new Error(`Failed to fetch ratings: ${fetchError.message}`);
-        }
-
-        return data || [];
-      } catch (err: any) {
-        console.error('Error fetching ratings:', err);
-        return [];
-      }
-    },
-    []
-  );
-
-  const addSpiritToMyBar = useCallback(
-    async (spiritId: string, spiritType: 'alcohol_type' | 'brand' | 'subtype', notes?: string): Promise<void> => {
-      try {
-        const { data: { user } = {} } = await supabase.auth.getUser();
-        if (!user) throw new Error('User not authenticated');
-
-        const { error: insertError } = await supabase
-          .from('user_spirits')
-          .insert({
-            user_id: user.id,
-            spirit_id: spiritId,
-            spirit_type: spiritType,
-            notes
-          });
-
-        if (insertError) {
-          console.error('Error adding spirit to My Bar:', insertError);
-          throw new Error(`Failed to add spirit to My Bar: ${insertError.message}`);
-        }
-
-        await loadMyBarSpirits();
-      } catch (err: any) {
-        console.error('Error adding spirit to My Bar:', err);
-        throw err;
-      }
-    },
-    [loadMyBarSpirits]
-  );
-
-  const removeSpiritFromMyBar = useCallback(async (userSpiritRecordId: string) => {
-    try {
-      const { data: { user } = {} } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
-
-      // The correct delete query: targets the specific user_spirits record by its 'id' (primary key)
-      // and also includes 'user_id' for added security and RLS validation.
-      const { error } = await supabase
-        .from('user_spirits')
-        .delete()
-        .eq('id', userSpiritRecordId) // <-- CRITICAL: Uses the primary key 'id' of the user_spirits record
-        .eq('user_id', user.id);     // <-- Ensures the logged-in user owns this record
-
-      if (error) {
-        console.error('Supabase delete error details:', error); // Log the full Supabase error object
-        throw new Error(`Failed to remove spirit: ${error.message}`); // Throw a more informative error
-      }
-
-      console.log('Spirit successfully removed from My Bar!'); // Log success
-      await loadMyBarSpirits(); // Rezload the bar to reflect the change
-    } catch (error: any) { // Catch as any to ensure .message is accessible
-      console.error('Error removing spirit from My Bar catch block:', error.message || error);
-      throw error; // Re-throw to propagate the error up to the UI
-    }
-  }, [loadMyBarSpirits]); // Dependencies for useCallback
-      } catch (err: any) {
-        console.error('Error removing spirit from My Bar:', err);
-        throw err;
-      }
-    },
-    [loadMyBarSpirits]
-  );
-
-  const updateMyBarNotes = useCallback(
-    async (spiritId: string, spiritType: 'alcohol_type' | 'brand' | 'subtype', notes: string): Promise<void> => {
-      try {
-        const { data: { user } = {} } = await supabase.auth.getUser();
-        if (!user) throw new Error('User not authenticated');
-
-        const { error: updateError } = await supabase
-          .from('user_spirits')
-          .update({ notes })
-          .eq('user_id', user.id)
-          .eq('spirit_id', spiritId)
-          .eq('spirit_type', spiritType);
-
-        if (updateError) {
-          console.error('Error updating My Bar notes:', updateError);
-          throw new Error(`Failed to update My Bar notes: ${updateError.message}`);
-        }
-
-        await loadMyBarSpirits();
-      } catch (err: any) {
-        console.error('Error updating My Bar notes:', err);
-        throw err;
-      }
-    },
-    [loadMyBarSpirits]
-  );
-
-  const isInMyBar = useCallback(
-    (spiritId: string, spiritType: 'alcohol_type' | 'brand' | 'subtype'): boolean => {
-      return myBarSpirits.some(
-        spirit => spirit.spirit_id === spiritId && spirit.spirit_type === spiritType
-      );
-    },
-    [myBarSpirits]
-  );
-
   const contextValue = {
     alcoholTypes,
-    brands, // Now included in context
+    allSubtypes,
+    allBrands,
+    myBarSpirits,
     loading,
     error,
-    myBarSpirits,
     getCategoryById,
     getAlcoholTypeById,
     getSubtypesByCategoryId,
@@ -610,15 +514,15 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     getBrandsBySubtypeId,
     getBrandById,
     getFilteredSpirits,
-    addRating,
-    getRatingsForBrand,
-    getTastingNotesForSpirit,
     getAvailableFilterOptions,
     addSpiritToMyBar,
     removeSpiritFromMyBar,
     updateMyBarNotes,
     isInMyBar,
     loadMyBarSpirits,
+    addRating,
+    getRatingsForBrand,
+    getTastingNotesForSpirit,
   };
 
   return (
