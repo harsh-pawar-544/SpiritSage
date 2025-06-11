@@ -32,13 +32,15 @@ const MyBarPage: React.FC = () => {
     spirit?.spirit_data?.name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleRemoveSpirit = async (spiritId: string, spiritName: string) => {
+  const handleRemoveSpirit = async (userSpiritRecordId: string, spiritName: string) => {
     if (window.confirm(`Remove ${spiritName} from your bar?`)) {
       try {
-        await removeSpiritFromMyBar(spiritId);
+        console.log('Removing spirit with record ID:', userSpiritRecordId);
+        await removeSpiritFromMyBar(userSpiritRecordId);
         toast.success(`${spiritName} removed from your bar`);
-      } catch (error) {
-        toast.error('Failed to remove spirit');
+      } catch (error: any) {
+        console.error('Failed to remove spirit:', error);
+        toast.error(error.message || 'Failed to remove spirit');
       }
     }
   };
@@ -53,7 +55,7 @@ const MyBarPage: React.FC = () => {
     if (!editingSpirit) return;
 
     try {
-      await updateMyBarNotes(editingSpirit.spirit_id, notes);
+      await updateMyBarNotes(editingSpirit.id, notes);
       toast.success('Notes updated');
       setShowNotesModal(false);
       setEditingSpirit(null);
@@ -187,7 +189,7 @@ const MyBarPage: React.FC = () => {
                       Notes
                     </button>
                     <button
-                      onClick={() => handleRemoveSpirit(spirit.spirit_id, spiritData.name)}
+                      onClick={() => handleRemoveSpirit(spirit.id, spiritData.name)}
                       className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
                     >
                       <Trash2 className="h-4 w-4" />
