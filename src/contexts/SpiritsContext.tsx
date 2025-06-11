@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase, isSupabaseAvailable } from '../lib/supabase';
+import { useAuth } from './AuthContext'; // Import useAuth hook
 import { mockSpirits } from '../data/mockSpirits';
 
 interface Spirit {
@@ -28,11 +29,22 @@ interface FilterOptions {
   abvRanges: Array<{min: number; max: number; label: string}>;
 }
 
+interface MyBarSpirit {
+  id: string;
+  user_id: string;
+  spirit_id: string;
+  spirit_type: 'alcohol_type' | 'subtype' | 'brand';
+  notes?: string;
+  added_at: string;
+  spirit_data?: any;
+}
+
 interface SpiritsContextType {
   spirits: Spirit[];
   alcoholTypes: any[];
   subtypes: any[];
   brands: any[];
+  myBarSpirits: MyBarSpirit[];
   loading: boolean;
   error: string | null;
   isOffline: boolean;
@@ -41,6 +53,8 @@ interface SpiritsContextType {
   getFilteredSpirits: (filters: any) => Spirit[];
   addSpiritToMyBar: (spiritId: string, spiritType: string, notes?: string) => Promise<void>;
   isInMyBar: (spiritId: string, spiritType: string) => boolean;
+  removeSpiritFromMyBar: (userSpiritRecordId: string) => Promise<void>;
+  updateMyBarNotes: (userSpiritRecordId: string, notes: string) => Promise<void>;
   loadMyBarSpirits: () => Promise<void>;
   addRating: (spiritId: string, rating: number, comment?: string) => Promise<void>;
   getRatingsForBrand: (brandId: string) => any[];
@@ -62,7 +76,7 @@ export const useSpirits = () => {
   return context;
 };
 
-export const SpiritsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [spirits, setSpirits] = useState<Spirit[]>([]);
   const [alcoholTypes, setAlcoholTypes] = useState<any[]>([]);
   const [subtypes, setSubtypes] = useState<any[]>([]);
@@ -70,17 +84,20 @@ export const SpiritsProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isOffline, setIsOffline] = useState(false);
-  const [myBarSpirits, setMyBarSpirits] = useState<any[]>([]);
+  const [myBarSpirits, setMyBarSpirits] = useState<MyBarSpirit[]>([]);
+
+  // Get user from AuthContext
+  const { user } = useAuth();
 
   const fetchAlcoholTypes = async () => {
     if (!supabase) {
       console.log('Using mock alcohol types data');
       return [
-        { id: '1', name: 'Whiskey', description: 'Distilled alcoholic beverage made from fermented grain mash' },
-        { id: '2', name: 'Vodka', description: 'Clear distilled alcoholic beverage' },
-        { id: '3', name: 'Rum', description: 'Distilled alcoholic drink made from sugarcane' },
-        { id: '4', name: 'Gin', description: 'Distilled alcoholic drink flavored with juniper berries' },
-        { id: '5', name: 'Tequila', description: 'Distilled beverage made from blue agave plant' }
+        { id: '1', name: 'Whiskey', description: 'Distilled alcoholic beverage made from fermented grain mash', image_url: 'https://images.pexels.com/photos/5947028/pexels-photo-5947028.jpeg' },
+        { id: '2', name: 'Vodka', description: 'Clear distilled alcoholic beverage', image_url: 'https://images.pexels.com/photos/1283219/pexels-photo-1283219.jpeg' },
+        { id: '3', name: 'Rum', description: 'Distilled alcoholic drink made from sugarcane', image_url: 'https://images.pexels.com/photos/5947019/pexels-photo-5947019.jpeg' },
+        { id: '4', name: 'Gin', description: 'Distilled alcoholic drink flavored with juniper berries', image_url: 'https://images.pexels.com/photos/4021983/pexels-photo-4021983.jpeg' },
+        { id: '5', name: 'Tequila', description: 'Distilled beverage made from blue agave plant', image_url: 'https://images.pexels.com/photos/8105118/pexels-photo-8105118.jpeg' }
       ];
     }
 
@@ -168,20 +185,46 @@ export const SpiritsProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   };
 
-  const fetchMyBarSpirits = async () => {
-    if (!supabase) {
-      console.log('Using mock My Bar spirits data');
-      return [];
+  const loadMyBarSpirits = useCallback(async () => {
+    if (!supabase || !user) {
+      console.log('Cannot load My Bar spirits - no Supabase or user not authenticated');
+      setMyBarSpirits([]);
+      return;
     }
 
     try {
-      // For now, return empty array since we don't have user authentication
-      return [];
+      const { data, error } = await supabase
+        .from('user_spirits')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error loading My Bar spirits:', error);
+        return;
+      }
+
+      // Enrich with spirit data
+      const enrichedSpirits = (data || []).map((spirit) => {
+        let spiritData = null;
+        switch (spirit.spirit_type) {
+          case 'alcohol_type':
+            spiritData = alcoholTypes.find(at => at.id === spirit.spirit_id);
+            break;
+          case 'subtype':
+            spiritData = subtypes.find(st => st.id === spirit.spirit_id);
+            break;
+          case 'brand':
+            spiritData = brands.find(b => b.id === spirit.spirit_id);
+            break;
+        }
+        return { ...spirit, spirit_data: spiritData };
+      });
+
+      setMyBarSpirits(enrichedSpirits);
     } catch (err) {
-      console.warn('Error loading My Bar spirits:', err);
-      return [];
+      console.error('Error loading My Bar spirits:', err);
     }
-  };
+  }, [user, alcoholTypes, subtypes, brands]);
 
   const fetchAllSpiritsData = async () => {
     setLoading(true);
@@ -196,11 +239,11 @@ export const SpiritsProvider: React.FC<{ children: ReactNode }> = ({ children })
         setIsOffline(true);
         setSpirits(mockSpirits);
         setAlcoholTypes([
-          { id: '1', name: 'Whiskey', description: 'Distilled alcoholic beverage made from fermented grain mash' },
-          { id: '2', name: 'Vodka', description: 'Clear distilled alcoholic beverage' },
-          { id: '3', name: 'Rum', description: 'Distilled alcoholic drink made from sugarcane' },
-          { id: '4', name: 'Gin', description: 'Distilled alcoholic drink flavored with juniper berries' },
-          { id: '5', name: 'Tequila', description: 'Distilled beverage made from blue agave plant' }
+          { id: '1', name: 'Whiskey', description: 'Distilled alcoholic beverage made from fermented grain mash', image_url: 'https://images.pexels.com/photos/5947028/pexels-photo-5947028.jpeg' },
+          { id: '2', name: 'Vodka', description: 'Clear distilled alcoholic beverage', image_url: 'https://images.pexels.com/photos/1283219/pexels-photo-1283219.jpeg' },
+          { id: '3', name: 'Rum', description: 'Distilled alcoholic drink made from sugarcane', image_url: 'https://images.pexels.com/photos/5947019/pexels-photo-5947019.jpeg' },
+          { id: '4', name: 'Gin', description: 'Distilled alcoholic drink flavored with juniper berries', image_url: 'https://images.pexels.com/photos/4021983/pexels-photo-4021983.jpeg' },
+          { id: '5', name: 'Tequila', description: 'Distilled beverage made from blue agave plant', image_url: 'https://images.pexels.com/photos/8105118/pexels-photo-8105118.jpeg' }
         ]);
         setSubtypes([]);
         setBrands([]);
@@ -209,17 +252,15 @@ export const SpiritsProvider: React.FC<{ children: ReactNode }> = ({ children })
       }
 
       // Fetch all data in parallel
-      const [alcoholTypesData, subtypesData, brandsData, myBarSpiritsData] = await Promise.all([
+      const [alcoholTypesData, subtypesData, brandsData] = await Promise.all([
         fetchAlcoholTypes(),
         fetchSubtypes(),
-        fetchBrands(),
-        fetchMyBarSpirits()
+        fetchBrands()
       ]);
 
       setAlcoholTypes(alcoholTypesData);
       setSubtypes(subtypesData);
       setBrands(brandsData);
-      setMyBarSpirits(myBarSpiritsData);
 
       // Combine all spirits data
       const allSpirits: Spirit[] = [
@@ -278,11 +319,11 @@ export const SpiritsProvider: React.FC<{ children: ReactNode }> = ({ children })
       // Fallback to mock data
       setSpirits(mockSpirits);
       setAlcoholTypes([
-        { id: '1', name: 'Whiskey', description: 'Distilled alcoholic beverage made from fermented grain mash' },
-        { id: '2', name: 'Vodka', description: 'Clear distilled alcoholic beverage' },
-        { id: '3', name: 'Rum', description: 'Distilled alcoholic drink made from sugarcane' },
-        { id: '4', name: 'Gin', description: 'Distilled alcoholic drink flavored with juniper berries' },
-        { id: '5', name: 'Tequila', description: 'Distilled beverage made from blue agave plant' }
+        { id: '1', name: 'Whiskey', description: 'Distilled alcoholic beverage made from fermented grain mash', image_url: 'https://images.pexels.com/photos/5947028/pexels-photo-5947028.jpeg' },
+        { id: '2', name: 'Vodka', description: 'Clear distilled alcoholic beverage', image_url: 'https://images.pexels.com/photos/1283219/pexels-photo-1283219.jpeg' },
+        { id: '3', name: 'Rum', description: 'Distilled alcoholic drink made from sugarcane', image_url: 'https://images.pexels.com/photos/5947019/pexels-photo-5947019.jpeg' },
+        { id: '4', name: 'Gin', description: 'Distilled alcoholic drink flavored with juniper berries', image_url: 'https://images.pexels.com/photos/4021983/pexels-photo-4021983.jpeg' },
+        { id: '5', name: 'Tequila', description: 'Distilled beverage made from blue agave plant', image_url: 'https://images.pexels.com/photos/8105118/pexels-photo-8105118.jpeg' }
       ]);
       setSubtypes([]);
       setBrands([]);
@@ -361,17 +402,40 @@ export const SpiritsProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   const addSpiritToMyBar = async (spiritId: string, spiritType: string, notes?: string): Promise<void> => {
-    if (!supabase) {
-      console.log('Cannot add to My Bar - Supabase not available');
-      return;
+    if (!supabase || !user) {
+      throw new Error('Please sign in to add spirits to your bar');
     }
 
     try {
-      // This would require user authentication
-      console.log('Adding spirit to My Bar:', { spiritId, spiritType, notes });
-      // Implementation would go here when user auth is available
-    } catch (err) {
+      // Check if spirit already exists in user's bar
+      const { data: existingSpirit } = await supabase
+        .from('user_spirits')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('spirit_id', spiritId)
+        .eq('spirit_type', spiritType)
+        .single();
+
+      if (existingSpirit) {
+        throw new Error('Spirit already in your bar');
+      }
+
+      const { error } = await supabase
+        .from('user_spirits')
+        .insert({
+          user_id: user.id,
+          spirit_id: spiritId,
+          spirit_type: spiritType,
+          notes: notes || null
+        });
+
+      if (error) throw error;
+
+      // Reload My Bar spirits
+      await loadMyBarSpirits();
+    } catch (err: any) {
       console.error('Error adding spirit to My Bar:', err);
+      throw err;
     }
   };
 
@@ -381,23 +445,69 @@ export const SpiritsProvider: React.FC<{ children: ReactNode }> = ({ children })
     );
   };
 
-  const loadMyBarSpirits = async (): Promise<void> => {
-    const myBarData = await fetchMyBarSpirits();
-    setMyBarSpirits(myBarData);
-  };
-
-  const addRating = async (spiritId: string, rating: number, comment?: string): Promise<void> => {
-    if (!supabase) {
-      console.log('Cannot add rating - Supabase not available');
-      return;
+  const removeSpiritFromMyBar = async (userSpiritRecordId: string): Promise<void> => {
+    if (!supabase || !user) {
+      throw new Error('Please sign in to manage your bar');
     }
 
     try {
-      // This would require user authentication
-      console.log('Adding rating:', { spiritId, rating, comment });
-      // Implementation would go here when user auth is available
-    } catch (err) {
+      const { error } = await supabase
+        .from('user_spirits')
+        .delete()
+        .eq('id', userSpiritRecordId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      // Reload My Bar spirits
+      await loadMyBarSpirits();
+    } catch (err: any) {
+      console.error('Error removing spirit from My Bar:', err);
+      throw err;
+    }
+  };
+
+  const updateMyBarNotes = async (userSpiritRecordId: string, notes: string): Promise<void> => {
+    if (!supabase || !user) {
+      throw new Error('Please sign in to update notes');
+    }
+
+    try {
+      const { error } = await supabase
+        .from('user_spirits')
+        .update({ notes })
+        .eq('id', userSpiritRecordId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      // Reload My Bar spirits
+      await loadMyBarSpirits();
+    } catch (err: any) {
+      console.error('Error updating My Bar notes:', err);
+      throw err;
+    }
+  };
+
+  const addRating = async (spiritId: string, rating: number, comment?: string): Promise<void> => {
+    if (!supabase || !user) {
+      throw new Error('Please sign in to add ratings');
+    }
+
+    try {
+      const { error } = await supabase
+        .from('ratings')
+        .insert({
+          spirit_id: spiritId,
+          user_id: user.id,
+          rating,
+          comment: comment || null
+        });
+
+      if (error) throw error;
+    } catch (err: any) {
       console.error('Error adding rating:', err);
+      throw err;
     }
   };
 
@@ -615,15 +725,26 @@ export const SpiritsProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   };
 
+  // Load data on mount
   useEffect(() => {
     fetchAllSpiritsData();
   }, []);
+
+  // Load My Bar spirits when user changes or data is loaded
+  useEffect(() => {
+    if (user && alcoholTypes.length > 0) {
+      loadMyBarSpirits();
+    } else if (!user) {
+      setMyBarSpirits([]);
+    }
+  }, [user, alcoholTypes, subtypes, brands, loadMyBarSpirits]);
 
   const value: SpiritsContextType = {
     spirits,
     alcoholTypes,
     subtypes,
     brands,
+    myBarSpirits,
     loading,
     error,
     isOffline,
@@ -634,6 +755,8 @@ export const SpiritsProvider: React.FC<{ children: ReactNode }> = ({ children })
     getBrandsBySubtypeId,
     addSpiritToMyBar,
     isInMyBar,
+    removeSpiritFromMyBar,
+    updateMyBarNotes,
     loadMyBarSpirits,
     addRating,
     getRatingsForBrand,
