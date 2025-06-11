@@ -45,6 +45,7 @@ interface SpiritsContextType {
   addRating: (spiritId: string, rating: number, comment?: string) => Promise<void>;
   getRatingsForBrand: (brandId: string) => any[];
   getTastingNotesForSpirit: (spiritId: string) => string[];
+  getCategoryById: (id: string) => Promise<any>;
 }
 
 const SpiritsContext = createContext<SpiritsContextType | undefined>(undefined);
@@ -398,6 +399,62 @@ export const SpiritsProvider: React.FC<{ children: ReactNode }> = ({ children })
     return spirit?.tasting_notes || [];
   };
 
+  const getCategoryById = async (id: string): Promise<any> => {
+    try {
+      // First check if we have the alcohol type in our current state
+      const alcoholType = alcoholTypes.find(type => type.id === id);
+      if (alcoholType) {
+        return {
+          id: alcoholType.id,
+          name: alcoholType.name,
+          description: alcoholType.description,
+          history: alcoholType.history,
+          fun_facts: alcoholType.fun_facts,
+          myths: alcoholType.myths,
+          image: alcoholType.image_url,
+          subtypes: subtypes.filter(subtype => subtype.alcohol_type_id === id)
+        };
+      }
+
+      // If not found in state and Supabase is available, try fetching from database
+      if (supabase) {
+        const { data, error } = await supabase
+          .from('alcohol_types')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        if (data) {
+          // Also fetch related subtypes
+          const { data: subtypesData } = await supabase
+            .from('subtypes')
+            .select('*')
+            .eq('alcohol_type_id', id);
+
+          return {
+            id: data.id,
+            name: data.name,
+            description: data.description,
+            history: data.history,
+            fun_facts: data.fun_facts,
+            myths: data.myths,
+            image: data.image_url,
+            subtypes: subtypesData || []
+          };
+        }
+      }
+
+      return null;
+    } catch (err) {
+      console.error('Error fetching category by ID:', err);
+      throw err;
+    }
+  };
+
   useEffect(() => {
     fetchAllSpiritsData();
   }, []);
@@ -418,7 +475,8 @@ export const SpiritsProvider: React.FC<{ children: ReactNode }> = ({ children })
     loadMyBarSpirits,
     addRating,
     getRatingsForBrand,
-    getTastingNotesForSpirit
+    getTastingNotesForSpirit,
+    getCategoryById
   };
 
   return (
