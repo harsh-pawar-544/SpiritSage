@@ -516,29 +516,31 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [loadMyBarSpirits]);
 
-  const removeSpiritFromMyBar = useCallback(async (userSpiritRecordId: string) => {
-    try {
-      const { data: { user } = {} } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
+onst removeSpiritFromMyBar = useCallback(async (userSpiritRecordId: string) => {
+  try {
+    const { data: { user } = {} } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
 
-      const { error } = await supabase
-        .from('user_spirits')
-        .delete()
-        .eq('id', userSpiritRecordId) // <-- TARGET THE PRIMARY KEY 'id' of the user_spirits record
-        .eq('user_id', user.id);
+    console.log('Attempting to delete record with ID:', userSpiritRecordId, 'for user:', user.id); // <-- THIS LOG
 
-      if (error) {
-        console.error('Supabase delete error details:', error);
-        throw new Error(`Failed to remove spirit: ${error.message}`);
-      }
+    const { error } = await supabase
+      .from('user_spirits')
+      .delete()
+      .eq('id', userSpiritRecordId)
+      .eq('user_id', user.id);
 
-      console.log('Spirit successfully removed from My Bar!');
-      await loadMyBarSpirits();
-    } catch (error: any) {
-      console.error('Error removing spirit from My Bar catch block:', error.message || error);
-      throw error;
+    if (error) {
+      console.error('Supabase delete error details:', error); // <-- THIS LOG
+      throw new Error(`Failed to remove spirit: ${error.message}`);
     }
-  }, [loadMyBarSpirits]);
+
+    console.log('Spirit successfully removed from My Bar!');
+    await loadMyBarSpirits();
+  } catch (error: any) {
+    console.error('Caught error in removeSpiritFromMyBar:', error.message || error); // <-- THIS LOG
+    throw error;
+  }
+}, [loadMyBarSpirits]);
 
   const updateMyBarNotes = useCallback(async (userSpiritRecordId: string, notes: string) => {
     try {
