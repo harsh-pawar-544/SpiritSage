@@ -44,8 +44,9 @@ interface SpiritsContextType {
   loadMyBarSpirits: () => Promise<void>;
   addRating: (spiritId: string, rating: number, comment?: string) => Promise<void>;
   getRatingsForBrand: (brandId: string) => any[];
-  getTastingNotesForSpirit: (spiritId: string) => string[];
+  getTastingNotesForSpirit: (spiritId: string) => Array<{term: string; percentage?: number}>;
   getCategoryById: (id: string) => Promise<any>;
+  getBrandById: (id: string) => Promise<any>;
   getSubtypesByCategoryId: (categoryId: string) => any[];
   getBrandsBySubtypeId: (subtypeId: string) => any[];
 }
@@ -404,9 +405,15 @@ export const SpiritsProvider: React.FC<{ children: ReactNode }> = ({ children })
     return [];
   };
 
-  const getTastingNotesForSpirit = (spiritId: string): string[] => {
+  const getTastingNotesForSpirit = (spiritId: string): Array<{term: string; percentage?: number}> => {
     const spirit = spirits.find(s => s.id === spiritId);
-    return spirit?.tasting_notes || [];
+    const tastingNotes = spirit?.tasting_notes || [];
+    
+    // Transform array of strings to array of objects with term and percentage
+    return tastingNotes.map(note => ({
+      term: note,
+      percentage: undefined // No percentage data available in current schema
+    }));
   };
 
   const getCategoryById = async (id: string): Promise<any> => {
@@ -465,6 +472,78 @@ export const SpiritsProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   };
 
+  const getBrandById = async (id: string): Promise<any> => {
+    try {
+      // First check if we have the brand in our current state
+      const brand = brands.find(b => b.id === id);
+      if (brand) {
+        return {
+          id: brand.id,
+          name: brand.name,
+          description: brand.description,
+          abv: brand.abv,
+          tasting_notes: brand.tasting_notes,
+          price_range: brand.price_range,
+          history: brand.history,
+          fun_facts: brand.fun_facts,
+          myths: brand.myths,
+          image_url: brand.image_url,
+          subtype_name: brand.subtypes?.name,
+          alcohol_type_name: brand.subtypes?.alcohol_types?.name,
+          subtype_id: brand.subtype_id,
+          alcohol_type_id: brand.subtypes?.alcohol_types?.id
+        };
+      }
+
+      // If not found in state and Supabase is available, try fetching from database
+      if (supabase) {
+        const { data, error } = await supabase
+          .from('brands')
+          .select(`
+            *,
+            subtypes (
+              id,
+              name,
+              alcohol_types (
+                id,
+                name
+              )
+            )
+          `)
+          .eq('id', id)
+          .single();
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        if (data) {
+          return {
+            id: data.id,
+            name: data.name,
+            description: data.description,
+            abv: data.abv,
+            tasting_notes: data.tasting_notes,
+            price_range: data.price_range,
+            history: data.history,
+            fun_facts: data.fun_facts,
+            myths: data.myths,
+            image_url: data.image_url,
+            subtype_name: data.subtypes?.name,
+            alcohol_type_name: data.subtypes?.alcohol_types?.name,
+            subtype_id: data.subtype_id,
+            alcohol_type_id: data.subtypes?.alcohol_types?.id
+          };
+        }
+      }
+
+      return null;
+    } catch (err) {
+      console.error('Error fetching brand by ID:', err);
+      throw err;
+    }
+  };
+
   useEffect(() => {
     fetchAllSpiritsData();
   }, []);
@@ -488,7 +567,8 @@ export const SpiritsProvider: React.FC<{ children: ReactNode }> = ({ children })
     addRating,
     getRatingsForBrand,
     getTastingNotesForSpirit,
-    getCategoryById
+    getCategoryById,
+    getBrandById
   };
 
   return (
