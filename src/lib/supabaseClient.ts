@@ -8,11 +8,31 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 export const supabase = supabaseUrl && supabaseAnonKey
-  ? createClient(supabaseUrl, supabaseAnonKey)
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+      global: {
+        fetch: (url, options = {}) => {
+          return fetch(url, {
+            ...options,
+            signal: AbortSignal.timeout(10000), // 10 second timeout
+          }).catch(error => {
+            console.warn('Supabase fetch failed:', error.message);
+            return new Response(JSON.stringify({ error: 'Network unavailable' }), {
+              status: 503,
+              statusText: 'Service Unavailable',
+              headers: { 'Content-Type': 'application/json' }
+            });
+          });
+        }
+      }
+    })
   : null;
 
 export async function fetchRatingsForSpirit(spiritId: string) {
-  // Mock API call with setTimeout
+  // Always return mock data for now to prevent errors
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve([
