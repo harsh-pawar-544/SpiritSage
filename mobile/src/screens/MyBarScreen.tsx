@@ -53,19 +53,20 @@ export default function MyBarScreen() {
         {
           text: 'Remove',
           style: 'destructive',
-          onPress: async () => {
-            try {
-              // Pass the userSpiritRecordId (which is item.id from renderSpiritCard)
-              await removeSpiritFromMyBar(userSpiritRecordId); 
-            } catch (error: any) { // Catch as any to access error.message
-              console.error('Error removing spirit from UI:', error); // Log the actual error
-              Alert.alert('Error', error.message || 'Failed to remove spirit from your bar.'); // Display specific error message
-            }
+ onPress: async () => {
+          console.log('Remove button pressed, calling removeSpiritFromMyBar for ID:', userSpiritRecordId); // <-- ADD THIS LOG
+          try {
+            await removeSpiritFromMyBar(userSpiritRecordId);
+            console.log('removeSpiritFromMyBar resolved successfully.'); // <-- ADD THIS LOG
+          } catch (error: any) {
+            console.error('Error removing spirit from UI (handleRemoveSpirit catch):', error); // <-- Check 4
+            Alert.alert('Error', error.message || 'Failed to remove spirit from your bar.'); // <-- Check 5 (This alert should appear)
           }
         }
-      ]
-    );
-  };
+      }
+    ]
+  );
+};
   // --- END CORRECTED handleRemoveSpirit FUNCTION ---
 
   // --- CORRECTED handleSaveNotes and handleEditNotes to use userSpiritRecordId ---
