@@ -495,8 +495,11 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const { error } = await supabase
         .from('user_spirits')
         .delete()
-        .eq('user_id', user.id)
-        .eq('spirit_id', spiritId);
+        const { error } = await supabase
+        .from('user_spirits')
+        .delete()
+        .eq('id', userSpiritRecordId) // <-- TARGET THE PRIMARY KEY 'id' of the user_spirits record
+        .eq('user_id', user.id);   
 
       if (error) throw error;
 
