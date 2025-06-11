@@ -115,6 +115,16 @@ const SpiritSubtypesPage: React.FC = () => {
     fetchSubtypes();
   }, [id, getSubtypesByCategoryId]);
 
+  const handleGoBack = () => {
+    // Check if there's a previous page in history
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      // Fallback to explore page if no history
+      navigate('/explore');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-[50vh] flex items-center justify-center">
@@ -128,13 +138,13 @@ const SpiritSubtypesPage: React.FC = () => {
     return (
       <div className="min-h-[50vh] flex items-center justify-center flex-col">
         <p className="text-xl text-gray-600 dark:text-gray-400 mb-4">No subtypes found for this category.</p>
-        <Link
-          to={`/explore`} // Fallback to general explore or home
+        <button
+          onClick={handleGoBack}
           className="inline-flex items-center text-indigo-600 hover:text-indigo-700 group"
         >
           <ArrowLeft className="w-5 h-5 mr-2 transition-transform group-hover:-translate-x-1" />
-          Back to Categories
-        </Link>
+          Back
+        </button>
       </div>
     );
   }
@@ -143,14 +153,14 @@ const SpiritSubtypesPage: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center space-x-4">
-          {/* Link back to the AlcoholTypeDetailPage (e.g., /alcohol-type/vodka-category-id) */}
-          <Link
-            to={`/alcohol-type/${id}`}
+          {/* Back button with proper navigation */}
+          <button
+            onClick={handleGoBack}
             className="flex items-center text-indigo-600 hover:text-indigo-700 transition-colors group"
           >
             <ArrowLeft className="w-5 h-5 mr-1 transition-transform group-hover:-translate-x-1" />
-            Back to Categories
-          </Link>
+            Back
+          </button>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
              {subtypes.length > 0 ? subtypes[0].category_name : 'Spirit'}
           </h1>
