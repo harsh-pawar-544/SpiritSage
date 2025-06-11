@@ -47,6 +47,7 @@ interface SpiritsContextType {
   getTastingNotesForSpirit: (spiritId: string) => Array<{term: string; percentage?: number}>;
   getCategoryById: (id: string) => Promise<any>;
   getBrandById: (id: string) => Promise<any>;
+  getSubtypeById: (id: string) => Promise<any>;
   getSubtypesByCategoryId: (categoryId: string) => any[];
   getBrandsBySubtypeId: (subtypeId: string) => any[];
 }
@@ -544,6 +545,76 @@ export const SpiritsProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   };
 
+  const getSubtypeById = async (id: string): Promise<any> => {
+    try {
+      // First check if we have the subtype in our current state
+      const subtype = subtypes.find(s => s.id === id);
+      if (subtype) {
+        return {
+          id: subtype.id,
+          name: subtype.name,
+          region: subtype.region,
+          description: subtype.description,
+          abv_min: subtype.abv_min,
+          abv_max: subtype.abv_max,
+          flavor_profile: subtype.flavor_profile,
+          characteristics: subtype.characteristics,
+          production_method: subtype.production_method,
+          history: subtype.history,
+          fun_facts: subtype.fun_facts,
+          myths: subtype.myths,
+          image_url: subtype.image_url,
+          alcohol_type_name: subtype.alcohol_types?.name,
+          alcohol_type_id: subtype.alcohol_type_id
+        };
+      }
+
+      // If not found in state and Supabase is available, try fetching from database
+      if (supabase) {
+        const { data, error } = await supabase
+          .from('subtypes')
+          .select(`
+            *,
+            alcohol_types (
+              id,
+              name
+            )
+          `)
+          .eq('id', id)
+          .single();
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        if (data) {
+          return {
+            id: data.id,
+            name: data.name,
+            region: data.region,
+            description: data.description,
+            abv_min: data.abv_min,
+            abv_max: data.abv_max,
+            flavor_profile: data.flavor_profile,
+            characteristics: data.characteristics,
+            production_method: data.production_method,
+            history: data.history,
+            fun_facts: data.fun_facts,
+            myths: data.myths,
+            image_url: data.image_url,
+            alcohol_type_name: data.alcohol_types?.name,
+            alcohol_type_id: data.alcohol_type_id
+          };
+        }
+      }
+
+      return null;
+    } catch (err) {
+      console.error('Error fetching subtype by ID:', err);
+      throw err;
+    }
+  };
+
   useEffect(() => {
     fetchAllSpiritsData();
   }, []);
@@ -568,7 +639,8 @@ export const SpiritsProvider: React.FC<{ children: ReactNode }> = ({ children })
     getRatingsForBrand,
     getTastingNotesForSpirit,
     getCategoryById,
-    getBrandById
+    getBrandById,
+    getSubtypeById
   };
 
   return (
