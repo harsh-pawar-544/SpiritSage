@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase, isSupabaseAvailable } from '../lib/supabase';
-import { useAuth } from './AuthContext'; // Import useAuth hook
+import { useAuth } from './AuthContext';
 import { mockSpirits } from '../data/mockSpirits';
 
 interface Spirit {
@@ -86,7 +86,6 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [isOffline, setIsOffline] = useState(false);
   const [myBarSpirits, setMyBarSpirits] = useState<MyBarSpirit[]>([]);
 
-  // Get user from AuthContext
   const { user } = useAuth();
 
   const fetchAlcoholTypes = async () => {
@@ -407,7 +406,7 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
 
     try {
-      // Check if spirit already exists in user's bar using limit(1) instead of single()
+      // Check if spirit already exists in user's bar
       const { data: existingSpirits, error: checkError } = await supabase
         .from('user_spirits')
         .select('id')
