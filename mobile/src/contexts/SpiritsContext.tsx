@@ -516,31 +516,32 @@ export const SpiritsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [loadMyBarSpirits]);
 
-onst removeSpiritFromMyBar = useCallback(async (userSpiritRecordId: string) => {
-  try {
-    const { data: { user } = {} } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
+  // FIXED: removeSpiritFromMyBar function
+  const removeSpiritFromMyBar = useCallback(async (userSpiritRecordId: string) => {
+    try {
+      const { data: { user } = {} } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
 
-    console.log('Attempting to delete record with ID:', userSpiritRecordId, 'for user:', user.id); // <-- THIS LOG
+      console.log('Attempting to delete record with ID:', userSpiritRecordId, 'for user:', user.id);
 
-    const { error } = await supabase
-      .from('user_spirits')
-      .delete()
-      .eq('id', userSpiritRecordId)
-      .eq('user_id', user.id);
+      const { error } = await supabase
+        .from('user_spirits')
+        .delete()
+        .eq('id', userSpiritRecordId)
+        .eq('user_id', user.id);
 
-    if (error) {
-      console.error('Supabase delete error details:', error); // <-- THIS LOG
-      throw new Error(`Failed to remove spirit: ${error.message}`);
+      if (error) {
+        console.error('Supabase delete error details:', error);
+        throw new Error(`Failed to remove spirit: ${error.message}`);
+      }
+
+      console.log('Spirit successfully removed from My Bar!');
+      await loadMyBarSpirits();
+    } catch (error: any) {
+      console.error('Caught error in removeSpiritFromMyBar:', error.message || error);
+      throw error;
     }
-
-    console.log('Spirit successfully removed from My Bar!');
-    await loadMyBarSpirits();
-  } catch (error: any) {
-    console.error('Caught error in removeSpiritFromMyBar:', error.message || error); // <-- THIS LOG
-    throw error;
-  }
-}, [loadMyBarSpirits]);
+  }, [loadMyBarSpirits]);
 
   const updateMyBarNotes = useCallback(async (userSpiritRecordId: string, notes: string) => {
     try {
@@ -575,7 +576,7 @@ onst removeSpiritFromMyBar = useCallback(async (userSpiritRecordId: string) => {
       const { error } = await supabase
         .from('ratings')
         .insert({
-          brand_id: brandId, // Changed to brand_id as per typical schema
+          spirit_id: brandId, // Changed back to spirit_id as per your schema
           user_id: user.id,
           rating,
           comment
@@ -593,8 +594,8 @@ onst removeSpiritFromMyBar = useCallback(async (userSpiritRecordId: string) => {
     try {
       const { data, error: fetchError } = await supabase
         .from('ratings')
-        .select('*, profiles(username)') // Assuming 'profiles' table has 'username'
-        .eq('brand_id', brandId) // Changed to brand_id
+        .select('*')
+        .eq('spirit_id', brandId) // Changed back to spirit_id
         .order('created_at', { ascending: false });
 
       if (fetchError) throw fetchError;
