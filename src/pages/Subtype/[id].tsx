@@ -3,16 +3,12 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useSpirits } from '../../contexts/SpiritsContext';
 import TransitionImage from '../../components/ui/TransitionImage';
-import { Subtype } from '../../data/types'; // Removed 'Brand' as it's no longer used here for exampleBrands
-
-
+import { Subtype } from '../../data/types';
 
 const SubtypeDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  // Removed getBrandsBySubtypeId from destructuring as it's no longer needed for exampleBrands
   const { getSubtypeById, loading: spiritsContextLoading, error: spiritsContextError } = useSpirits();
   const [subtype, setSubtype] = useState<Subtype | null>(null);
-  // Removed: const [exampleBrands, setExampleBrands] = useState<Brand[]>([]); // This state is no longer needed
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,9 +26,6 @@ const SubtypeDetailPage: React.FC = () => {
         console.log("SubtypeDetailPage: Fetched subtypeData:", subtypeData);
         if (subtypeData) {
           setSubtype(subtypeData);
-          // Removed: Logic to fetch and set exampleBrands is no longer needed
-          // const allBrands = getBrandsBySubtypeId(subtypeData.id);
-          // setExampleBrands(allBrands.slice(0, 3));
         } else {
           setError('Subtype not found.');
         }
@@ -45,7 +38,6 @@ const SubtypeDetailPage: React.FC = () => {
     };
 
     fetchSubtypeDetails();
-    // Removed getBrandsBySubtypeId from dependency array
   }, [id, getSubtypeById]);
 
   if (isLoading || spiritsContextLoading) {
@@ -70,7 +62,7 @@ const SubtypeDetailPage: React.FC = () => {
     `/alcohol-type/${subtype.alcohol_type_id}` :
     '/explore';
 
-  const parentCategoryName = subtype.alcohol_types?.name || 'Category Overview';
+  const parentCategoryName = subtype.alcohol_type_name || 'Category Overview';
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
@@ -84,13 +76,11 @@ const SubtypeDetailPage: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start mb-12">
         <div className="relative rounded-lg overflow-hidden shadow-lg aspect-square">
-          {subtype.image && (
-            <TransitionImage
-              src={subtype.image}
-              alt={subtype.name}
-              className="w-full h-full object-cover"
-            />
-          )}
+          <TransitionImage
+            src={subtype.image_url || subtype.image || 'https://images.pexels.com/photos/602750/pexels-photo-602750.jpeg'}
+            alt={subtype.name}
+            className="w-full h-full object-cover"
+          />
         </div>
         <div>
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">{subtype.name}</h1>
@@ -138,55 +128,6 @@ const SubtypeDetailPage: React.FC = () => {
               </div>
             </div>
           )}
-
-          {/* REMOVED: Example Brands Section (Popular Examples) */}
-          {/*
-          {exampleBrands.length > 0 && (
-            <div className="mb-6">
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-3">Popular Examples</h2>
-              <div className="space-y-3">
-                {exampleBrands.map((brand) => (
-                  <Link
-                    key={brand.id}
-                    to={`/spirit/${brand.id}`}
-                    className="flex items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
-                  >
-                    <div className="w-12 h-12 rounded-lg overflow-hidden mr-3 flex-shrink-0">
-                      <TransitionImage
-                        src={brand.image || 'https://images.pexels.com/photos/602750/pexels-photo-602750.jpeg'}
-                        alt={brand.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                        {brand.name}
-                      </h3>
-                      {brand.description && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                          {brand.description}
-                        </p>
-                      )}
-                      <div className="flex items-center space-x-3 mt-1">
-                        {brand.abv && (
-                          <span className="text-xs text-gray-500 dark:text-gray-500">
-                            {brand.abv}% ABV
-                          </span>
-                        )}
-                        {brand.price_range && (
-                          <span className="text-xs text-gray-500 dark:text-gray-500">
-                            {brand.price_range}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <ArrowLeft className="w-4 h-4 text-gray-400 transform rotate-180 group-hover:translate-x-1 transition-transform" />
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-          */}
 
           {subtype.history && (
             <div className="mb-6">
