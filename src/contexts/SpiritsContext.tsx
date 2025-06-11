@@ -18,6 +18,13 @@ interface Spirit {
   myths?: string[];
 }
 
+interface FilterOptions {
+  types: string[];
+  subtypes: string[];
+  brands: string[];
+  priceRanges: string[];
+}
+
 interface SpiritsContextType {
   spirits: Spirit[];
   alcoholTypes: any[];
@@ -27,6 +34,14 @@ interface SpiritsContextType {
   error: string | null;
   isOffline: boolean;
   refreshData: () => Promise<void>;
+  getAvailableFilterOptions: () => FilterOptions;
+  getFilteredSpirits: (filters: any) => Spirit[];
+  addSpiritToMyBar: (spiritId: string, spiritType: string, notes?: string) => Promise<void>;
+  isInMyBar: (spiritId: string, spiritType: string) => boolean;
+  loadMyBarSpirits: () => Promise<void>;
+  addRating: (spiritId: string, rating: number, comment?: string) => Promise<void>;
+  getRatingsForBrand: (brandId: string) => any[];
+  getTastingNotesForSpirit: (spiritId: string) => string[];
 }
 
 const SpiritsContext = createContext<SpiritsContextType | undefined>(undefined);
@@ -47,6 +62,7 @@ export const SpiritsProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isOffline, setIsOffline] = useState(false);
+  const [myBarSpirits, setMyBarSpirits] = useState<any[]>([]);
 
   const fetchAlcoholTypes = async () => {
     if (!supabase) {
@@ -195,6 +211,7 @@ export const SpiritsProvider: React.FC<{ children: ReactNode }> = ({ children })
       setAlcoholTypes(alcoholTypesData);
       setSubtypes(subtypesData);
       setBrands(brandsData);
+      setMyBarSpirits(myBarSpiritsData);
 
       // Combine all spirits data
       const allSpirits: Spirit[] = [
@@ -265,6 +282,89 @@ export const SpiritsProvider: React.FC<{ children: ReactNode }> = ({ children })
     await fetchAllSpiritsData();
   };
 
+  // Filter and utility functions
+  const getAvailableFilterOptions = (): FilterOptions => {
+    const types = [...new Set(spirits.map(spirit => spirit.type))];
+    const subtypes = [...new Set(spirits.map(spirit => spirit.subtype).filter(Boolean))];
+    const brands = [...new Set(spirits.map(spirit => spirit.brand).filter(Boolean))];
+    const priceRanges = [...new Set(spirits.map(spirit => spirit.price_range).filter(Boolean))];
+
+    return {
+      types,
+      subtypes,
+      brands,
+      priceRanges
+    };
+  };
+
+  const getFilteredSpirits = (filters: any): Spirit[] => {
+    if (!filters) return spirits;
+
+    return spirits.filter(spirit => {
+      if (filters.type && spirit.type !== filters.type) return false;
+      if (filters.subtype && spirit.subtype !== filters.subtype) return false;
+      if (filters.brand && spirit.brand !== filters.brand) return false;
+      if (filters.priceRange && spirit.price_range !== filters.priceRange) return false;
+      if (filters.search) {
+        const searchTerm = filters.search.toLowerCase();
+        return spirit.name.toLowerCase().includes(searchTerm) ||
+               spirit.description.toLowerCase().includes(searchTerm);
+      }
+      return true;
+    });
+  };
+
+  const addSpiritToMyBar = async (spiritId: string, spiritType: string, notes?: string): Promise<void> => {
+    if (!supabase) {
+      console.log('Cannot add to My Bar - Supabase not available');
+      return;
+    }
+
+    try {
+      // This would require user authentication
+      console.log('Adding spirit to My Bar:', { spiritId, spiritType, notes });
+      // Implementation would go here when user auth is available
+    } catch (err) {
+      console.error('Error adding spirit to My Bar:', err);
+    }
+  };
+
+  const isInMyBar = (spiritId: string, spiritType: string): boolean => {
+    return myBarSpirits.some(spirit => 
+      spirit.spirit_id === spiritId && spirit.spirit_type === spiritType
+    );
+  };
+
+  const loadMyBarSpirits = async (): Promise<void> => {
+    const myBarData = await fetchMyBarSpirits();
+    setMyBarSpirits(myBarData);
+  };
+
+  const addRating = async (spiritId: string, rating: number, comment?: string): Promise<void> => {
+    if (!supabase) {
+      console.log('Cannot add rating - Supabase not available');
+      return;
+    }
+
+    try {
+      // This would require user authentication
+      console.log('Adding rating:', { spiritId, rating, comment });
+      // Implementation would go here when user auth is available
+    } catch (err) {
+      console.error('Error adding rating:', err);
+    }
+  };
+
+  const getRatingsForBrand = (brandId: string): any[] => {
+    // Return empty array for now - would fetch from database when available
+    return [];
+  };
+
+  const getTastingNotesForSpirit = (spiritId: string): string[] => {
+    const spirit = spirits.find(s => s.id === spiritId);
+    return spirit?.tasting_notes || [];
+  };
+
   useEffect(() => {
     fetchAllSpiritsData();
   }, []);
@@ -277,7 +377,15 @@ export const SpiritsProvider: React.FC<{ children: ReactNode }> = ({ children })
     loading,
     error,
     isOffline,
-    refreshData
+    refreshData,
+    getAvailableFilterOptions,
+    getFilteredSpirits,
+    addSpiritToMyBar,
+    isInMyBar,
+    loadMyBarSpirits,
+    addRating,
+    getRatingsForBrand,
+    getTastingNotesForSpirit
   };
 
   return (
