@@ -47,6 +47,7 @@ interface SpiritsContextType {
   getTastingNotesForSpirit: (spiritId: string) => string[];
   getCategoryById: (id: string) => Promise<any>;
   getSubtypesByCategoryId: (categoryId: string) => any[];
+  getBrandsBySubtypeId: (subtypeId: string) => any[];
 }
 
 const SpiritsContext = createContext<SpiritsContextType | undefined>(undefined);
@@ -353,6 +354,10 @@ export const SpiritsProvider: React.FC<{ children: ReactNode }> = ({ children })
     return subtypes.filter(subtype => subtype.alcohol_type_id === categoryId);
   };
 
+  const getBrandsBySubtypeId = (subtypeId: string): any[] => {
+    return brands.filter(brand => brand.subtype_id === subtypeId);
+  };
+
   const addSpiritToMyBar = async (spiritId: string, spiritType: string, notes?: string): Promise<void> => {
     if (!supabase) {
       console.log('Cannot add to My Bar - Supabase not available');
@@ -476,6 +481,7 @@ export const SpiritsProvider: React.FC<{ children: ReactNode }> = ({ children })
     getAvailableFilterOptions,
     getFilteredSpirits,
     getSubtypesByCategoryId,
+    getBrandsBySubtypeId,
     addSpiritToMyBar,
     isInMyBar,
     loadMyBarSpirits,
