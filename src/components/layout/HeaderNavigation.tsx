@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { Menu, X, GlassWater, User, LogOut } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from '../../contexts/TranslationContext';
 import AuthModal from '../auth/AuthModal';
 
 const HeaderNavigation: React.FC = () => {
@@ -9,6 +10,7 @@ const HeaderNavigation: React.FC = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const location = useLocation();
   const { user, signOut } = useAuth();
+  const { t } = useTranslation();
 
   useEffect(() => {
     setIsMenuOpen(false);
@@ -27,11 +29,11 @@ const HeaderNavigation: React.FC = () => {
   }, [isMenuOpen]);
 
   const navLinks = [
-    { name: 'Explore', path: '/explore' },
-    { name: 'My Bar', path: '/my-bar' },
-    { name: 'About', path: '/about' },
-    { name: 'Contact', path: '/contact' },
-    { name: 'Settings', path: '/settings' },
+    { name: t('nav.explore'), path: '/explore' },
+    { name: t('nav.myBar'), path: '/my-bar' },
+    { name: t('nav.about'), path: '/about' },
+    { name: t('nav.contact'), path: '/contact' },
+    { name: t('nav.settings'), path: '/settings' },
   ];
 
   const handleSignOut = async () => {
@@ -96,7 +98,7 @@ const HeaderNavigation: React.FC = () => {
                     className="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                   >
                     <LogOut className="w-4 h-4" />
-                    <span>Sign Out</span>
+                    <span>{t('auth.signOut')}</span>
                   </button>
                 </div>
               ) : (
@@ -105,7 +107,7 @@ const HeaderNavigation: React.FC = () => {
                   className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
                 >
                   <User className="w-4 h-4" />
-                  <span>Sign In</span>
+                  <span>{t('auth.signIn')}</span>
                 </button>
               )}
             </div>
@@ -156,7 +158,7 @@ const HeaderNavigation: React.FC = () => {
                         onClick={handleSignOut}
                         className="w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                       >
-                        Sign Out
+                        {t('auth.signOut')}
                       </button>
                     </div>
                   ) : (
@@ -164,7 +166,7 @@ const HeaderNavigation: React.FC = () => {
                       onClick={() => setShowAuthModal(true)}
                       className="w-full text-left px-3 py-2 rounded-md text-base font-medium bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
                     >
-                      Sign In
+                      {t('auth.signIn')}
                     </button>
                   )}
                 </div>
