@@ -5,11 +5,10 @@ import RatingStars from './RatingStars';
 import { useSpirits } from '../contexts/SpiritsContext';
 import TransitionImage from './ui/TransitionImage';
 import { Link } from 'react-router-dom';
-import { getSpiritById } from '../data/spiritCategories';
 
 const RecommendedSpirits: React.FC = () => {
   const { recommendedSpirits, clearInteractionHistory, isLoading } = useRecommendations();
-  const { getRatingsForBrand } = useSpirits(); // Changed from getRatingsForSpirit to getRatingsForBrand
+  const { getRatingsForBrand } = useSpirits();
 
   if (isLoading) {
     return (
@@ -24,11 +23,7 @@ const RecommendedSpirits: React.FC = () => {
     );
   }
 
-  const validSpirits = recommendedSpirits
-    .map(spiritId => getSpiritById(spiritId))
-    .filter((spirit): spirit is NonNullable<typeof spirit> => spirit !== undefined);
-
-  if (validSpirits.length === 0) {
+  if (recommendedSpirits.length === 0) {
     return null;
   }
 
@@ -54,8 +49,7 @@ const RecommendedSpirits: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {validSpirits.map(spirit => {
-          // Use getRatingsForBrand with async handling
+        {recommendedSpirits.map(spirit => {
           const [ratings, setRatings] = React.useState([]);
           
           React.useEffect(() => {
@@ -76,21 +70,27 @@ const RecommendedSpirits: React.FC = () => {
             ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
             : 0;
 
+          const linkPath = spirit.type === 'alcohol_type' 
+            ? `/alcohol-type/${spirit.id}` 
+            : spirit.type === 'subtype' 
+            ? `/subtype/${spirit.id}` 
+            : `/spirit/${spirit.id}`;
+
           return (
             <Link
               key={spirit.id}
-              to={`/spirit/${spirit.id}`}
+              to={linkPath}
               className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden group cursor-pointer hover:shadow-lg transition-shadow"
             >
               <div className="relative aspect-[4/3]">
                 <TransitionImage
-                  src={spirit.image}
+                  src={spirit.image_url}
                   alt={spirit.name}
                   className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                 <div className="absolute bottom-4 left-4 right-4">
-                  <div className="text-white mb-1">{spirit.details.stats?.category}</div>
+                  <div className="text-white mb-1 capitalize">{spirit.type.replace('_', ' ')}</div>
                   <h3 className="text-xl font-bold text-white mb-2">{spirit.name}</h3>
                   <div className="flex items-center space-x-2">
                     <RatingStars rating={Math.round(avgRating)} size="sm" />

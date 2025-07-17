@@ -3,10 +3,14 @@ import { Link } from 'react-router-dom';
 import { useSpirits } from '../contexts/SpiritsContext';
 import RatingStars from './RatingStars';
 import TransitionImage from './ui/TransitionImage';
-import { type SpiritSubtype } from '../data/types';
 
 interface RecommendedSpiritCardProps {
-  spirit: SpiritSubtype;
+  spirit: {
+    id: string;
+    name: string;
+    image_url: string;
+    type: 'alcohol_type' | 'subtype' | 'brand';
+  };
 }
 
 const RecommendedSpiritCard: React.FC<RecommendedSpiritCardProps> = ({ spirit }) => {
@@ -31,20 +35,26 @@ const RecommendedSpiritCard: React.FC<RecommendedSpiritCardProps> = ({ spirit })
     ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
     : 0;
 
+  const linkPath = spirit.type === 'alcohol_type' 
+    ? `/alcohol-type/${spirit.id}` 
+    : spirit.type === 'subtype' 
+    ? `/subtype/${spirit.id}` 
+    : `/spirit/${spirit.id}`;
+
   return (
     <Link
-      to={`/spirit/${spirit.id}`}
+      to={linkPath}
       className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden group cursor-pointer hover:shadow-lg transition-shadow"
     >
       <div className="relative aspect-[4/3]">
         <TransitionImage
-          src={spirit.image}
+          src={spirit.image_url}
           alt={spirit.name}
           className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
         <div className="absolute bottom-4 left-4 right-4">
-          <div className="text-white mb-1">{spirit.details?.stats?.category}</div>
+          <div className="text-white mb-1 capitalize">{spirit.type.replace('_', ' ')}</div>
           <h3 className="text-xl font-bold text-white mb-2">{spirit.name}</h3>
           <div className="flex items-center space-x-2">
             <RatingStars rating={Math.round(avgRating)} size="sm" />

@@ -1,8 +1,17 @@
 import React from 'react';
 import { Info, X } from 'lucide-react';
 import { useRecommendations } from '../contexts/RecommendationsContext';
-import { getSpiritById } from '../data/spiritCategories';
-import RecommendedSpiritCard from './RecommendedSpiritCard';
+import { Link } from 'react-router-dom';
+import TransitionImage from './ui/TransitionImage';
+import RatingStars from './RatingStars';
+
+// Define the interface for recommended spirit items
+export interface RecommendedSpiritItem {
+  id: string;
+  name: string;
+  image_url: string;
+  type: 'alcohol_type' | 'subtype' | 'brand';
+}
 
 const RecommendedSpirits: React.FC = () => {
   const { recommendedSpirits, clearInteractionHistory, isLoading } = useRecommendations();
@@ -20,11 +29,7 @@ const RecommendedSpirits: React.FC = () => {
     );
   }
 
-  const validSpirits = recommendedSpirits
-    .map(spiritId => getSpiritById(spiritId))
-    .filter((spirit): spirit is NonNullable<typeof spirit> => spirit !== undefined);
-
-  if (validSpirits.length === 0) {
+  if (recommendedSpirits.length === 0) {
     return (
       <div className="text-center text-gray-500 dark:text-gray-400 p-8 border border-dashed rounded-lg">
         <p className="mb-2">No recommendations yet.</p>
@@ -55,8 +60,29 @@ const RecommendedSpirits: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {validSpirits.map(spirit => (
-          <RecommendedSpiritCard key={spirit.id} spirit={spirit} />
+        {recommendedSpirits.map(spirit => (
+          <Link
+            key={spirit.id}
+            to={`/${spirit.type === 'alcohol_type' ? 'alcohol-type' : spirit.type}/${spirit.id}`}
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden group cursor-pointer hover:shadow-lg transition-shadow"
+          >
+            <div className="relative aspect-[4/3]">
+              <TransitionImage
+                src={spirit.image_url}
+                alt={spirit.name}
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+              <div className="absolute bottom-4 left-4 right-4">
+                <div className="text-white mb-1 capitalize">{spirit.type.replace('_', ' ')}</div>
+                <h3 className="text-xl font-bold text-white mb-2">{spirit.name}</h3>
+                <div className="flex items-center space-x-2">
+                  <RatingStars rating={4} size="sm" />
+                  <span className="text-white text-sm">Recommended</span>
+                </div>
+              </div>
+            </div>
+          </Link>
         ))}
       </div>
     </div>

@@ -116,7 +116,8 @@ const SpiritListPage: React.FC = () => {
       await addSpiritToMyBar(alcoholType.id, 'alcohol_type');
       toast.success(`${alcoholType.name} added to your bar!`);
     } catch (error) {
-      toast.error('Failed to add to your bar');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to add to your bar';
+      toast.error(errorMessage);
     }
   };
 

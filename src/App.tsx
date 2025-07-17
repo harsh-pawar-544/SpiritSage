@@ -3,6 +3,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { TranslationProvider } from './contexts/TranslationContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { SpiritsProvider } from './contexts/SpiritsContext';
 import { UserPreferencesProvider } from './contexts/UserPreferencesContext';
@@ -29,37 +30,39 @@ import OtherAlcoholPage from './pages/OtherAlcoholPage'; // You'll need to creat
 
 function App() {
   return (
-    <UserPreferencesProvider>
-      <AuthProvider>
-        <SpiritsProvider>
-          <RecommendationsProvider>
-            <Router>
-              <Toaster position="top-center" />
-              <Layout>
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/explore" element={<SpiritListPage />} /> {/* This is your main explore/list page */}
-                  <Route path="/my-bar" element={<MyBarPage />} />
-                  <Route path="/alcohol-type/:id" element={<AlcoholTypeDetailPage />} />
-                  <Route path="/alcohol-type/:id/subtypes" element={<SpiritSubtypesPage />} />
-                  <Route path="/subtype/:id" element={<SubtypeDetailPage />} />
+    <TranslationProvider>
+      <UserPreferencesProvider>
+        <AuthProvider>
+          <SpiritsProvider>
+            <RecommendationsProvider>
+              <Router>
+                <Toaster position="top-center" />
+                <Layout>
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/explore" element={<SpiritListPage />} /> {/* This is your main explore/list page */}
+                    <Route path="/my-bar" element={<MyBarPage />} />
+                    <Route path="/alcohol-type/:id" element={<AlcoholTypeDetailPage />} />
+                    <Route path="/alcohol-type/:id/subtypes" element={<SpiritSubtypesPage />} />
+                    <Route path="/subtype/:id" element={<SubtypeDetailPage />} />
 
-                  <Route path="/spirit/:id" element={<SpiritProfilePage />} />
+                    <Route path="/spirit/:id" element={<SpiritProfilePage />} />
 
-                  <Route path="/category/:id" element={<SpiritOverviewPage />} />
-                  <Route path="/about" element={<AboutPage />} />
-                  <Route path="/contact" element={<ContactPage />} />
-                  <Route path="/settings" element={<SettingsPage />} />
+                    <Route path="/category/:id" element={<SpiritOverviewPage />} />
+                    <Route path="/about" element={<AboutPage />} />
+                    <Route path="/contact" element={<ContactPage />} />
+                    <Route path="/settings" element={<SettingsPage />} />
 
-                  {/* NEW ROUTE for Other Alcohol */}
-                  <Route path="/other-alcohol" element={<OtherAlcoholPage />} />
-                </Routes>
-              </Layout>
-            </Router>
-          </RecommendationsProvider>
-        </SpiritsProvider>
-      </AuthProvider>
-    </UserPreferencesProvider>
+                    {/* NEW ROUTE for Other Alcohol */}
+                    <Route path="/other-alcohol" element={<OtherAlcoholPage />} />
+                  </Routes>
+                </Layout>
+              </Router>
+            </RecommendationsProvider>
+          </SpiritsProvider>
+        </AuthProvider>
+      </UserPreferencesProvider>
+    </TranslationProvider>
   );
 }
 
