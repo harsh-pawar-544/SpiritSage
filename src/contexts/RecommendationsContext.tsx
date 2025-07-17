@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { debounce } from 'lodash';
-import { useSpirits } from './SpiritsContext';// Import SpiritsContext for fetching real data
-import { AlcoholType, Subtype, Brand } from '../data/types'; // Import relevant types
+import { useSpirits } from './SpiritsContext';
+import { AlcoholType, Subtype, Brand } from '../data/types';
 import { RecommendedSpiritItem } from '../components/RecommendedSpirits'; // Import the shared interface
 
 // Define an interface for interactions that includes the spirit's UUID and its type
@@ -41,7 +41,7 @@ export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = 
   // Get the fetching functions and data arrays from SpiritsContext
   const {
     alcoholTypes,
-    subtypes,
+    subtypes: allSubtypes,
     brands,
     loading: spiritsContextLoading, // Consider spirits context loading as well
     error: spiritsContextError
@@ -99,11 +99,11 @@ export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = 
       if (interaction.spiritType === 'alcohol_type') {
         mainCategory = interaction.spiritId;
       } else if (interaction.spiritType === 'subtype') {
-        const subtype = subtypes?.find(s => s.id === interaction.spiritId);
+        const subtype = allSubtypes?.find(s => s.id === interaction.spiritId);
         mainCategory = subtype?.alcohol_type_id || '';
       } else if (interaction.spiritType === 'brand') {
         const brand = brands?.find(b => b.id === interaction.spiritId);
-        const subtype = subtypes?.find(s => s.id === brand?.subtype_id);
+        const subtype = allSubtypes?.find(s => s.id === brand?.subtype_id);
         mainCategory = subtype?.alcohol_type_id || '';
       }
 
@@ -118,16 +118,16 @@ export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = 
     const allUniqueSpiritIds: { id: string; type: 'alcohol_type' | 'subtype' | 'brand'; categoryId: string }[] = [];
 
     alcoholTypes?.forEach(at => allUniqueSpiritIds.push({ id: at.id, type: 'alcohol_type', categoryId: at.id }));
-    subtypes?.forEach(st => allUniqueSpiritIds.push({ id: st.id, type: 'subtype', categoryId: st.alcohol_type_id }));
+    allSubtypes?.forEach(st => allUniqueSpiritIds.push({ id: st.id, type: 'subtype', categoryId: st.alcohol_type_id }));
     brands?.forEach(b => {
-      const subtype = subtypes?.find(s => s.id === b.subtype_id);
+      const subtype = allSubtypes?.find(s => s.id === b.subtype_id);
       allUniqueSpiritIds.push({ id: b.id, type: 'brand', categoryId: subtype?.alcohol_type_id || '' });
     });
 
     console.log("RecommendationsContext: All unique spirit IDs collected. Count:", allUniqueSpiritIds.length);
     if (allUniqueSpiritIds.length === 0) {
       console.warn("RecommendationsContext: No unique spirits loaded from SpiritsContext! Check SpiritsContext data.");
-      console.log("SpiritsContext Data - AlcoholTypes length:", alcoholTypes?.length, "Subtypes length:", subtypes?.length, "Brands length:", brands?.length);
+      console.log("SpiritsContext Data - AlcoholTypes length:", alcoholTypes?.length, "Subtypes length:", allSubtypes?.length, "Brands length:", brands?.length);
     }
 
     const rankedSpiritIds = allUniqueSpiritIds
@@ -142,7 +142,7 @@ export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = 
 
     console.log("RecommendationsContext: calculateSpiritScores - Ranked spirits count:", rankedSpiritIds.length);
     return rankedSpiritIds;
-  }, [interactions, alcoholTypes, subtypes, brands]); // Dependencies: interactions and all spirit data from SpiritsContext
+  }, [interactions, alcoholTypes, allSubtypes, brands]); // Dependencies: interactions and all spirit data from SpiritsContext
 
   // Step 2: Select top recommendations (UUIDs) with diversity
   const selectTopRecommendations = useCallback((rankedSpiritIds: ReturnType<typeof calculateSpiritScores>) => {
@@ -184,14 +184,15 @@ export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = 
   const fetchRecommendedSpiritDetails = useCallback(async (ids: string[]) => {
     console.log("RecommendationsContext: Starting fetchRecommendedSpiritDetails for IDs:", ids);
     const fetchedDetails: RecommendedSpiritItem[] = [];
-    const fetchPromises = ids.map(async id => {
+    
+    for (const id of ids) {
       let spirit: AlcoholType | Subtype | Brand | undefined;
       let type: RecommendedSpiritItem['type'] | undefined;
 
       spirit = brands?.find(b => b.id === id);
       if (spirit) { type = 'brand'; }
       else {
-        spirit = subtypes?.find(s => s.id === id);
+        spirit = allSubtypes?.find(s => s.id === id);
         if (spirit) { type = 'subtype'; }
         else {
           spirit = alcoholTypes?.find(at => at.id === id);
@@ -203,19 +204,18 @@ export const RecommendationsProvider: React.FC<{ children: React.ReactNode }> = 
         fetchedDetails.push({
           id: spirit.id,
           name: spirit.name,
-          image_url: (spirit as any).image || 'https://via.placeholder.com/150.png?text=Spirit',
+          image_url: (spirit as any).image_url || (spirit as any).image || 'https://images.pexels.com/photos/602750/pexels-photo-602750.jpeg',
           type: type,
         });
       } else {
         console.warn(`RecommendationsContext: Could not find details for recommended spirit ID: ${id}.`);
       }
-    });
-
-    await Promise.all(fetchPromises);
+    }
+    
     console.log("RecommendationsContext: fetchRecommendedSpiritDetails - Full details count:", fetchedDetails.length);
     console.log("RecommendationsContext: Final recommended spirits:", fetchedDetails);
     return fetchedDetails;
-  }, [alcoholTypes, subtypes, brands]);
+  }, [alcoholTypes, allSubtypes, brands]);
 
   // --- Main Function to Update Recommendations (Debounced) ---
   // This function is now stable because its dependencies (the useCallback functions) are stable.

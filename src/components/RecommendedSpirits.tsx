@@ -38,6 +38,19 @@ const RecommendedSpirits: React.FC = () => {
     );
   }
 
+  const getLinkPath = (spirit: RecommendedSpiritItem) => {
+    switch (spirit.type) {
+      case 'alcohol_type':
+        return `/alcohol-type/${spirit.id}`;
+      case 'subtype':
+        return `/subtype/${spirit.id}`;
+      case 'brand':
+        return `/spirit/${spirit.id}`;
+      default:
+        return '/explore';
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -63,7 +76,7 @@ const RecommendedSpirits: React.FC = () => {
         {recommendedSpirits.map(spirit => (
           <Link
             key={spirit.id}
-            to={`/${spirit.type === 'alcohol_type' ? 'alcohol-type' : spirit.type}/${spirit.id}`}
+            to={getLinkPath(spirit)}
             className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden group cursor-pointer hover:shadow-lg transition-shadow"
           >
             <div className="relative aspect-[4/3]">
